@@ -1,6 +1,6 @@
 {
   "name": "fastify-lor-zod",
-  "version": "0.1.0-beta.6",
+  "version": "0.1.0-beta.7",
   "description": "A Fastify type provider integrating Zod for schema validation and type-safe route definitions",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
