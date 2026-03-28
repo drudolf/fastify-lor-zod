@@ -426,20 +426,20 @@ describe('type inference', () => {
   it('infers output type for schemas with defaults', async () => {
     const app = buildApp();
 
-    app.post(
+    app.get(
       '/',
       {
         schema: {
-          body: z.object({
-            name: z.string(),
-            role: z.string().default('user'),
-          }),
+          response: {
+            200: z.object({ name: z.string(), role: z.string().default('user') }),
+          },
         },
       },
-      (req) => {
-        // After validation, default is applied — role is always string
-        expectTypeOf(req.body).toEqualTypeOf<{ name: string; role: string }>();
-        return req.body;
+      (_req, reply) => {
+        // role has a default — reply.send should accept it as optional
+        expectTypeOf(reply.send)
+          .parameter(0)
+          .toExtend<{ name: string; role?: string | undefined } | undefined>();
       },
     );
 
@@ -453,15 +453,35 @@ describe('type inference', () => {
       '/',
       {
         schema: {
-          querystring: z.object({
-            ids: z.string().transform((s) => s.split(',')),
-          }),
+          response: {
+            200: z.object({ id: z.string().transform((s) => parseInt(s, 10)) }),
+          },
         },
       },
-      (req) => {
-        // After transform, ids is string[]
-        expectTypeOf(req.query).toEqualTypeOf<{ ids: string[] }>();
-        return { ids: req.query.ids };
+      (_req, reply) => {
+        // transform produces number — reply.send should accept number for id
+        expectTypeOf(reply.send).parameter(0).toExtend<{ id: number }>();
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('Infers output type for response schemas with preprocess', async () => {
+    const app = buildApp();
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.preprocess((v) => String(v), z.string()),
+          },
+        },
+      },
+      (_req, reply) => {
+        // preprocess has z.input = unknown — SerializerType must resolve to z.output = string, not unknown
+        expectTypeOf(reply.send).parameter(0).toExtend<string | undefined>();
       },
     );
 
