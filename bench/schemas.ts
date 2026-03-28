@@ -292,6 +292,84 @@ export const validTreeData: TreeNode = {
   ],
 };
 
+// --- Codec variants (Date ↔ ISO string) ---
+
+const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+  decode: (iso: string) => new Date(iso),
+  encode: (date: Date) => date.toISOString(),
+});
+
+export const UserResponseWithCodec = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  email: z.string(),
+  age: z.number().int().nullable(),
+  role: z.enum(['admin', 'user', 'moderator']),
+  tags: z.array(z.string()),
+  address: AddressSchema.nullable(),
+  createdAt: dateCodec,
+  updatedAt: dateCodec,
+  posts: z.array(PostSchema),
+});
+
+export const validUserResponseDataWithCodec = {
+  ...validUserResponseData,
+  createdAt: new Date('2025-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2025-06-15T12:30:00.000Z'),
+};
+
+// Money codec: domain stores cents as integer, wire format is "$12.99" string
+const moneyCodec = z.codec(z.string(), z.number().int(), {
+  decode: (s: string) => Math.round(Number.parseFloat(s.replace('$', '')) * 100),
+  encode: (cents: number) => `$${(cents / 100).toFixed(2)}`,
+});
+
+export const OrderSchemaWithCodec = z.object({
+  orderId: z.string(),
+  userId: z.string(),
+  items: z.array(OrderItemSchema),
+  shipping: z.object({
+    address: OrderAddressSchema,
+    method: z.enum(['standard', 'express', 'overnight']),
+    cost: moneyCodec,
+    estimatedDays: z.number().int().positive(),
+    tracking: z.string().nullable(),
+  }),
+  billing: z.object({
+    address: OrderAddressSchema,
+    cardLast4: z.string().length(4),
+    expiryMonth: z.number().int().min(1).max(12),
+    expiryYear: z.number().int(),
+    cardBrand: z.enum(['visa', 'mastercard', 'amex', 'discover']),
+  }),
+  totals: z.object({
+    subtotal: moneyCodec,
+    tax: moneyCodec,
+    shipping: moneyCodec,
+    discount: moneyCodec,
+    total: moneyCodec,
+  }),
+  status: z.enum(['pending', 'confirmed', 'shipped', 'delivered', 'cancelled', 'refunded']),
+  notes: z.array(z.string()).optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export const validOrderDataWithCodec = {
+  ...validOrderData,
+  shipping: {
+    ...validOrderData.shipping,
+    cost: 1299, // $12.99 in cents
+  },
+  totals: {
+    subtotal: 34990,
+    tax: 2800,
+    shipping: 1299,
+    discount: 3500,
+    total: 35589,
+  },
+};
+
 // --- Bench options (consistent across all benchmarks) ---
 
 export const benchOpts = {

@@ -10,13 +10,17 @@ import {
 import {
   benchOpts,
   OrderSchema,
+  OrderSchemaWithCodec,
   PaymentResponse,
   TreeNodeSchema,
   UserResponse,
+  UserResponseWithCodec,
   validOrderData,
+  validOrderDataWithCodec,
   validPaymentSuccess,
   validTreeData,
   validUserResponseData,
+  validUserResponseDataWithCodec,
 } from './schemas.js';
 
 let _result: unknown;
@@ -33,7 +37,7 @@ const compile = (
     ]),
   );
 
-const providers = {
+const allProviders = {
   'fastify-lor-zod': lorZodSerializer,
   'fastify-lor-zod (parse)': lorZodParseSerializer,
   'fastify-lor-zod (fast)': lorZodFastSerializer,
@@ -41,13 +45,18 @@ const providers = {
   'fastify-zod-openapi': samchungySerializer,
 };
 
-// Pre-compile all serializers
-const userSerializers = compile(providers, UserResponse, '/users/42');
-const orderSerializers = compile(providers, OrderSchema, '/orders/1');
-const paymentSerializers = compile(providers, PaymentResponse, '/payments/1');
-const treeSerializers = compile(providers, TreeNodeSchema, '/tree');
+// Only auto-detect and fast support codecs; parse would fail validation on Date objects.
+const lorZodCodecProviders = {
+  'fastify-lor-zod': lorZodSerializer,
+  'fastify-lor-zod (fast)': lorZodFastSerializer,
+};
 
-describe('serialization — simple object (UserResponse)', () => {
+// --- Without codecs (auto-detect → safeParse) ---
+
+const userSerializers = compile(allProviders, UserResponse, '/users/42');
+const orderSerializers = compile(allProviders, OrderSchema, '/orders/1');
+
+describe('without codecs — simple object (UserResponse)', () => {
   for (const [name, serialize] of Object.entries(userSerializers)) {
     bench(
       name,
@@ -59,7 +68,7 @@ describe('serialization — simple object (UserResponse)', () => {
   }
 });
 
-describe('serialization — deeply nested (Order, 10 items)', () => {
+describe('without codecs — deeply nested (Order, 10 items)', () => {
   for (const [name, serialize] of Object.entries(orderSerializers)) {
     bench(
       name,
@@ -71,7 +80,42 @@ describe('serialization — deeply nested (Order, 10 items)', () => {
   }
 });
 
-describe('serialization — discriminated union (Payment)', () => {
+// --- With codecs (auto-detect → safeEncode) ---
+// Only lor-zod supports codecs; competitors would produce incorrect output.
+
+const userCodecSerializers = compile(lorZodCodecProviders, UserResponseWithCodec, '/users/42');
+const orderCodecSerializers = compile(lorZodCodecProviders, OrderSchemaWithCodec, '/orders/1');
+
+describe('with codecs — simple object (UserResponse + date codec)', () => {
+  for (const [name, serialize] of Object.entries(userCodecSerializers)) {
+    bench(
+      name,
+      () => {
+        _result = serialize(validUserResponseDataWithCodec);
+      },
+      benchOpts,
+    );
+  }
+});
+
+describe('with codecs — deeply nested (Order + money codec)', () => {
+  for (const [name, serialize] of Object.entries(orderCodecSerializers)) {
+    bench(
+      name,
+      () => {
+        _result = serialize(validOrderDataWithCodec);
+      },
+      benchOpts,
+    );
+  }
+});
+
+// --- Other schema shapes (without codecs) ---
+
+const paymentSerializers = compile(allProviders, PaymentResponse, '/payments/1');
+const treeSerializers = compile(allProviders, TreeNodeSchema, '/tree');
+
+describe('without codecs — discriminated union (Payment)', () => {
   for (const [name, serialize] of Object.entries(paymentSerializers)) {
     bench(
       name,
@@ -83,7 +127,7 @@ describe('serialization — discriminated union (Payment)', () => {
   }
 });
 
-describe('serialization — recursive tree (3 levels deep)', () => {
+describe('without codecs — recursive tree (3 levels deep)', () => {
   for (const [name, serialize] of Object.entries(treeSerializers)) {
     bench(
       name,

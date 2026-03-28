@@ -3,6 +3,7 @@ import type { FastifySerializerCompiler } from 'fastify/types/schema';
 import { z } from 'zod';
 
 import { ResponseSerializationError } from './errors.js';
+import { hasCodecInTree } from './utils/has-codec-in-tree.js';
 
 /**
  * Options for the serializer compiler factories.
@@ -25,11 +26,14 @@ export interface SerializerCompilerOptions {
 }
 
 /**
- * Creates a Fastify serializer compiler that uses Zod v4's `safeEncode` for response serialization.
+ * Creates a Fastify serializer compiler that auto-detects whether to use `safeEncode` or `safeParse`.
  *
- * This is the **recommended default**. For codec schemas, `safeEncode` runs the reverse
- * transform (domain type → wire format). For plain schemas, it validates the response matches
- * the schema. Throws {@link ResponseSerializationError} on failure.
+ * At compile time (when Fastify registers a route), inspects the schema tree for codec/pipe types.
+ * If codecs are found, uses `safeEncode` to run reverse transforms (domain type → wire format).
+ * If no codecs are found, uses `safeParse` for ~15% faster validation-only serialization.
+ *
+ * This is the **recommended default** — it gives the best of both worlds without manual selection.
+ * Throws {@link ResponseSerializationError} on failure.
  *
  * @param opts - Optional configuration (e.g. custom `JSON.stringify` replacer)
  * @returns A Fastify serializer compiler function
@@ -44,24 +48,30 @@ export interface SerializerCompilerOptions {
  */
 export const createSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
-  ({ schema, method, url }) =>
-  (data: unknown): string => {
-    const result = z.safeEncode(schema, data);
-    if (!result.success) {
-      throw new ResponseSerializationError({
-        method,
-        url,
-        zodError: result.error,
-      });
-    }
-    return JSON.stringify(result.data, opts.replacer);
+  ({ schema, method, url }) => {
+    const useEncode = !schema?._zod?.def || hasCodecInTree(schema);
+    const validate = useEncode
+      ? (data: unknown) => z.safeEncode(schema, data)
+      : (data: unknown) => schema.safeParse(data);
+
+    return (data: unknown): string => {
+      const result = validate(data);
+      if (!result.success) {
+        throw new ResponseSerializationError({
+          method,
+          url,
+          zodError: result.error,
+        });
+      }
+      return JSON.stringify(result.data, opts.replacer);
+    };
   };
 
 /**
- * Default serializer compiler using `safeEncode` + `JSON.stringify`.
+ * Default serializer compiler with auto-detect codec support.
  *
- * Supports Zod v4 codecs (e.g. `Date` → ISO string) and validates responses
- * against the schema. This is the recommended serializer for most applications.
+ * Automatically uses `safeEncode` for schemas with codecs/pipes, and `safeParse`
+ * for plain schemas (~15% faster). This is the recommended serializer for most applications.
  *
  * @example
  * ```ts
@@ -71,11 +81,11 @@ export const createSerializerCompiler =
 export const serializerCompiler: FastifySerializerCompiler<z.ZodType> = createSerializerCompiler();
 
 /**
- * Creates a Fastify serializer compiler that uses Zod's `safeParse` for response validation.
+ * Creates a Fastify serializer compiler that always uses Zod's `safeParse` for response validation.
  *
- * Unlike {@link createSerializerCompiler} (which uses `safeEncode`), this skips the codec
- * encode step — ~10-15% faster but does **not** run reverse transforms for codec schemas.
- * Use this when you need response validation but don't use Zod codecs.
+ * Always uses `safeParse`, never `safeEncode` — does **not** run reverse transforms for codec schemas.
+ * For most use cases, prefer {@link createSerializerCompiler} which auto-detects codecs and
+ * uses `safeParse` for non-codec schemas automatically.
  *
  * Throws {@link ResponseSerializationError} on validation failure.
  *
@@ -105,8 +115,8 @@ export const createParseSerializerCompiler =
 /**
  * Default validating serializer using `safeParse` + `JSON.stringify`.
  *
- * Validates responses but skips codec encoding. ~10-15% faster than
- * {@link serializerCompiler} when codecs are not used.
+ * Always uses `safeParse`, skips codec encoding. Prefer {@link serializerCompiler}
+ * which auto-detects and matches this speed for non-codec schemas.
  *
  * @example
  * ```ts

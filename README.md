@@ -15,10 +15,10 @@ Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.c
 ## Why fastify-lor-zod?
 
 - **Zod v4 native** -- uses `safeEncode`, `toJSONSchema`, codecs, and registries directly
-- **Three serializer strategies** -- choose between robustness (codec support), validation-only, or raw speed
+- **Smart serializer** -- auto-detects codecs at compile time; falls back to `safeParse` for ~15% faster non-codec schemas
 - **Complete OpenAPI** -- all HTTP parts, nullable types, discriminated unions, recursive schemas, content types
 - **Type-safe end-to-end** -- `req.body`, `req.params`, `req.query`, `req.headers`, and `reply.send()` fully typed
-- **100% test coverage** -- 106 tests including snapshot parity with `fastify-type-provider-zod`
+- **100% test coverage** -- 121 tests including snapshot parity with `fastify-type-provider-zod`
 - **Why "Lor"?** -- [Son of Zod](https://dc.fandom.com/wiki/Lor-Zod), here to power your `fastify` schemas.
 
 ## Table of Contents
@@ -81,14 +81,14 @@ Three strategies for different trade-offs:
 
 | Compiler | Validates | Codecs | Speed | Use when |
 |----------|-----------|--------|-------|----------|
-| `serializerCompiler` | Yes | Yes | Baseline | You use `z.codec()` transforms |
-| `parseSerializerCompiler` | Yes | No | ~15% faster | You need validation but no codecs |
-| `fastSerializerCompiler` | No | No | Fastest | You trust your handlers |
+| `serializerCompiler` | Yes | Auto-detect | Fastest validating | **Recommended default** -- uses `safeParse` for plain schemas, `safeEncode` only when codecs are present |
+| `parseSerializerCompiler` | Yes | No | Same as above | Explicit opt-in to always use `safeParse` |
+| `fastSerializerCompiler` | No | No | Fastest overall | You trust your handlers and want maximum throughput |
 
 ```ts
 import {
-  serializerCompiler,         // default: z.safeEncode + JSON.stringify
-  parseSerializerCompiler,    // z.safeParse + JSON.stringify
+  serializerCompiler,         // default: auto-detects codecs, picks safeParse or safeEncode
+  parseSerializerCompiler,    // always z.safeParse + JSON.stringify
   fastSerializerCompiler,     // fast-json-stringify, no validation
 } from 'fastify-lor-zod';
 
@@ -103,19 +103,23 @@ Serialization throughput (ops/sec, higher is better):
 
 | Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | zod-openapi |
 |----------|---------|-----------------|----------------|-------------------|-------------|
-| Simple object | 245K | 305K | **670K** | 308K | 294K |
-| Nested (10 items) | 32K | 36K | **98K** | 36K | 34K |
-| Discriminated union | 433K | 540K | **703K** | 505K | 353K |
-| Recursive tree | 337K | 392K | **1.12M** | 384K | 462K |
+| Simple object | 305K | 305K | **624K** | 309K | 286K |
+| Simple object + date codec | 140K | Unsupported | **213K** | Unsupported | Unsupported |
+| Nested (10 items) | 34K | 35K | **78K** | 33K | 30K |
+| Nested + money codec | 30K | Unsupported | **87K** | Unsupported | Unsupported |
+| Discriminated union | **582K** | 541K | 652K | 457K | 341K |
+| Recursive tree | 393K | 372K | **1.21M** | 412K | 464K |
+
+For non-codec schemas, `serializerCompiler` auto-detects and matches `parseSerializerCompiler` speed. For codec schemas, it automatically uses `safeEncode`.
 
 Validation throughput (all libraries are within ~5% of each other):
 
 | Scenario | lor-zod | type-provider-zod | zod-openapi |
 |----------|---------|-------------------|-------------|
-| Simple object | 376K | 393K | 392K |
-| Nested (10 items) | 55K | 57K | 56K |
-| Discriminated union | 962K | 937K | 906K |
-| Recursive tree | 679K | 716K | 726K |
+| Simple object | 366K | 384K | 386K |
+| Nested (10 items) | 57K | 55K | 57K |
+| Discriminated union | 958K | 890K | 817K |
+| Recursive tree | 758K | 724K | 722K |
 
 > Measured on Apple M-series, Node.js 24, Zod 4.3.6. Run `pnpm bench` to reproduce.
 
