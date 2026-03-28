@@ -15,6 +15,7 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
+      statuses: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -35,6 +36,17 @@ jobs:
           publish: node --experimental-strip-types scripts/publish.ts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Mark CI as passing on version PR
+        if: steps.changesets.outputs.hasChangesets == 'true'
+        run: |
+          SHA=$(git rev-parse origin/changeset-release/main)
+          gh api repos/${{ github.repository }}/statuses/$SHA \
+            --method POST \
+            -f state=success \
+            -f context=ci \
+            -f description="Skipped — version PR only changes package.json and CHANGELOG.md"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create git tag and GitHub release
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
