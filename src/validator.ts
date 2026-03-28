@@ -4,13 +4,18 @@ import type { z } from 'zod';
 import { RequestValidationError } from './errors.js';
 
 /**
- * Fastify validator compiler that uses Zod for request validation.
+ * Fastify validator compiler that uses Zod's `safeParse` for request validation.
  *
- * Validates body, querystring, params, and headers using `safeParse`.
- * Returns `{ value }` on success, `{ error }` with mapped validation errors on failure.
+ * Validates all HTTP parts (body, querystring, params, headers). On success returns
+ * `{ value }` with the parsed data. On failure returns `{ error }` with a
+ * {@link RequestValidationError} containing Fastify-compatible validation errors.
+ *
+ * @returns A Fastify schema compiler function
  *
  * @example
  * ```ts
+ * import { validatorCompiler } from 'fastify-lor-zod';
+ *
  * app.setValidatorCompiler(validatorCompiler);
  * ```
  */

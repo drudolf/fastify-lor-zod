@@ -5,11 +5,22 @@ import type { z } from 'zod';
 /**
  * Error thrown when response serialization fails.
  *
+ * Thrown by `serializerCompiler` and `parseSerializerCompiler` when the handler's
+ * return value does not match the response schema. Contains the HTTP method, URL,
+ * and the underlying `ZodError` for inspection.
+ *
+ * Use `instanceof` to catch in a Fastify error handler. The `code` property
+ * (`'ERR_RESPONSE_SERIALIZATION'`) is stable for programmatic matching.
+ *
  * @example
  * ```ts
  * app.setErrorHandler((error, request, reply) => {
  *   if (error instanceof ResponseSerializationError) {
- *     reply.code(500).send({ message: "Response validation failed" });
+ *     reply.code(500).send({
+ *       error: error.code,     // 'ERR_RESPONSE_SERIALIZATION'
+ *       method: error.method,  // 'GET'
+ *       url: error.url,        // '/users/42'
+ *     });
  *   }
  * });
  * ```
@@ -38,11 +49,22 @@ export class ResponseSerializationError extends Error {
 /**
  * Error thrown when request validation fails.
  *
+ * Thrown by `validatorCompiler` when incoming data (body, querystring, params, headers)
+ * does not pass the Zod schema. The `validation` array contains Fastify-compatible
+ * validation errors mapped from Zod issues.
+ *
+ * Use `instanceof` to catch in a Fastify error handler. The `code` property
+ * (`'ERR_REQUEST_VALIDATION'`) is stable for programmatic matching.
+ *
  * @example
  * ```ts
  * app.setErrorHandler((error, request, reply) => {
  *   if (error instanceof RequestValidationError) {
- *     reply.code(400).send({ message: "Validation failed", issues: error.validation });
+ *     reply.code(400).send({
+ *       error: error.code,           // 'ERR_REQUEST_VALIDATION'
+ *       issues: error.validation,    // FastifySchemaValidationError[]
+ *       context: error.context,      // 'body' | 'querystring' | 'params' | 'headers'
+ *     });
  *   }
  * });
  * ```

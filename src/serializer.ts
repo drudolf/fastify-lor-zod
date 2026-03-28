@@ -4,24 +4,42 @@ import { z } from 'zod';
 
 import { ResponseSerializationError } from './errors.js';
 
-/** Options for the serializer compiler factory. */
+/**
+ * Options for the serializer compiler factories.
+ *
+ * Applies to `createSerializerCompiler` and `createParseSerializerCompiler`.
+ * The `createFastSerializerCompiler` does not use `JSON.stringify` and ignores these options.
+ */
 export interface SerializerCompilerOptions {
-  /** Custom replacer function passed to `JSON.stringify`. */
+  /**
+   * Custom replacer function passed to `JSON.stringify`.
+   *
+   * @example
+   * ```ts
+   * const compiler = createSerializerCompiler({
+   *   replacer: (key, value) => key === 'secret' ? '[REDACTED]' : value,
+   * });
+   * ```
+   */
   replacer?: (key: string, value: unknown) => unknown;
 }
 
 /**
- * Creates a Fastify serializer compiler that uses Zod's `safeEncode` for response serialization.
+ * Creates a Fastify serializer compiler that uses Zod v4's `safeEncode` for response serialization.
  *
- * For codec schemas, `safeEncode` runs the reverse transform (output → wire format).
- * For plain schemas, it validates that the response matches the schema.
+ * This is the **recommended default**. For codec schemas, `safeEncode` runs the reverse
+ * transform (domain type → wire format). For plain schemas, it validates the response matches
+ * the schema. Throws {@link ResponseSerializationError} on failure.
  *
- * @param opts - Optional configuration
+ * @param opts - Optional configuration (e.g. custom `JSON.stringify` replacer)
  * @returns A Fastify serializer compiler function
  *
  * @example
  * ```ts
- * app.setSerializerCompiler(createSerializerCompiler({ replacer: (k, v) => v }));
+ * // With custom replacer to redact sensitive fields
+ * app.setSerializerCompiler(createSerializerCompiler({
+ *   replacer: (key, value) => key === 'password' ? '[REDACTED]' : value,
+ * }));
  * ```
  */
 export const createSerializerCompiler =
@@ -40,7 +58,10 @@ export const createSerializerCompiler =
   };
 
 /**
- * Default serializer compiler instance.
+ * Default serializer compiler using `safeEncode` + `JSON.stringify`.
+ *
+ * Supports Zod v4 codecs (e.g. `Date` → ISO string) and validates responses
+ * against the schema. This is the recommended serializer for most applications.
  *
  * @example
  * ```ts
@@ -52,16 +73,18 @@ export const serializerCompiler: FastifySerializerCompiler<z.ZodType> = createSe
 /**
  * Creates a Fastify serializer compiler that uses Zod's `safeParse` for response validation.
  *
- * Unlike `createSerializerCompiler` (which uses `safeEncode`), this skips the codec encode
- * step — ~10-15% faster but does not run reverse transforms for codec schemas.
+ * Unlike {@link createSerializerCompiler} (which uses `safeEncode`), this skips the codec
+ * encode step — ~10-15% faster but does **not** run reverse transforms for codec schemas.
  * Use this when you need response validation but don't use Zod codecs.
  *
- * @param opts - Optional configuration
+ * Throws {@link ResponseSerializationError} on validation failure.
+ *
+ * @param opts - Optional configuration (e.g. custom `JSON.stringify` replacer)
  * @returns A Fastify serializer compiler function
  *
  * @example
  * ```ts
- * app.setSerializerCompiler(parseSerializerCompiler);
+ * app.setSerializerCompiler(createParseSerializerCompiler());
  * ```
  */
 export const createParseSerializerCompiler =
@@ -80,7 +103,10 @@ export const createParseSerializerCompiler =
   };
 
 /**
- * Default validating serializer compiler instance.
+ * Default validating serializer using `safeParse` + `JSON.stringify`.
+ *
+ * Validates responses but skips codec encoding. ~10-15% faster than
+ * {@link serializerCompiler} when codecs are not used.
  *
  * @example
  * ```ts
@@ -93,18 +119,19 @@ export const parseSerializerCompiler: FastifySerializerCompiler<z.ZodType> =
 /**
  * Creates a Fastify serializer compiler that uses `fast-json-stringify` for maximum performance.
  *
- * Converts the Zod schema to JSON Schema once at route registration, then uses the optimized
- * `fast-json-stringify` function for every request. No Zod validation is performed — responses
- * are serialized directly without type checking.
+ * Converts the Zod schema to JSON Schema **once** at route registration, then uses the
+ * pre-compiled `fast-json-stringify` function for every request. No Zod validation is
+ * performed — responses are serialized directly without type checking.
  *
- * Use this when response validation is not needed and performance is critical.
- * For response validation and codec support, use `createSerializerCompiler` instead.
+ * Use this when response validation is not needed and throughput is critical.
+ * For response validation, use {@link createSerializerCompiler} or
+ * {@link createParseSerializerCompiler} instead.
  *
  * @returns A Fastify serializer compiler function
  *
  * @example
  * ```ts
- * app.setSerializerCompiler(fastSerializerCompiler);
+ * app.setSerializerCompiler(createFastSerializerCompiler());
  * ```
  */
 export const createFastSerializerCompiler =
@@ -120,7 +147,10 @@ export const createFastSerializerCompiler =
   };
 
 /**
- * Default fast serializer compiler instance.
+ * Default fast serializer using `fast-json-stringify` (no validation).
+ *
+ * The fastest option — pre-compiles a JSON Schema stringify function at route
+ * registration. No runtime validation is performed on responses.
  *
  * @example
  * ```ts

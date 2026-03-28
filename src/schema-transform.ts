@@ -19,15 +19,17 @@ interface Schema extends FastifySchema {
   hide?: boolean;
 }
 
-/** Options for the JSON Schema transform functions. */
+/**
+ * Options for {@link createJsonSchemaTransform} and {@link createJsonSchemaTransformObject}.
+ */
 export interface SchemaTransformOptions {
-  /** Route URL patterns to exclude from OpenAPI documentation. */
+  /** Route URL patterns to exclude from OpenAPI documentation (e.g. `/documentation/*`). */
   skipList?: readonly string[];
-  /** Custom schema registry (defaults to `z.globalRegistry`). */
+  /** Custom schema registry for `$ref` component resolution (defaults to `z.globalRegistry`). */
   schemaRegistry?: typeof z.globalRegistry;
-  /** Configuration for input schema creation. */
+  /** When `true`, also generates `{Id}Input` variants in `components.schemas`. Defaults to `false`. */
   withInputSchema?: boolean;
-  /** Configuration for Zod-to-JSON Schema conversion. */
+  /** Configuration for Zod-to-JSON Schema conversion (e.g. custom `target` or `override`). */
   zodToJsonConfig?: ZodToJsonConfig;
 }
 
@@ -106,13 +108,21 @@ const transformContentTypes = (
 /**
  * Creates a Fastify Swagger `transform` function that converts Zod schemas to OpenAPI JSON Schema.
  *
- * @param opts - Optional configuration
+ * Processes all HTTP parts uniformly (body, querystring, params, headers, response).
+ * Automatically uses `io: "input"` for request schemas and `io: "output"` for response schemas.
+ * Supports nested content types in body and response, and preserves extra wrapper keys
+ * like `description`.
+ *
+ * @param opts - Optional configuration (skip list, registry, JSON config)
  * @returns A `transform` function compatible with `@fastify/swagger`
  *
  * @example
  * ```ts
  * app.register(swagger, {
- *   transform: jsonSchemaTransform,
+ *   transform: createJsonSchemaTransform({
+ *     schemaRegistry: myRegistry,
+ *     zodToJsonConfig: { override: (ctx) => { ... } },
+ *   }),
  * });
  * ```
  */
@@ -231,15 +241,22 @@ export const createJsonSchemaTransform = (
 
 /**
  * Creates a Fastify Swagger `transformObject` function that resolves Zod registry schemas
- * into OpenAPI `$ref`-based components.
+ * into OpenAPI `$ref`-based `components.schemas`.
  *
- * @param opts - Optional configuration
+ * Iterates over all schemas in the registry, converts each to JSON Schema via
+ * `zodSchemaToJson`, and merges them into the OpenAPI document's components.
+ * Set `withInputSchema: true` to also generate `{Id}Input` variants.
+ *
+ * @param opts - Optional configuration (registry, input schemas, JSON config)
  * @returns A `transformObject` function compatible with `@fastify/swagger`
  *
  * @example
  * ```ts
+ * const registry = z.registry<{ id: string }>();
+ * registry.add(UserSchema, { id: 'User' });
+ *
  * app.register(swagger, {
- *   transformObject: jsonSchemaTransformObject,
+ *   transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry }),
  * });
  * ```
  */
@@ -299,10 +316,20 @@ export const createJsonSchemaTransformObject = (
   };
 };
 
-/** Pre-configured JSON Schema transform for `@fastify/swagger`. */
+/**
+ * Pre-configured JSON Schema transform for `@fastify/swagger`.
+ *
+ * Uses `z.globalRegistry` and default settings. For custom configuration,
+ * use {@link createJsonSchemaTransform} instead.
+ */
 export const jsonSchemaTransform: ReturnType<typeof createJsonSchemaTransform> =
   createJsonSchemaTransform();
 
-/** Pre-configured JSON Schema transform object for `@fastify/swagger`. */
+/**
+ * Pre-configured JSON Schema transform object for `@fastify/swagger`.
+ *
+ * Uses `z.globalRegistry` and default settings. For custom configuration,
+ * use {@link createJsonSchemaTransformObject} instead.
+ */
 export const jsonSchemaTransformObject: ReturnType<typeof createJsonSchemaTransformObject> =
   createJsonSchemaTransformObject();

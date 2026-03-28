@@ -42,7 +42,12 @@ const getSchemaId = (id: string, io: 'input' | 'output'): string =>
 const getReferenceUri = (id: string, io: 'input' | 'output'): string =>
   `#/components/schemas/${getSchemaId(id, io)}`;
 
-/** Returns the id→schema map from a Zod registry. */
+/**
+ * Returns the internal `id → schema` map from a Zod registry.
+ *
+ * @param registry - A Zod registry (e.g. `z.globalRegistry` or a custom one)
+ * @returns Map of schema IDs to their Zod schema instances
+ */
 export const getRegistryIdMap = (registry: typeof z.globalRegistry): Map<string, z.ZodType> =>
   (registry as unknown as ZodRegistryInternal)._idmap;
 
@@ -95,10 +100,28 @@ interface OverrideContext {
   path: (string | number)[];
 }
 
-/** Configuration for Zod-to-JSON Schema conversion. */
+/**
+ * Configuration for Zod-to-JSON Schema conversion.
+ *
+ * Pass via {@link SchemaTransformOptions.zodToJsonConfig} to customize
+ * how schemas are converted to JSON Schema / OpenAPI.
+ */
 export interface ZodToJsonConfig {
+  /** JSON Schema target (e.g. `'openapi-3.0'`, `'draft-2020-12'`). Defaults based on OAS version. */
   target?: string;
-  /** Custom override applied after the built-in overrides (date, undefined, transform). */
+  /**
+   * Custom override applied after the built-in overrides (date, undefined, transform).
+   *
+   * @example
+   * ```ts
+   * // Strip `pattern` from UUID fields for OAS 3.0 compatibility
+   * zodToJsonConfig: {
+   *   override: (ctx) => {
+   *     if (ctx.jsonSchema.format === 'uuid') delete ctx.jsonSchema.pattern;
+   *   },
+   * }
+   * ```
+   */
   override?: (ctx: OverrideContext) => void;
 }
 
@@ -189,10 +212,11 @@ export const zodSchemaToJson = (
 // --- JSON Schema to OAS conversion ---
 
 /**
- * Gets the OAS version from a Swagger document object.
+ * Detects the OpenAPI version from a `@fastify/swagger` document object.
  *
- * @param documentObject - The Swagger/OpenAPI document object
- * @returns The detected OAS version
+ * @param documentObject - The OpenAPI document object (must contain `openapiObject`)
+ * @returns `'3.0'` or `'3.1'`
+ * @throws If the version is not 3.0 or 3.1
  */
 export const getOASVersion = (documentObject: {
   openapiObject: Partial<OpenAPIV3.Document | OpenAPIV3_1.Document>;
@@ -248,8 +272,12 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
 /**
  * Converts a JSON Schema to an OpenAPI-compatible schema.
  *
- * @param schema - JSON Schema object
- * @param oasVersion - Target OpenAPI version
+ * For OAS 3.1, returns the schema as-is (JSON Schema Draft 2020-12 compatible).
+ * For OAS 3.0, strips incompatible keys (`$schema`, `$id`, `unevaluatedProperties`, etc.)
+ * and recursively processes nested schemas.
+ *
+ * @param schema - JSON Schema object (typically from {@link zodSchemaToJson})
+ * @param oasVersion - Target OpenAPI version (`'3.0'` or `'3.1'`)
  * @returns OpenAPI-compatible schema object
  */
 export const jsonSchemaToOAS = (
