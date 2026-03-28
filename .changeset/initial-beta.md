@@ -10,4 +10,4 @@ Initial beta release of fastify-lor-zod.
 - Schema registry support with $ref component resolution
 - Custom error classes (RequestValidationError, ResponseSerializationError) with cause chaining
 - Typed plugin helpers (FastifyPluginAsyncZod, FastifyPluginCallbackZod)
-- Fixes 18 upstream issues from fastify-type-provider-zod
+- Fixes issues from fastify-type-provider-zod

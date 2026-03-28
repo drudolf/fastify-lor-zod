@@ -10,15 +10,16 @@
 
 A Fastify type provider for **Zod v4** with full OpenAPI support.
 
-Built from scratch for Fastify v5 and Zod v4. Fixes [issues](https://github.com/turkerdev/fastify-type-provider-zod/issues) from the original `fastify-type-provider-zod`.
+Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.com/turkerdev/fastify-type-provider-zod/issues) from the original `fastify-type-provider-zod`.
 
 ## Why fastify-lor-zod?
 
 - **Zod v4 native** -- uses `safeEncode`, `toJSONSchema`, codecs, and registries directly
-- **Three serializer strategies** -- choose between correctness (codec support), validation-only, or raw speed
+- **Three serializer strategies** -- choose between robustness (codec support), validation-only, or raw speed
 - **Complete OpenAPI** -- all HTTP parts, nullable types, discriminated unions, recursive schemas, content types
 - **Type-safe end-to-end** -- `req.body`, `req.params`, `req.query`, `req.headers`, and `reply.send()` fully typed
-- **100% test coverage** -- 106 tests including snapshot parity with the upstream project
+- **100% test coverage** -- 106 tests including snapshot parity with `fastify-type-provider-zod`
+- **Why "Lor"?** -- [Son of Zod](https://dc.fandom.com/wiki/Lor-Zod), here to power your `fastify` schemas.
 
 ## Table of Contents
 
@@ -30,7 +31,7 @@ Built from scratch for Fastify v5 and Zod v4. Fixes [issues](https://github.com/
 - [Error Handling](#error-handling)
 - [Zod v4 Codec Support](#zod-v4-codec-support)
 - [Compatibility](#compatibility)
-- [Issues Addressed](#upstream-issues-addressed)
+- [Issues Addressed](#issues-addressed)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -229,11 +230,11 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | Node.js |
 |-----------------|---------|-----|------------------|---------|
-| 0.x             | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 20 |
+| 0.1.0-beta.1    | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 22 |
 
 ## Issues Addressed
 
-Fixes 18 issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
+Fixes issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
 
 | Issue | Description |
 |-------|-------------|

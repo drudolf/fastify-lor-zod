@@ -75,7 +75,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] z.null in unions handled correctly for OAS 3.0 (#192)
 - [x] Reused schemas inlined correctly for OAS 3.0 (#210)
 
-### Upstream issues — 12 tests
+### Other provider issues — 12 tests
 
 - [x] Registered querystring schema generates valid params (#244)
 - [x] z.transform() preserves type info in response schema (#208)
