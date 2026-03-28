@@ -26,7 +26,7 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "knip": "knip",
-    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "syncpack": "syncpack",
     "test:spec-check": "node --experimental-strip-types scripts/test-spec.ts check",
     "test:scaffold": "node --experimental-strip-types scripts/test-spec.ts scaffold",
