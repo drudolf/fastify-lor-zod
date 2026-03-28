@@ -8,7 +8,6 @@ on:
 
 jobs:
   ci:
-    if: github.head_ref != 'changeset-release/main'
     runs-on: ubuntu-latest
     container: node:24-alpine
     env:
