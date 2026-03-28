@@ -1,5 +1,20 @@
 # fastify-lor-zod
 
+## 0.1.0-beta.8
+
+### Minor Changes
+
+- [#23](https://github.com/drudolf/fastify-lor-zod/pull/23) [`1a32963`](https://github.com/drudolf/fastify-lor-zod/commit/1a32963b2d2e83d842dedd2fa2016e6576bb329f) Thanks [@drudolf](https://github.com/drudolf)! - Fix serializer type provider to make `.default()` response fields optional
+
+  `FastifyLorZodTypeProvider` previously mapped the serializer to `z.output`, which
+  made fields with `.default()` appear as required in handler return types. Handlers
+  could not omit defaulted fields without a type error, defeating the purpose of `.default()`.
+
+  The serializer now uses `SerializerType<T>`: `z.input` when output is a subtype of input
+  (plain schemas and `.default()` schemas — making defaulted fields optional), falling back
+  to `z.output` for codec schemas (where `Date` diverges from `string`) and `z.preprocess`
+  schemas (where input is `unknown`).
+
 ## 0.1.0-beta.7
 
 ### Patch Changes
