@@ -18,7 +18,6 @@ const buildAppWithSwagger = async (oasVersion: '3.0.3' | '3.1.0' = '3.0.3') => {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  // @ts-expect-error — swagger plugin typing mismatch with callback/async overloads
   await app.register(swagger, {
     openapi: {
       openapi: oasVersion,
@@ -84,9 +83,9 @@ describe('schema-transform', () => {
         transform({
           schema: {},
           url: '/test',
-          route: {},
+          route: { method: 'GET', url: '/test', handler: () => undefined },
           swaggerObject: {},
-        } as Parameters<typeof transform>[0]),
+        }),
       ).toThrow('OpenAPI 2.0 is not supported');
     });
 
@@ -130,7 +129,6 @@ describe('schema-transform', () => {
         schemaRegistry: testRegistry,
       });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.0.3',
@@ -216,7 +214,7 @@ describe('schema-transform', () => {
         'content',
         'application/json',
         'schema',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(bodySchema?.required).toBeDefined();
       if (Array.isArray(bodySchema?.required)) {
@@ -252,7 +250,7 @@ describe('schema-transform', () => {
         'schema',
         'properties',
         'value',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(valueSchema?.nullable).toBe(true);
     });
@@ -263,12 +261,12 @@ describe('schema-transform', () => {
       const result = transform({
         schema: { body: z.object({ name: z.string() }) },
         url: '/documentation/',
-        route: {},
+        route: { method: 'GET', url: '/documentation', handler: () => ({ name: 'test' }) },
         openapiObject: { openapi: '3.0.3' },
-      } as Parameters<typeof transform>[0]);
+      });
 
       expect(result.schema).toHaveProperty('hide');
-      expect((result.schema as Record<string, unknown>).hide).toBe(true);
+      expect(result.schema.hide).toBe(true);
     });
 
     it('allows zodToJsonConfig passthrough', () => {
@@ -283,9 +281,9 @@ describe('schema-transform', () => {
           body: z.object({ value: z.string() }),
         },
         url: '/test',
-        route: {},
+        route: { method: 'GET', url: '/test', handler: () => ({ value: 'test' }) },
         openapiObject: { openapi: '3.0.3' },
-      } as Parameters<typeof transform>[0]);
+      });
 
       expect(result.schema.body).toBeDefined();
     });
@@ -295,7 +293,6 @@ describe('schema-transform', () => {
       app.setValidatorCompiler(validatorCompiler);
       app.setSerializerCompiler(serializerCompiler);
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
         transform: createJsonSchemaTransform({
@@ -336,7 +333,7 @@ describe('schema-transform', () => {
         'schema',
         'properties',
         'id',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(idSchema).toBeDefined();
       expect(idSchema?.format).toBe('uuid');
@@ -376,7 +373,6 @@ describe('schema-transform', () => {
       const transform = createJsonSchemaTransform({ schemaRegistry: registry });
       const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.0.3',
@@ -413,7 +409,6 @@ describe('schema-transform', () => {
       const transform = createJsonSchemaTransform({ schemaRegistry: registry });
       const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.0.3',
@@ -457,7 +452,6 @@ describe('schema-transform', () => {
       const transform = createJsonSchemaTransform({ schemaRegistry: registry });
       const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.0.3',
@@ -502,7 +496,6 @@ describe('schema-transform', () => {
       const transform = createJsonSchemaTransform({ schemaRegistry: registry });
       const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.0.3',
@@ -533,7 +526,6 @@ describe('schema-transform', () => {
       const transform = createJsonSchemaTransform();
       const transformObject = createJsonSchemaTransformObject();
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.1.0',
@@ -570,7 +562,7 @@ describe('schema-transform', () => {
         'schema',
         'properties',
         'value',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(valueSchema).toBeDefined();
       // OAS 3.1 should NOT have nullable property — uses type arrays instead
@@ -590,7 +582,7 @@ describe('schema-transform', () => {
             },
           },
           url: '/test',
-          route: {},
+          route: { method: 'GET', url: '/test', handler: () => ({ id: 1 }) },
           openapiObject: { openapi: '3.0.3' },
         }),
       ).toThrow('Invalid schema');
@@ -606,9 +598,9 @@ describe('schema-transform', () => {
           body: z.object({ name: z.string() }),
         },
         url: '/test',
-        route: {},
+        route: { method: 'GET', url: '/test', handler: () => ({ name: 'test' }) },
         openapiObject: { openapi: '3.0.3' },
-      } as unknown as Parameters<typeof transform>[0]);
+      });
 
       const schema = result.schema as Record<string, unknown>;
       expect(schema.description).toBe('a route');
@@ -621,7 +613,7 @@ describe('schema-transform', () => {
       expect(() =>
         transformObject({
           swaggerObject: {},
-        } as Parameters<typeof transformObject>[0]),
+        }),
       ).toThrow('OpenAPI 2.0 is not supported');
     });
 
@@ -640,9 +632,9 @@ describe('schema-transform', () => {
           },
         },
         url: '/test',
-        route: {},
+        route: { method: 'GET', url: '/test', handler: () => 'raw' },
         openapiObject: { openapi: '3.0.3' },
-      } as unknown as Parameters<typeof transform>[0]);
+      });
 
       const body = result.schema.body as Record<string, unknown>;
       const content = body.content as Record<string, unknown>;
@@ -662,9 +654,9 @@ describe('schema-transform', () => {
           body: z.object({ name: z.string() }),
         },
         url: '/test',
-        route: {},
+        route: { method: 'GET', url: '/test', handler: () => ({ name: 'test' }) },
         openapiObject: {} as Partial<Record<string, unknown>>,
-      } as Parameters<typeof transform>[0]);
+      });
 
       // Should not throw — defaults to 3.0
       expect(result.schema.body).toBeDefined();
@@ -703,7 +695,7 @@ describe('schema-transform', () => {
         'schema',
         'properties',
         'value',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(valueSchema).toBeDefined();
       expect(valueSchema?.nullable).toBe(true);
@@ -765,7 +757,6 @@ describe('schema-transform', () => {
       schemaRegistry.add(UserQuery, { id: 'UserQuery' });
       schemaRegistry.add(UserSchema, { id: 'User' });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.0.3',
@@ -810,7 +801,6 @@ describe('schema-transform', () => {
       app.setValidatorCompiler(validatorCompiler);
       app.setSerializerCompiler(serializerCompiler);
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.1.0',
@@ -870,7 +860,6 @@ describe('schema-transform', () => {
       const UserSchema = z.object({ id: z.number(), name: z.string() });
       z.globalRegistry.add(UserSchema, { id: 'User' });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' }, servers: [] },
         transform: jsonSchemaTransform,
@@ -905,7 +894,7 @@ describe('schema-transform', () => {
         'application/json',
         'schema',
         'items',
-      ]) as Record<string, unknown> | undefined;
+      ]);
       expect(items?.$ref).toBe('#/components/schemas/User');
 
       // Component should be populated
@@ -1005,7 +994,7 @@ describe('schema-transform', () => {
         'schema',
         'properties',
         'data',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(bodySchema).toBeDefined();
       // Should either inline the anyOf or have a valid $ref with definitions
@@ -1053,7 +1042,7 @@ describe('schema-transform', () => {
         'content',
         'application/json',
         'schema',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(jsonSchema).toBeDefined();
       expect(jsonSchema?.type).toBe('object');
@@ -1067,7 +1056,7 @@ describe('schema-transform', () => {
         'content',
         'application/octet-stream',
         'schema',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(octetSchema).toBeDefined();
       expect(octetSchema?.type).toBe('string');
@@ -1104,7 +1093,7 @@ describe('schema-transform', () => {
         'schema',
         'properties',
         'value',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(valueSchema).toBeDefined();
       // Should have anyOf with all 3 types preserved
@@ -1162,7 +1151,6 @@ describe('schema-transform', () => {
       const TokenSchema = z.string().length(12);
       schemaRegistry.add(TokenSchema, { id: 'Token' });
 
-      // @ts-expect-error — swagger plugin typing mismatch
       await app.register(swagger, {
         openapi: {
           openapi: '3.0.3',
@@ -1263,7 +1251,7 @@ describe('schema-transform', () => {
         'content',
         'application/json',
         'schema',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(jsonSchema).toBeDefined();
       expect(jsonSchema?.type).toBe('object');
@@ -1276,7 +1264,7 @@ describe('schema-transform', () => {
         'content',
         'text/plain',
         'schema',
-      ]) as Record<string, unknown> | undefined;
+      ]);
 
       expect(textSchema).toBeDefined();
       expect(textSchema?.type).toBe('string');

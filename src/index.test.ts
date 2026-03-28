@@ -25,7 +25,6 @@ const buildApp = async () => {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  // @ts-expect-error — @fastify/swagger types use 3-generic FastifyPluginCallback, TS 6 is stricter
   await app.register(swagger, {
     openapi: {
       openapi: '3.0.3',
@@ -226,7 +225,6 @@ describe('integration', () => {
     const transform = createJsonSchemaTransform({ schemaRegistry: registry });
     const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
 
-    // @ts-expect-error — swagger plugin typing mismatch
     await app.register(swagger, {
       openapi: {
         openapi: '3.0.3',

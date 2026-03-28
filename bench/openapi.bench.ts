@@ -28,7 +28,7 @@ const buildLorZodApp = async () => {
   const app = Fastify();
   app.setValidatorCompiler(lorZodValidator);
   app.setSerializerCompiler(lorZodSerializer);
-  // @ts-expect-error — swagger plugin typing mismatch
+
   await app.register(swagger, {
     openapi: { openapi: '3.0.3', info: { title: 'Bench', version: '1.0.0' } },
     transform: lorZodTransform,
@@ -45,7 +45,7 @@ const buildTurkerApp = async () => {
   const app = Fastify();
   app.setValidatorCompiler(turkerValidator);
   app.setSerializerCompiler(turkerSerializer);
-  // @ts-expect-error — swagger plugin typing mismatch
+
   await app.register(swagger, {
     openapi: { openapi: '3.0.3', info: { title: 'Bench', version: '1.0.0' } },
     transform: turkerTransform,
@@ -63,7 +63,7 @@ const buildSamchungyApp = async () => {
   app.setValidatorCompiler(samchungyValidator);
   app.setSerializerCompiler(samchungySerializer);
   await app.register(fastifyZodOpenApiPlugin);
-  // @ts-expect-error — swagger plugin typing mismatch
+
   await app.register(swagger, {
     openapi: { openapi: '3.0.3', info: { title: 'Bench', version: '1.0.0' } },
     transform: fastifyZodOpenApiTransformers.transform,
