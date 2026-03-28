@@ -708,4 +708,55 @@ describe('transformer', () => {
     await app.ready();
     expect(app.swagger()).toMatchSnapshot();
   });
+
+  it('Should generate Input variant schemas with withInputSchema: true', async () => {
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+
+    const registry = z.registry<z.GlobalMeta>();
+
+    const PasswordLoginSchema = z.string().trim().min(8);
+    const UserLoginRequestSchema = z.object({ name: z.string(), password: PasswordLoginSchema });
+    const UserLoginResponseSchema = z.object({ id: z.number() });
+
+    registry.add(PasswordLoginSchema, { id: 'PasswordLogin' });
+    registry.add(UserLoginRequestSchema, {
+      id: 'UserLoginRequest',
+      description: 'User login request',
+    });
+    registry.add(UserLoginResponseSchema, {
+      id: 'UserLoginResponse',
+      description: 'User login response',
+    });
+
+    await app.register(swagger, {
+      ...OPENAPI_ROOT,
+      transform: createJsonSchemaTransform({ schemaRegistry: registry, withInputSchema: true }),
+      transformObject: createJsonSchemaTransformObject({
+        schemaRegistry: registry,
+        withInputSchema: true,
+      }),
+    });
+
+    app.after(() => {
+      app.withTypeProvider<FastifyLorZodTypeProvider>().route({
+        method: 'POST',
+        url: '/api/v1/user/login',
+        schema: {
+          body: UserLoginRequestSchema,
+          headers: z.object({ Authorization: z.string().optional() }),
+          params: z.object({ id: z.coerce.number().positive() }),
+          querystring: z.object({ filter: z.string().optional() }),
+          response: { 200: UserLoginResponseSchema },
+        },
+        handler: (_req, res) => {
+          res.code(200).send({ id: 0 });
+        },
+      });
+    });
+
+    await app.ready();
+    expect(app.swagger()).toMatchSnapshot();
+  });
 });

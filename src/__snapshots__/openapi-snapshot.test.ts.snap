@@ -1,5 +1,139 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`transformer > Should generate Input variant schemas with withInputSchema: true 1`] = `
+{
+  "components": {
+    "schemas": {
+      "PasswordLogin": {
+        "minLength": 8,
+        "type": "string",
+      },
+      "PasswordLoginInput": {
+        "minLength": 8,
+        "type": "string",
+      },
+      "UserLoginRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+          },
+          "password": {
+            "$ref": "#/components/schemas/PasswordLogin",
+          },
+        },
+        "required": [
+          "name",
+          "password",
+        ],
+        "type": "object",
+      },
+      "UserLoginRequestInput": {
+        "properties": {
+          "name": {
+            "type": "string",
+          },
+          "password": {
+            "$ref": "#/components/schemas/PasswordLoginInput",
+          },
+        },
+        "required": [
+          "name",
+          "password",
+        ],
+        "type": "object",
+      },
+      "UserLoginResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "number",
+          },
+        },
+        "required": [
+          "id",
+        ],
+        "type": "object",
+      },
+      "UserLoginResponseInput": {
+        "properties": {
+          "id": {
+            "type": "number",
+          },
+        },
+        "required": [
+          "id",
+        ],
+        "type": "object",
+      },
+    },
+  },
+  "info": {
+    "description": "Sample backend service",
+    "title": "SampleApi",
+    "version": "1.0.0",
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/api/v1/user/login": {
+      "post": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "type": "string",
+            },
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "number",
+            },
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "type": "string",
+            },
+          },
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLoginRequestInput",
+              },
+            },
+          },
+          "required": true,
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserLoginResponse",
+                },
+              },
+            },
+            "description": "Default Response",
+          },
+        },
+      },
+    },
+  },
+  "servers": [],
+}
+`;
+
 exports[`transformer > generates types for fastify-swagger correctly 1`] = `
 {
   "components": {
@@ -687,10 +821,10 @@ exports[`transformer > should generate ref correctly using global registry 1`] =
               "schema": {
                 "properties": {
                   "access_token": {
-                    "$ref": "#/components/schemas/TokenInput",
+                    "$ref": "#/components/schemas/Token",
                   },
                   "refresh_token": {
-                    "$ref": "#/components/schemas/TokenInput",
+                    "$ref": "#/components/schemas/Token",
                   },
                 },
                 "required": [
@@ -746,10 +880,10 @@ exports[`transformer > should generate ref correctly using z.registry 1`] = `
               "schema": {
                 "properties": {
                   "access_token": {
-                    "$ref": "#/components/schemas/TokenInput",
+                    "$ref": "#/components/schemas/Token",
                   },
                   "refresh_token": {
-                    "$ref": "#/components/schemas/TokenInput",
+                    "$ref": "#/components/schemas/Token",
                   },
                 },
                 "required": [
@@ -826,7 +960,7 @@ exports[`transformer > should generate referenced input and output schemas corre
               "schema": {
                 "properties": {
                   "user": {
-                    "$ref": "#/components/schemas/UserInput",
+                    "$ref": "#/components/schemas/User",
                   },
                 },
                 "required": [
@@ -916,7 +1050,7 @@ exports[`transformer > should generate referenced input and output schemas corre
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UserInput",
+                "$ref": "#/components/schemas/User",
               },
             },
           },
