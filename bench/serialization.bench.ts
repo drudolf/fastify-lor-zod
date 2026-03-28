@@ -2,7 +2,11 @@ import { serializerCompiler as turkerSerializer } from 'fastify-type-provider-zo
 import { serializerCompiler as samchungySerializer } from 'fastify-zod-openapi';
 import { bench, describe } from 'vitest';
 
-import { serializerCompiler as lorZodSerializer } from '../src/serializer.js';
+import {
+  fastSerializerCompiler as lorZodFastSerializer,
+  parseSerializerCompiler as lorZodParseSerializer,
+  serializerCompiler as lorZodSerializer,
+} from '../src/serializer.js';
 import {
   benchOpts,
   OrderSchema,
@@ -31,6 +35,8 @@ const compile = (
 
 const providers = {
   'fastify-lor-zod': lorZodSerializer,
+  'fastify-lor-zod (parse)': lorZodParseSerializer,
+  'fastify-lor-zod (fast)': lorZodFastSerializer,
   'fastify-type-provider-zod': turkerSerializer,
   'fastify-zod-openapi': samchungySerializer,
 };
