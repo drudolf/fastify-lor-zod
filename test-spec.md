@@ -35,6 +35,24 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] serializer uses encode for codec schemas
 - [x] Custom serializer replacer modifies JSON.stringify output
 
+## Auto-detect codec (`has-codec-in-tree.test.ts`) — 15 tests
+
+- [x] returns false for plain object schema
+- [x] returns true for schema with transform (pipe in Zod v4)
+- [x] returns false for lazy schema without codec
+- [x] returns true for object with codec field
+- [x] returns true for array of codec elements
+- [x] returns true for optional codec
+- [x] returns true for nullable codec
+- [x] returns true for union with codec variant
+- [x] returns true for deeply nested codec
+- [x] returns true for tuple with codec element
+- [x] returns true for record with codec value
+- [x] returns true for lazy schema with codec
+- [x] returns false for enum schema (options are primitives, not schemas)
+- [x] returns false for non-ZodType input
+- [x] handles circular schema without stack overflow
+
 ## Error Handling (`errors.test.ts`) — 2 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
@@ -139,4 +157,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 106 tests across 7 test files**
+**Total: 121 tests across 8 test files**
