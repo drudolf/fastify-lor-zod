@@ -8,6 +8,8 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     container: node:24-alpine
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - run: apk add --no-cache tar
       - uses: actions/checkout@v4

@@ -9,6 +9,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     container: node:24-alpine
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     permissions:
       contents: read
       id-token: write
