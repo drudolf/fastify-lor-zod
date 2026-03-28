@@ -72,6 +72,7 @@ const transformContentTypes = (
   io: 'input' | 'output',
   oasVersion: '3.0' | '3.1',
   zodToJsonConfig: ZodToJsonConfig,
+  withInputSchema = false,
 ): Record<string, unknown> => {
   const content = wrapper.content as Record<string, unknown>;
   const transformedContent: Record<string, unknown> = {};
@@ -86,6 +87,8 @@ const transformContentTypes = (
           io,
           oasVersion,
           zodToJsonConfig,
+          undefined,
+          withInputSchema,
         );
         transformedContent[mimeType] = {
           ...(mimeEntry as Record<string, unknown>),
@@ -129,6 +132,7 @@ export const createJsonSchemaTransform = (
   const {
     skipList = DEFAULT_SKIP_LIST,
     schemaRegistry = z.globalRegistry,
+    withInputSchema = false,
     zodToJsonConfig = {},
   } = opts;
 
@@ -166,6 +170,7 @@ export const createJsonSchemaTransform = (
           'input',
           oasVersion,
           zodToJsonConfig,
+          withInputSchema,
         );
         continue;
       }
@@ -177,6 +182,7 @@ export const createJsonSchemaTransform = (
         oasVersion,
         zodToJsonConfig,
         prop,
+        withInputSchema,
       );
       transformed[prop] = jsonSchemaToOAS(jsonSchema, oasVersion);
     }
@@ -287,6 +293,7 @@ export const createJsonSchemaTransformObject = (
           oasVersion,
           zodToJsonConfig,
           'params',
+          true,
         );
         oasSchemas[`${id}Input`] = jsonSchemaToOAS(inputJson, oasVersion);
       }

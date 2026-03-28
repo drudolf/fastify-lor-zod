@@ -36,11 +36,11 @@ const getZodDef = (entity: unknown): ZodDef | undefined =>
 
 // --- Zod-to-JSON helpers ---
 
-const getSchemaId = (id: string, io: 'input' | 'output'): string =>
-  io === 'input' ? `${id}Input` : id;
+const getSchemaId = (id: string, io: 'input' | 'output', withInputSchema: boolean): string =>
+  io === 'input' && withInputSchema ? `${id}Input` : id;
 
-const getReferenceUri = (id: string, io: 'input' | 'output'): string =>
-  `#/components/schemas/${getSchemaId(id, io)}`;
+const getReferenceUri = (id: string, io: 'input' | 'output', withInputSchema: boolean): string =>
+  `#/components/schemas/${getSchemaId(id, io, withInputSchema)}`;
 
 /**
  * Returns the internal `id → schema` map from a Zod registry.
@@ -140,6 +140,7 @@ const PARAM_PARTS = new Set(['querystring', 'params', 'headers']);
  * @param oasVersion - Target OAS version
  * @param config - Optional configuration
  * @param httpPart - The HTTP part being converted (body, querystring, params, headers)
+ * @param withInputSchema - When `true`, input `$ref`s use the `{Id}Input` naming convention
  * @returns JSON Schema object
  */
 export const zodSchemaToJson = (
@@ -149,6 +150,7 @@ export const zodSchemaToJson = (
   oasVersion: OASVersion,
   config: ZodToJsonConfig = {},
   httpPart?: string,
+  withInputSchema = false,
 ): JSONSchemaRecord => {
   const defaultTarget = oasVersion === '3.0' ? 'openapi-3.0' : 'draft-2020-12';
   const target = config.target ?? defaultTarget;
@@ -158,7 +160,7 @@ export const zodSchemaToJson = (
   // Registered schemas return $ref directly — except for querystring/params/headers
   // where @fastify/swagger needs inlined properties to generate individual parameters
   if (schemaId && (!httpPart || !PARAM_PARTS.has(httpPart))) {
-    return { $ref: getReferenceUri(schemaId, io) };
+    return { $ref: getReferenceUri(schemaId, io, withInputSchema) };
   }
 
   // Build an external registry containing only explicitly-registered schemas (those with
@@ -187,7 +189,7 @@ export const zodSchemaToJson = (
       registry: externalRegistry,
       uri: (id: string) => {
         if (id === '__target__' || id === '__shared') return '';
-        return getReferenceUri(id, io);
+        return getReferenceUri(id, io, withInputSchema);
       },
       defs,
     },

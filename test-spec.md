@@ -112,7 +112,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] response description preserved from wrapper object (#47)
 - [x] body content type wrappers supported (#132)
 
-## OpenAPI Snapshot (`openapi-snapshot.test.ts`) — 13 tests
+## OpenAPI Snapshot (`openapi-snapshot.test.ts`) — 14 tests
 
 Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify-swagger.spec.ts.snap`.
 
@@ -129,6 +129,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Should generate referenced input and output schemas correctly
 - [x] should generate referenced input and output schemas correctly when referencing a registered schema
 - [x] Should allow specification of Zod target to handle OpenAPI 3.1
+- [x] Should generate Input variant schemas with withInputSchema: true
 
 ## OAS Converter (`zod-to-openapi.test.ts`) — 11 tests
 
