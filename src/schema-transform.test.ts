@@ -712,7 +712,6 @@ describe('schema-transform', () => {
     });
 
     it('reused schemas inlined correctly for OAS 3.0 (#210)', async () => {
-      // The upstream approach uses `reused: "inline"` which avoids $defs entirely
       const SharedTag = z.object({ label: z.string() });
       const ItemSchema = z.object({
         primary: SharedTag,
@@ -754,7 +753,7 @@ describe('schema-transform', () => {
     });
   });
 
-  describe('upstream issues', () => {
+  describe('provider issues', () => {
     it('registered querystring schema generates valid params (#244)', async () => {
       const app = Fastify();
       app.setValidatorCompiler(validatorCompiler);

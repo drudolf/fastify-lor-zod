@@ -154,7 +154,7 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    // additionalProperties is not recursed by the OAS 3.0 converter (matching upstream behavior)
+    // additionalProperties is not recursed by the OAS 3.0 converter (matching other provider behavior)
     // Only properties, items, allOf, anyOf, oneOf, not, then, else, if, contains are recursed
     expect(result.type).toBe('object');
   });
