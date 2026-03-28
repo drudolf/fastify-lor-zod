@@ -1,0 +1,97 @@
+{
+  "name": "fastify-lor-zod",
+  "version": "0.1.0-beta.1",
+  "description": "A Fastify type provider integrating Zod for schema validation and type-safe route definitions",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "knip": "knip",
+    "typecheck": "tsc --noEmit",
+    "syncpack": "syncpack",
+    "test:spec-check": "node --experimental-strip-types scripts/test-spec.ts check",
+    "test:scaffold": "node --experimental-strip-types scripts/test-spec.ts scaffold",
+    "bench": "vitest bench",
+    "changeset": "changeset",
+    "prepare": "husky"
+  },
+  "peerDependencies": {
+    "@fastify/swagger": ">=9.7.0",
+    "fast-json-stringify": ">=6.3.0",
+    "fastify": ">=5.8.4",
+    "zod": ">=4.3.6"
+  },
+  "peerDependenciesMeta": {
+    "@fastify/swagger": {
+      "optional": true
+    },
+    "fast-json-stringify": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.9",
+    "@changesets/cli": "2.30.0",
+    "@commitlint/cli": "20.5.0",
+    "@commitlint/config-conventional": "20.5.0",
+    "@fastify/swagger": "9.7.0",
+    "@types/lodash-es": "4.17.12",
+    "@vitest/coverage-v8": "4.1.2",
+    "fast-json-stringify": "6.3.0",
+    "fastify": "5.8.4",
+    "fastify-type-provider-zod": "6.1.0",
+    "fastify-zod-openapi": "5.6.0",
+    "husky": "9.1.7",
+    "knip": "6.0.6",
+    "lint-staged": "16.4.0",
+    "lodash-es": "4.17.23",
+    "openapi-types": "12.1.3",
+    "syncpack": "14.2.1",
+    "typescript": "6.0.2",
+    "vite": "8.0.3",
+    "vite-plugin-dts": "4.5.4",
+    "vitest": "4.1.2",
+    "zod": "4.3.6"
+  },
+  "author": "Dirk Matthias Rudolf",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drudolf/fastify-lor-zod"
+  },
+  "bugs": {
+    "url": "https://github.com/drudolf/fastify-lor-zod/issues"
+  },
+  "homepage": "https://github.com/drudolf/fastify-lor-zod#readme",
+  "keywords": [
+    "fastify",
+    "zod",
+    "validation",
+    "openapi",
+    "swagger",
+    "type-provider",
+    "schema"
+  ],
+  "engines": {
+    "node": ">=22"
+  }
+}
