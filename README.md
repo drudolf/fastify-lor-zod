@@ -230,7 +230,7 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | Node.js |
 |-----------------|---------|-----|------------------|---------|
-| 0.1.0-beta.1    | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 22 |
+| 0.1.0-beta.3    | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 22 |
 
 ## Issues Addressed
 
