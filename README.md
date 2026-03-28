@@ -18,7 +18,7 @@ Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.c
 - **Smart serializer** -- auto-detects codecs at compile time; falls back to `safeParse` for ~15% faster non-codec schemas
 - **Complete OpenAPI** -- all HTTP parts, nullable types, discriminated unions, recursive schemas, content types
 - **Type-safe end-to-end** -- `req.body`, `req.params`, `req.query`, `req.headers`, and `reply.send()` fully typed
-- **100% test coverage** -- 121 tests including snapshot parity with `fastify-type-provider-zod`
+- **100% test coverage** -- 127 tests including snapshot parity with `fastify-type-provider-zod`
 - **Why "Lor"?** -- [Son of Zod](https://dc.fandom.com/wiki/Lor-Zod), here to power your `fastify` schemas.
 
 ## Table of Contents
@@ -174,6 +174,34 @@ await app.register(swagger, {
   transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry }),
 });
 ```
+
+### Input/Output Schema Variants
+
+Zod schemas used as request bodies are processed with `io: "input"`, while response schemas use `io: "output"`. For most schemas these are identical, but schemas with transforms or defaults can produce different input and output shapes.
+
+By default (`withInputSchema: false`), body `$ref`s always use the output schema name — the spec is always valid and components are not duplicated. This is the right choice for the majority of APIs.
+
+Set `withInputSchema: true` on both `createJsonSchemaTransform` and `createJsonSchemaTransformObject` when you need the spec to accurately document the input shape separately from the output shape:
+
+```ts
+// CreateUserSchema has role: z.string().default('user')
+// Input shape: role is optional. Output shape: role is always present.
+registry.add(CreateUserSchema, { id: 'CreateUser' });
+
+await app.register(swagger, {
+  openapi: { openapi: '3.0.3', info: { title: 'My API', version: '1.0.0' } },
+  transform: createJsonSchemaTransform({ schemaRegistry: registry, withInputSchema: true }),
+  transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry, withInputSchema: true }),
+});
+
+// components.schemas will contain both:
+//   CreateUser      — output shape (role required)
+//   CreateUserInput — input shape  (role optional, with default)
+// requestBody $ref → #/components/schemas/CreateUserInput
+// response    $ref → #/components/schemas/CreateUser
+```
+
+Both options must be set consistently — mixing them will produce either orphaned components or broken `$ref`s.
 
 ## Typed Plugins
 
