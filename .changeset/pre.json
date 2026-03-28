@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "fastify-lor-zod": "0.1.0-beta.4"
+  },
+  "changesets": []
+}
