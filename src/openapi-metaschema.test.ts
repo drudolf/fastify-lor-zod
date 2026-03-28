@@ -13,7 +13,6 @@ const buildApp = async (oasVersion: '3.0.3' | '3.1.0') => {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 
-  // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
   await app.register(swagger, {
     openapi: {
       openapi: oasVersion,

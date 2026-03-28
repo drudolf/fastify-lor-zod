@@ -1,3 +1,4 @@
+import type { SwaggerTransform, SwaggerTransformObject } from '@fastify/swagger';
 import type { FastifySchema } from 'fastify';
 import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import { z } from 'zod';
@@ -11,10 +12,6 @@ import {
 } from './zod-to-openapi.js';
 
 type JSONSchemaRecord = Record<string, unknown>;
-type SwaggerDocumentObject =
-  | { swaggerObject: Partial<OpenAPIV3.Document> }
-  | { openapiObject: Partial<OpenAPIV3.Document | OpenAPIV3_1.Document> };
-
 interface Schema extends FastifySchema {
   hide?: boolean;
 }
@@ -128,13 +125,7 @@ const transformContentTypes = (
  */
 export const createJsonSchemaTransform = (
   opts: SchemaTransformOptions = {},
-): ((
-  args: {
-    schema: Schema;
-    url: string;
-    route: unknown;
-  } & SwaggerDocumentObject,
-) => { schema: Schema | JSONSchemaRecord; url: string }) => {
+): SwaggerTransform<Schema> => {
   const {
     skipList = DEFAULT_SKIP_LIST,
     schemaRegistry = z.globalRegistry,
@@ -262,9 +253,7 @@ export const createJsonSchemaTransform = (
  */
 export const createJsonSchemaTransformObject = (
   opts: SchemaTransformOptions = {},
-): ((
-  documentObject: SwaggerDocumentObject,
-) => Partial<OpenAPIV3.Document | OpenAPIV3_1.Document>) => {
+): SwaggerTransformObject => {
   const { schemaRegistry = z.globalRegistry, withInputSchema = false, zodToJsonConfig = {} } = opts;
 
   return (documentObject) => {
@@ -322,8 +311,7 @@ export const createJsonSchemaTransformObject = (
  * Uses `z.globalRegistry` and default settings. For custom configuration,
  * use {@link createJsonSchemaTransform} instead.
  */
-export const jsonSchemaTransform: ReturnType<typeof createJsonSchemaTransform> =
-  createJsonSchemaTransform();
+export const jsonSchemaTransform: SwaggerTransform<Schema> = createJsonSchemaTransform();
 
 /**
  * Pre-configured JSON Schema transform object for `@fastify/swagger`.
@@ -331,5 +319,4 @@ export const jsonSchemaTransform: ReturnType<typeof createJsonSchemaTransform> =
  * Uses `z.globalRegistry` and default settings. For custom configuration,
  * use {@link createJsonSchemaTransformObject} instead.
  */
-export const jsonSchemaTransformObject: ReturnType<typeof createJsonSchemaTransformObject> =
-  createJsonSchemaTransformObject();
+export const jsonSchemaTransformObject: SwaggerTransformObject = createJsonSchemaTransformObject();

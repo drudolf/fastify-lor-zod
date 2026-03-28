@@ -30,7 +30,6 @@ describe('transformer', () => {
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       openapi: {
         openapi: '3.0.3',
@@ -112,7 +111,6 @@ describe('transformer', () => {
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       openapi: {
         openapi: '3.1.0',
@@ -198,7 +196,6 @@ describe('transformer', () => {
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
 
-    // @ts-expect-error — swagger 2.0 config intentionally invalid
     await app.register(swagger, {
       swagger: {
         swagger: '2.0',
@@ -279,7 +276,6 @@ describe('transformer', () => {
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: jsonSchemaTransform,
@@ -322,7 +318,6 @@ describe('transformer', () => {
       id: 'Token',
     });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: createJsonSchemaTransform({ schemaRegistry }),
@@ -361,7 +356,6 @@ describe('transformer', () => {
       description: 'Token description',
     });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: jsonSchemaTransform,
@@ -418,7 +412,6 @@ describe('transformer', () => {
       id: 'User',
     });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: createJsonSchemaTransform({ schemaRegistry }),
@@ -462,7 +455,6 @@ describe('transformer', () => {
       values: z.array(z.string()).nullable(),
     });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: createJsonSchemaTransform({}),
@@ -503,7 +495,6 @@ describe('transformer', () => {
       files: z.record(z.string(), z.record(z.string(), z.string())),
     });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: createJsonSchemaTransform({}),
@@ -544,7 +535,6 @@ describe('transformer', () => {
 
     const ID_SCHEMA = z.string().default('1');
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: createJsonSchemaTransform({ schemaRegistry }),
@@ -593,7 +583,6 @@ describe('transformer', () => {
       id: 'User',
     });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: createJsonSchemaTransform({ schemaRegistry }),
@@ -643,7 +632,6 @@ describe('transformer', () => {
 
     schemaRegistry.add(USER_SCHEMA, { id: 'User' });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       ...OPENAPI_ROOT,
       transform: createJsonSchemaTransform({ schemaRegistry }),
@@ -681,7 +669,6 @@ describe('transformer', () => {
       zodToJsonConfig: { target: 'draft-2020-12' },
     });
 
-    // @ts-expect-error — @fastify/swagger typing mismatch with TS 6
     await app.register(swagger, {
       openapi: {
         openapi: '3.1.0',
