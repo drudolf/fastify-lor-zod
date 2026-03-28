@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.1.0-beta.9
+
+### Minor Changes
+
+- [#26](https://github.com/drudolf/fastify-lor-zod/pull/26) [`af45c2f`](https://github.com/drudolf/fastify-lor-zod/commit/af45c2f2eb67e166362cb294cb139b5059105b93) Thanks [@drudolf](https://github.com/drudolf)! - Add CommonJS output alongside ESM. The package now ships both `dist/index.js` (ESM) and `dist/index.cjs` (CJS), with `"require"` and `"import"` conditions in the `exports` field and a `"main"` field for legacy consumers.
+
 ## 0.1.0-beta.8
 
 ### Minor Changes
