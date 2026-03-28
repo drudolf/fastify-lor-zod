@@ -27,6 +27,8 @@
     "knip": "knip",
     "typecheck": "tsc --noEmit",
     "syncpack": "syncpack",
+    "test:spec-check": "node --experimental-strip-types scripts/test-spec.ts check",
+    "test:scaffold": "node --experimental-strip-types scripts/test-spec.ts scaffold",
     "bench": "vitest bench",
     "changeset": "changeset",
     "prepare": "husky"

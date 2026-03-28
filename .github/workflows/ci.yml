@@ -25,3 +25,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test
+      - run: pnpm test:spec-check
+      - name: Enforce no todo tests on main
+        if: github.ref == 'refs/heads/main'
+        run: pnpm test:spec-check --strict
