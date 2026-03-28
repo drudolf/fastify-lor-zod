@@ -10,7 +10,7 @@
 
 A Fastify type provider for **Zod v4** with full OpenAPI support.
 
-Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.com/turkerdev/fastify-type-provider-zod/issues) from the original `fastify-type-provider-zod`.
+Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.com/turkerdev/fastify-type-provider-zod/issues) from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod).
 
 ## Why fastify-lor-zod?
 
@@ -96,6 +96,28 @@ app.setSerializerCompiler(serializerCompiler);
 ```
 
 Each has a factory variant (`createSerializerCompiler`, `createParseSerializerCompiler`, `createFastSerializerCompiler`) that accepts a `replacer` option for `JSON.stringify`.
+
+### Benchmarks
+
+Serialization throughput (ops/sec, higher is better):
+
+| Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | zod-openapi |
+|----------|---------|-----------------|----------------|-------------------|-------------|
+| Simple object | 245K | 305K | **670K** | 308K | 294K |
+| Nested (10 items) | 32K | 36K | **98K** | 36K | 34K |
+| Discriminated union | 433K | 540K | **703K** | 505K | 353K |
+| Recursive tree | 337K | 392K | **1.12M** | 384K | 462K |
+
+Validation throughput (all libraries are within ~5% of each other):
+
+| Scenario | lor-zod | type-provider-zod | zod-openapi |
+|----------|---------|-------------------|-------------|
+| Simple object | 376K | 393K | 392K |
+| Nested (10 items) | 55K | 57K | 56K |
+| Discriminated union | 962K | 937K | 906K |
+| Recursive tree | 679K | 716K | 726K |
+
+> Measured on Apple M-series, Node.js 24, Zod 4.3.6. Run `pnpm bench` to reproduce.
 
 ## OpenAPI / Swagger
 
@@ -228,9 +250,9 @@ app.get(
 
 ## Compatibility
 
-| fastify-lor-zod | Fastify | Zod | @fastify/swagger | Node.js |
-|-----------------|---------|-----|------------------|---------|
-| 0.1.0-beta.3    | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 22 |
+| fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
+|-----------------|---------|-----|------------------|---------------------|---------|
+| 0.1.0-beta.3    | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 6.0 (optional, for `fastSerializerCompiler`) | >= 22 |
 
 ## Issues Addressed
 
@@ -260,7 +282,7 @@ Fixes issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/tur
 ## Contributing
 
 ```bash
-git clone https://github.com/dirkluijk/fastify-lor-zod.git
+git clone https://github.com/drudolf/fastify-lor-zod.git
 cd fastify-lor-zod
 pnpm install
 ```
