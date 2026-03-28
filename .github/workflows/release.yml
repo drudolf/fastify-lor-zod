@@ -13,6 +13,7 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - run: apk add --no-cache tar
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - name: Get pnpm store path
