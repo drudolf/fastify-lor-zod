@@ -2,35 +2,50 @@
 
 ## Project overview
 
-fastify-zod-provider — a Fastify type provider that integrates Zod for schema validation and type-safe route definitions.
+fastify-lor-zod — a Fastify type provider that integrates Zod v4 for schema validation, response serialization, and type-safe route definitions with OpenAPI support.
 
 ## Tech stack
 
-- TypeScript (strict mode)
-- Fastify
-- Zod
-- ES modules (`"type": "module"`)
+- TypeScript (strict mode), ES modules (`"type": "module"`)
+- Fastify v5, Zod v4, @fastify/swagger (optional peer dep)
+- lodash-es (runtime dep), fast-json-stringify (dev dep for fast serializer)
 
 ## Development commands
 
 - `pnpm install` — install dependencies
 - `pnpm build` — build the project
 - `pnpm test` — run tests
-- `pnpm vitest run` — run tests once (CI mode)
+- `pnpm test:coverage` — run tests with 100% coverage enforcement
 - `pnpm vitest run <path> -t "<pattern>"` — run specific tests
 - `pnpm check` — run Biome (lint + format)
 - `pnpm check:fix` — auto-fix Biome issues
-- `pnpm lint` — run Biome linter only
-- `pnpm format` — format code with Biome
-- `pnpm format:check` — check formatting without writing
 - `pnpm knip` — detect unused exports, dependencies, and files
+- `pnpm typecheck` — `tsc --noEmit`
+- `pnpm bench` — run benchmarks (vitest bench)
 - `pnpm changeset` — create a changeset for versioning
+
+## Test-spec workflow
+
+Tests follow a spec-first workflow enforced by tooling:
+
+1. Write `- [ ] test name` in `test-spec.md` first
+2. `pnpm test:scaffold` — generates `it.todo()` stubs in the correct test file
+3. Implement the test, replacing `.todo` with the real body
+4. Mark `- [x]` in `test-spec.md`
+
+Enforcement:
+
+- `pnpm test:spec-check` — verify spec ↔ test alignment (runs vitest)
+- `pnpm test:spec-check --no-run` — fast file-based check (pre-commit hook)
+- `pnpm test:spec-check --strict` — also fail on `it.todo()` (CI on main)
+
+Test names in `test-spec.md` must exactly match the `it('...')` strings.
 
 ## Linting and formatting
 
 - **Biome** for linting and formatting
 - **Knip** for detecting unused exports, dependencies, types, and files
-- **husky + lint-staged** for pre-commit enforcement
+- **husky + lint-staged** for pre-commit enforcement (config in `.lintstagedrc.json`, not `package.json`)
 - All code must pass linting, formatting, and knip checks before commit
 - Never disable lint rules inline without justification
 - Run `pnpm typecheck`, `pnpm check` and `pnpm knip` before submitting changes
@@ -48,21 +63,23 @@ fastify-zod-provider — a Fastify type provider that integrates Zod for schema 
 - **Changesets** (`@changesets/cli`) for version management and changelog generation
 - Every user-facing change (feat, fix, perf) must include a changeset
 - Run `pnpm changeset` to create a changeset describing the change and its semver impact
-- Changelogs are generated automatically from changesets on release
 
 ## CI
 
-- CI must run all of the following — nothing merges without passing:
-  - `pnpm check`
-  - `pnpm knip`
-  - `pnpm typecheck`
-  - `pnpm build`
-  - `pnpm test`
+CI must run all of the following — nothing merges without passing:
+
+- `pnpm check`
+- `pnpm knip`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm test`
+- `pnpm test:spec-check`
+- `pnpm test:spec-check --strict` (main branch only — blocks `it.todo()`)
 
 ## Coding standards
 
 - All code in TypeScript — never JavaScript
-- No `console.log` or `debugger` in production code or tests
+- No `console.log` or `debugger` in production code or tests (allowed in `scripts/`)
 - No `any` types — use `unknown` and narrow with type guards
 - Prefer Zod schemas for all validation; never validate manually
 - Export types alongside schemas where consumers need them
@@ -79,7 +96,7 @@ fastify-zod-provider — a Fastify type provider that integrates Zod for schema 
 - Keep dependencies minimal — this is a library
 - Fastify and Zod must be **peer dependencies**, not direct dependencies
 - Avoid adding dependencies when the standard library or existing deps suffice
-- Pin exact versions for dev dependencies
+- Pin exact versions for all dependencies (enforced by syncpack)
 
 ## Error handling
 
@@ -94,13 +111,24 @@ fastify-zod-provider — a Fastify type provider that integrates Zod for schema 
 - Test both success and failure scenarios
 - Test edge cases: empty input, invalid types, missing fields
 - Keep tests focused — one behavior per test
+- 100% code coverage enforced via vitest V8 provider
 
 ## Code style
 
+- Arrow functions everywhere — no function declarations or function expressions
+- Handle error case first (guard clauses) — early return/throw, happy path last
 - Use `const` by default, `let` only when reassignment is necessary
 - Prefer named exports over default exports
 - Keep files focused — one concern per file
-- Request permission before creating new files
+- No `@ts-expect-error` as a shortcut — fix the actual types instead
+
+## Custom errors (ES2022+)
+
+- `override readonly name = 'ErrorName' as const`
+- `readonly code = 'ERR_...' as const` for programmatic matching
+- Accept `ErrorOptions` param, forward to `super()` for cause chaining
+- No `Object.setPrototypeOf`, no `Error.captureStackTrace` — unnecessary with ES2022+ targets
+- Export error classes as public API
 
 ## Information gathering
 
