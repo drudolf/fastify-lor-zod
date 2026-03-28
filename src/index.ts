@@ -29,7 +29,11 @@ export {
   type SchemaTransformOptions,
 } from './schema-transform.js';
 export {
+  createFastSerializerCompiler,
+  createParseSerializerCompiler,
   createSerializerCompiler,
+  fastSerializerCompiler,
+  parseSerializerCompiler,
   type SerializerCompilerOptions,
   serializerCompiler,
 } from './serializer.js';

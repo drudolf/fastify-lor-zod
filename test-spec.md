@@ -12,23 +12,35 @@
 - [x] Uses undefined as httpPart fallback when not provided
 - [x] Headers can be modified after validation (#209)
 
-## Response Validation (`serializer.test.ts`) — 8 tests
+## Serialization (`serializer.test.ts`) — 23 tests
+
+Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
+
+### Serializer-agnostic (×3 serializers = 15 tests)
 
 - [x] Returns 204 with empty response schema
-- [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 200 on correct string response
-- [x] Returns 500 on incorrect string response
 - [x] Returns 200 on correct object response
+- [x] Handles nested schemas
+- [x] Strips extra fields not in schema
+
+### Validation errors — safeEncode + safeParse only (×2 = 6 tests)
+
+- [x] Throws 500 on non-empty response with 204 schema
+- [x] Returns 500 on incorrect string response
 - [x] Returns 500 on incorrect object response
+
+### safeEncode only — 2 tests
+
+- [x] serializer uses encode for codec schemas
 - [x] Custom serializer replacer modifies JSON.stringify output
-- [x] Serializer uses Zod encode() for codec schemas (#211)
 
 ## Error Handling (`errors.test.ts`) — 2 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 
-## OpenAPI/Swagger (`schema-transform.test.ts`) — 31 tests
+## OpenAPI/Swagger (`schema-transform.test.ts`) — 35 tests
 
 ### Spec generation — 16 tests
 
@@ -50,18 +62,20 @@
 - [x] Allows custom override to strip pattern from uuid (#233)
 - [x] Handles readonly schemas (#71)
 
-### Edge cases — 3 tests
+### Edge cases — 5 tests
 
 - [x] Throws on non-Zod response schemas
 - [x] Passes through non-schema keys like tags and description
 - [x] Defaults to OAS 3.0 when openapi version is not specified
+- [x] transformObject rejects Swagger 2.0
+- [x] passes through non-ZodType and non-object content entries
 
 ### End-to-end bug fixes — 2 tests
 
 - [x] z.null in unions handled correctly for OAS 3.0 (#192)
 - [x] Reused schemas inlined correctly for OAS 3.0 (#210)
 
-### Upstream issues — 9 tests
+### Upstream issues — 12 tests
 
 - [x] Registered querystring schema generates valid params (#244)
 - [x] z.transform() preserves type info in response schema (#208)
@@ -72,6 +86,9 @@
 - [x] z.json() schema definitions not lost (#210)
 - [x] Nested content types supported (#227)
 - [x] anyOf with 3+ items preserved correctly (#195)
+- [x] excludes Input variants from components by default (#214)
+- [x] response description preserved from wrapper object (#47)
+- [x] body content type wrappers supported (#132)
 
 ## OpenAPI Snapshot (`openapi-snapshot.test.ts`) — 13 tests
 
@@ -79,7 +96,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 - [x] Generates types for fastify-swagger correctly (OAS 3.0.3)
 - [x] Generates types for fastify-swagger with OAS 3.1.0 correctly
-- [x] Should fail generating types for Swagger 2.0
+- [x] should fail generating types for fastify-swagger Swagger 2.0 correctly
 - [x] Should not generate ref (inline schemas)
 - [x] Should generate ref correctly using z.registry
 - [x] Should generate ref correctly using global registry
@@ -88,10 +105,10 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Should handle records within records
 - [x] Should generate input and output schemas correctly
 - [x] Should generate referenced input and output schemas correctly
-- [x] Should generate referenced input/output schemas when referencing a registered schema
+- [x] should generate referenced input and output schemas correctly when referencing a registered schema
 - [x] Should allow specification of Zod target to handle OpenAPI 3.1
 
-## OAS Converter (`zod-to-openapi.test.ts`) — 10 tests
+## OAS Converter (`zod-to-openapi.test.ts`) — 11 tests
 
 - [x] Passes through schema for OAS 3.1
 - [x] Removes OAS 3.0 incompatible keys
@@ -103,6 +120,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Does not mutate original schema
 - [x] Preserves $ref schemas as-is
 - [x] Handles additionalProperties recursively for OAS 3.0
+- [x] throws on unsupported OpenAPI version
 
 ## Integration & Type Inference (`index.test.ts`) — 12 tests
 
@@ -121,4 +139,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 85 tests across 7 test files**
+**Total: 111 tests across 7 test files**
