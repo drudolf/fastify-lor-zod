@@ -1,5 +1,4 @@
 import type { FastifySchemaValidationError } from 'fastify/types/schema';
-import omit from 'lodash-es/omit';
 import type { z } from 'zod';
 
 /**
@@ -93,11 +92,11 @@ export class RequestValidationError extends Error {
     issues: z.ZodError['issues'][number][],
     httpPart: string | undefined = '',
   ): FastifySchemaValidationError[] {
-    return issues.map((issue) => ({
-      instancePath: RequestValidationError.formatIssuePath(issue.path),
-      keyword: issue.code,
-      message: issue.message,
-      params: { ...omit(issue, ['path', 'code', 'message']) },
+    return issues.map(({ path, code, message, ...params }) => ({
+      instancePath: RequestValidationError.formatIssuePath(path),
+      keyword: code,
+      message,
+      params,
       schemaPath: `#/${httpPart}`,
     }));
   }

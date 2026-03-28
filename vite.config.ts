@@ -11,7 +11,14 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['fastify', 'zod', 'zod/v4', 'zod/v4/core', '@fastify/swagger'],
+      external: [
+        'fastify',
+        'zod',
+        'zod/v4',
+        'zod/v4/core',
+        '@fastify/swagger',
+        'fast-json-stringify',
+      ],
     },
   },
   plugins: [

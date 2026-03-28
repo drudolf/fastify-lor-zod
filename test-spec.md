@@ -40,9 +40,9 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 
-## OpenAPI/Swagger (`schema-transform.test.ts`) — 35 tests
+## OpenAPI/Swagger (`schema-transform.test.ts`) — 36 tests
 
-### Spec generation — 16 tests
+### Spec generation — 17 tests
 
 - [x] Generates OAS 3.0.3 spec correctly
 - [x] Generates OAS 3.1.0 spec correctly
@@ -139,4 +139,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 111 tests across 7 test files**
+**Total: 106 tests across 7 test files**
