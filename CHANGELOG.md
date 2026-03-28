@@ -1,5 +1,15 @@
 # fastify-lor-zod
 
+## 0.1.0-beta.10
+
+### Patch Changes
+
+- [#29](https://github.com/drudolf/fastify-lor-zod/pull/29) [`2b0f82a`](https://github.com/drudolf/fastify-lor-zod/commit/2b0f82aea90f321781c9d4fb4106a06a0e666ad2) Thanks [@drudolf](https://github.com/drudolf)! - Fix broken `$ref`s for registered body schemas when `withInputSchema` is `false` (the default).
+
+  Previously, registered schemas used as request bodies always generated `$ref`s pointing to `{Id}Input` components, but those components are only added when `withInputSchema: true`. This produced invalid OpenAPI specs by default.
+
+  Now, `withInputSchema` consistently controls both the component generation and the `$ref` naming: `false` (default) uses the output schema name for all `$ref`s; `true` uses `{Id}Input` for body `$ref`s and adds both variants to `components.schemas`.
+
 ## 0.1.0-beta.9
 
 ### Minor Changes
