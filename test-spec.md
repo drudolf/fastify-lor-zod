@@ -155,6 +155,11 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Infers output type for schemas with defaults
 - [x] Infers output type for schemas with transforms
 
+## OpenAPI Metaschema Validation (`openapi-metaschema.test.ts`) — 2 tests
+
+- [x] Generated OAS 3.0.3 spec passes official metaschema validation
+- [x] Generated OAS 3.1.0 spec passes official metaschema validation
+
 ---
 
-**Total: 121 tests across 8 test files**
+**Total: 123 tests across 9 test files**
