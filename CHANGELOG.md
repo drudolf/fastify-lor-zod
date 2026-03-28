@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.1.0-beta.6
+
+### Patch Changes
+
+- [#15](https://github.com/drudolf/fastify-lor-zod/pull/15) [`c956faa`](https://github.com/drudolf/fastify-lor-zod/commit/c956faa8dcbfec1d8522d0320be645c7bf8a2503) Thanks [@drudolf](https://github.com/drudolf)! - Prevent duplicate npm publish errors on release workflow reruns.
+
 ## 0.1.0-beta.5
 
 ### Minor Changes
