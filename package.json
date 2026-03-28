@@ -34,8 +34,8 @@
     "prepare": "husky"
   },
   "peerDependencies": {
-    "@fastify/swagger": ">=9.5.1",
-    "fast-json-stringify": ">=6.0.0",
+    "@fastify/swagger": ">=9.7.0",
+    "fast-json-stringify": ">=6.3.0",
     "fastify": ">=5.8.4",
     "zod": ">=4.3.6"
   },
@@ -52,7 +52,7 @@
     "@changesets/cli": "2.30.0",
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "20.5.0",
-    "@fastify/swagger": "9.5.2",
+    "@fastify/swagger": "9.7.0",
     "@types/lodash-es": "4.17.12",
     "@vitest/coverage-v8": "4.1.2",
     "fast-json-stringify": "6.3.0",
