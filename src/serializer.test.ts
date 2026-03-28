@@ -205,3 +205,28 @@ describe('serializer — safeEncode only', () => {
     expect(body.secret).toBe('[REDACTED]');
   });
 });
+
+describe.each(validatingSerializers)('serializer — $name — default values', ({ compiler }) => {
+  it('applies default value for omitted field in response schema', async () => {
+    const app = buildApp(compiler);
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({
+              name: z.string(),
+              role: z.string().default('user'),
+            }),
+          },
+        },
+      },
+      () => ({ name: 'Alice' }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ name: 'Alice', role: 'user' });
+  });
+});

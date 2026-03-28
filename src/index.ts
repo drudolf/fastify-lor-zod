@@ -10,9 +10,12 @@ import type { z } from 'zod';
 /**
  * Fastify type provider that integrates Zod v4 for schema validation and serialization.
  *
- * Both `validator` and `serializer` map to `z.output`, so request handlers receive
- * the validated/transformed output type, and `reply.send()` accepts the domain type
- * (the serializer handles encoding to wire format).
+ * The `validator` maps to `z.output` so request handlers receive the validated/transformed
+ * output type. The `serializer` uses `z.input` when `output extends input` (plain schemas
+ * and schemas with `.default()`), making defaulted fields optional in handler return types —
+ * returning `undefined` for such a field lets Zod apply the default during serialization.
+ * For codec schemas where `output` diverges from `input` (e.g. `Date` vs `string`), the
+ * serializer maps to `z.output` so handlers return the domain type for encoding.
  *
  * @example
  * ```ts
@@ -28,9 +31,24 @@ import type { z } from 'zod';
  * //               ^ typed as number
  * ```
  */
+/**
+ * Resolves the handler return type for a response schema.
+ *
+ * Uses `z.input<T>` when output is a subtype of input and input is not `unknown`
+ * (plain schemas and schemas with `.default()` — makes defaulted fields optional).
+ * Falls back to `z.output<T>` for codec schemas (where `Date` diverges from `string`)
+ * and for `z.preprocess` schemas (where input is `unknown`).
+ */
+type SerializerType<T extends z.ZodType> =
+  z.output<T> extends z.input<T>
+    ? unknown extends z.input<T>
+      ? z.output<T>
+      : z.input<T>
+    : z.output<T>;
+
 export interface FastifyLorZodTypeProvider extends FastifyTypeProvider {
   readonly validator: this['schema'] extends z.ZodType ? z.output<this['schema']> : unknown;
-  readonly serializer: this['schema'] extends z.ZodType ? z.output<this['schema']> : unknown;
+  readonly serializer: this['schema'] extends z.ZodType ? SerializerType<this['schema']> : unknown;
 }
 
 export { RequestValidationError, ResponseSerializationError } from './errors.js';

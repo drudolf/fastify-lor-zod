@@ -12,7 +12,7 @@
 - [x] Uses undefined as httpPart fallback when not provided
 - [x] Headers can be modified after validation (#209)
 
-## Serialization (`serializer.test.ts`) — 23 tests
+## Serialization (`serializer.test.ts`) — 25 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -29,6 +29,10 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
 - [x] Returns 500 on incorrect object response
+
+### Default values — safeEncode + safeParse only (×2 = 2 tests)
+
+- [x] applies default value for omitted field in response schema
 
 ### safeEncode only — 2 tests
 
@@ -140,7 +144,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Handles additionalProperties recursively for OAS 3.0
 - [x] throws on unsupported OpenAPI version
 
-## Integration & Type Inference (`index.test.ts`) — 12 tests
+## Integration & Type Inference (`index.test.ts`) — 13 tests
 
 - [x] Boots, handles requests, and produces a valid OpenAPI spec
 - [x] Uses Zod codec encode for response serialization
@@ -154,6 +158,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Infers response type for reply.send()
 - [x] Infers output type for schemas with defaults
 - [x] Infers output type for schemas with transforms
+- [x] Infers output type for response schemas with preprocess
 
 ## OpenAPI Metaschema Validation (`openapi-metaschema.test.ts`) — 2 tests
 
