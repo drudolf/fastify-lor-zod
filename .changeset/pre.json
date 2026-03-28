@@ -4,5 +4,5 @@
   "initialVersions": {
     "fastify-lor-zod": "0.1.0-beta.4"
   },
-  "changesets": ["initial-beta"]
+  "changesets": ["idempotent-publish", "initial-beta"]
 }
