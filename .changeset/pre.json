@@ -6,6 +6,7 @@
   },
   "changesets": [
     "cjs-output",
+    "fix-input-schema-refs",
     "fix-serializer-type-defaults",
     "fix-transform-types",
     "idempotent-publish",
