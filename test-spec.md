@@ -155,7 +155,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Recursively converts allOf entries for OAS 3.0
 - [x] Does not mutate original schema
 - [x] Preserves $ref schemas as-is
-- [x] Handles additionalProperties recursively for OAS 3.0
+- [x] does not recurse into additionalProperties for OAS 3.0
 - [x] throws on unsupported OpenAPI version
 - [x] isZodInternal returns true for a valid Zod schema
 - [x] isZodInternal returns false for non-ZodType input

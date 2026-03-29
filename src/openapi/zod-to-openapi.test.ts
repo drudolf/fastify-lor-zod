@@ -147,23 +147,25 @@ describe('zod-to-openapi', () => {
     expect(result.$ref).toBe('#/components/schemas/User');
   });
 
-  it('handles additionalProperties recursively for OAS 3.0', () => {
+  it('does not recurse into additionalProperties for OAS 3.0', () => {
     const schema = {
       type: 'object',
       additionalProperties: {
         type: 'object',
         additionalProperties: {
           type: 'string',
-          $id: 'should-be-removed',
+          $id: 'should-survive',
         },
       },
     };
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    // additionalProperties is not recursed by the OAS 3.0 converter (matching other provider behavior)
-    // Only properties, items, allOf, anyOf, oneOf, not, then, else, if, contains are recursed
+    // additionalProperties is not recursed — nested $id must survive
     expect(result.type).toBe('object');
+    const inner = (result.additionalProperties as Record<string, unknown>)
+      .additionalProperties as Record<string, unknown>;
+    expect(inner.$id).toBe('should-survive');
   });
 
   it('throws on unsupported OpenAPI version', () => {
