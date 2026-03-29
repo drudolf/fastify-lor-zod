@@ -14,6 +14,9 @@ import type z from 'zod';
  * ```ts
  * app.setErrorHandler((error, request, reply) => {
  *   if (error instanceof ResponseSerializationError) {
+ *     // Do NOT forward error.message or error.zodError to the client —
+ *     // they contain internal schema details. Log them server-side instead.
+ *     request.log.error({ method: error.method, url: error.url, zodError: error.zodError });
  *     reply.code(500).send({
  *       error: error.code,     // 'ERR_RESPONSE_SERIALIZATION'
  *       method: error.method,  // 'GET'
