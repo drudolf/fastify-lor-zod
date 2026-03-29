@@ -24,7 +24,17 @@ export interface SchemaTransformOptions {
   skipList?: readonly string[];
   /** Custom schema registry for `$ref` component resolution (defaults to `z.globalRegistry`). */
   schemaRegistry?: typeof z.globalRegistry;
-  /** When `true`, also generates `{Id}Input` variants in `components.schemas`. Defaults to `false`. */
+  /**
+   * Controls how request body `$ref`s and `components.schemas` Input variants are generated.
+   *
+   * - `false` (default): body `$ref`s use the output schema name (e.g. `#/components/schemas/User`).
+   *   No `{Id}Input` variants are added to `components.schemas`. The spec is always valid.
+   * - `true`: body `$ref`s use `{Id}Input` (e.g. `#/components/schemas/UserInput`), and both
+   *   the output (`{Id}`) and input (`{Id}Input`) variants are added to `components.schemas`.
+   *   Useful when a schema has transforms or defaults that make its input and output shapes differ.
+   *
+   * Must be set consistently on both `createJsonSchemaTransform` and `createJsonSchemaTransformObject`.
+   */
   withInputSchema?: boolean;
   /** Configuration for Zod-to-JSON Schema conversion (e.g. custom `target` or `override`). */
   zodToJsonConfig?: ZodToJsonConfig;
@@ -113,7 +123,13 @@ const transformContentTypes = (
  * Supports nested content types in body and response, and preserves extra wrapper keys
  * like `description`.
  *
- * @param opts - Optional configuration (skip list, registry, JSON config)
+ * When using a schema registry, registered schemas resolve to `$ref`s. By default
+ * (`withInputSchema: false`), body `$ref`s use the output schema name so they always point
+ * to a component that exists. Set `withInputSchema: true` (on both this and
+ * `createJsonSchemaTransformObject`) to generate `{Id}Input` body refs alongside explicit
+ * Input variants in `components.schemas`.
+ *
+ * @param opts - Optional configuration (skip list, registry, withInputSchema, JSON config)
  * @returns A `transform` function compatible with `@fastify/swagger`
  *
  * @example
@@ -242,9 +258,12 @@ export const createJsonSchemaTransform = (
  *
  * Iterates over all schemas in the registry, converts each to JSON Schema via
  * `zodSchemaToJson`, and merges them into the OpenAPI document's components.
- * Set `withInputSchema: true` to also generate `{Id}Input` variants.
  *
- * @param opts - Optional configuration (registry, input schemas, JSON config)
+ * By default (`withInputSchema: false`), only the output schema (`{Id}`) is added to components.
+ * Set `withInputSchema: true` to also add `{Id}Input` variants — must be set consistently with
+ * `createJsonSchemaTransform` so that body `$ref`s and component definitions stay in sync.
+ *
+ * @param opts - Optional configuration (registry, withInputSchema, JSON config)
  * @returns A `transformObject` function compatible with `@fastify/swagger`
  *
  * @example

@@ -170,7 +170,7 @@ describe('validator', () => {
       const error = (result as { error: RequestValidationError }).error;
       expect(error).toBeInstanceOf(RequestValidationError);
       expect(error.context).toBeUndefined();
-      expect(error.validation[0].schemaPath).toBe('#/');
+      expect(error.validation[0].schemaPath).toBe('#/name');
     });
   });
 

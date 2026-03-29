@@ -140,7 +140,9 @@ const PARAM_PARTS = new Set(['querystring', 'params', 'headers']);
  * @param oasVersion - Target OAS version
  * @param config - Optional configuration
  * @param httpPart - The HTTP part being converted (body, querystring, params, headers)
- * @param withInputSchema - When `true`, input `$ref`s use the `{Id}Input` naming convention
+ * @param withInputSchema - When `true`, `$ref`s for input schemas use the `{Id}Input` naming
+ *   convention. When `false` (default), all `$ref`s use the output schema name regardless of `io`,
+ *   ensuring they always point to a component that exists in `components.schemas`.
  * @returns JSON Schema object
  */
 export const zodSchemaToJson = (
