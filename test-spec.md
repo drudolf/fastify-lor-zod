@@ -62,6 +62,15 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 
+## Error mapping (`utils/error.test.ts`) — 6 tests
+
+- [x] maps issue path to instancePath
+- [x] produces empty instancePath for root-level issue
+- [x] includes httpPart in schemaPath
+- [x] omits httpPart from schemaPath when undefined
+- [x] spreads remaining issue properties into params
+- [x] maps multiple issues
+
 ## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 36 tests
 
 ### Spec generation — 17 tests
@@ -168,4 +177,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 127 tests across 9 test files**
+**Total: 133 tests across 10 test files**
