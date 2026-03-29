@@ -6,6 +6,7 @@
   },
   "changesets": [
     "cjs-output",
+    "export-zod-to-json-config",
     "fix-input-schema-refs",
     "fix-schema-path",
     "fix-serializer-type-defaults",
