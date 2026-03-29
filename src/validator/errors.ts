@@ -1,7 +1,7 @@
 import type { FastifySchemaValidationError } from 'fastify';
 import type z from 'zod';
 
-import { mapIssueToValidationError } from '../utils/error';
+import { mapIssueToValidationError } from '../utils/error.js';
 
 /**
  * Error thrown when request validation fails.
