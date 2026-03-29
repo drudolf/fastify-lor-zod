@@ -881,7 +881,6 @@ describe('schema-transform', () => {
 
       await app.ready();
       const spec = app.swagger();
-      z.globalRegistry.remove(UserSchema);
 
       // Response should reference the schema
       const items = get(spec, [
@@ -1213,6 +1212,137 @@ describe('schema-transform', () => {
         | undefined;
 
       expect(response?.description).toBe('Healthy');
+    });
+
+    it('response description preserved when inner schema is registered (produces $ref)', async () => {
+      const HealthSchema = z.object({ status: z.boolean() }).meta({ id: 'Health' });
+
+      const app = Fastify();
+      app.setValidatorCompiler(validatorCompiler);
+      app.setSerializerCompiler(serializerCompiler);
+
+      await app.register(swagger, {
+        openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
+        transform: createJsonSchemaTransform(),
+        transformObject: createJsonSchemaTransformObject(),
+      });
+
+      app.withTypeProvider<FastifyLorZodTypeProvider>().get(
+        '/health',
+        {
+          schema: {
+            response: {
+              200: {
+                description: 'Healthy',
+                properties: HealthSchema,
+              },
+            },
+          },
+        },
+        () => ({ status: true }),
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const response = get(spec, ['paths', '/health', 'get', 'responses', '200']);
+      expect(response.description).toBe('Healthy');
+
+      const schema = get(response, ['content', 'application/json', 'schema']);
+      expect(schema.$ref).toBe('#/components/schemas/Health');
+    });
+
+    it('registered schema response without description is unchanged (FR-004 regression)', async () => {
+      const registry = z.registry<z.GlobalMeta>();
+      const ItemSchema = z.object({ id: z.number() });
+      registry.add(ItemSchema, { id: 'Item' });
+
+      const app = Fastify();
+      app.setValidatorCompiler(validatorCompiler);
+      app.setSerializerCompiler(serializerCompiler);
+
+      await app.register(swagger, {
+        openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
+        transform: createJsonSchemaTransform({ schemaRegistry: registry }),
+        transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry }),
+      });
+
+      app
+        .withTypeProvider<FastifyLorZodTypeProvider>()
+        .get('/item', { schema: { response: { 200: ItemSchema } } }, () => ({ id: 1 }));
+
+      await app.ready();
+      const spec = app.swagger();
+
+      expect(get(spec, ['components', 'schemas', 'Item'])).toBeDefined();
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/item',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]) as Record<string, unknown> | undefined;
+      expect(responseSchema?.['allOf']).toBeUndefined();
+      expect(responseSchema?.['$ref']).toBe('#/components/schemas/Item');
+    });
+
+    it('empty string description ignored for registered schema response', async () => {
+      const registry = z.registry<z.GlobalMeta>();
+      const PingSchema = z.object({ ok: z.boolean() });
+      registry.add(PingSchema, { id: 'Ping' });
+
+      const app = Fastify();
+      app.setValidatorCompiler(validatorCompiler);
+      app.setSerializerCompiler(serializerCompiler);
+
+      await app.register(swagger, {
+        openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
+        transform: createJsonSchemaTransform({ schemaRegistry: registry }),
+        transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry }),
+      });
+
+      app.withTypeProvider<FastifyLorZodTypeProvider>().get(
+        '/ping',
+        {
+          schema: {
+            response: {
+              200: {
+                description: '',
+                properties: PingSchema,
+              },
+            },
+          },
+        },
+        () => ({ ok: true }),
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const response = get(spec, ['paths', '/ping', 'get', 'responses', '200']) as
+        | Record<string, unknown>
+        | undefined;
+
+      // Empty string description must not appear in the OAS output
+      expect(response?.description).not.toBe('');
+
+      // Schema must be a bare $ref — no allOf wrapping (empty string treated as absent)
+      const schema = get(spec, [
+        'paths',
+        '/ping',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]) as Record<string, unknown> | undefined;
+      expect(schema?.['allOf']).toBeUndefined();
+      expect(schema?.['$ref']).toBe('#/components/schemas/Ping');
     });
 
     it('body content type wrappers supported (#132)', async () => {
