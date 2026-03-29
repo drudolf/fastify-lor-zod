@@ -27,33 +27,15 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
         run: echo "$TITLE" | pnpm exec commitlint
 
-  update-version-pr-title:
-    if: github.event_name == 'pull_request' && github.head_ref == 'changeset-release/main'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          ref: ${{ github.head_ref }}
-      - name: Set PR title to release version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          gh pr edit ${{ github.event.pull_request.number }} --title "release: v${VERSION}"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  version:
+  publish:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     concurrency:
-      group: version-${{ github.ref }}
+      group: publish-${{ github.ref }}
       cancel-in-progress: false
     permissions:
       contents: write
-      pull-requests: write
       id-token: write
-      statuses: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -66,27 +48,11 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - id: changesets
-        uses: changesets/action@6a0a831ff30acef54f2c6aa1cbbc1096b066edaf # v1.7.0
-        with:
-          title: 'chore: version packages'
-          commit: 'chore: version packages'
-          publish: node --experimental-strip-types scripts/publish.ts
+      - name: Publish to npm
+        run: node --experimental-strip-types scripts/publish.ts
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Mark CI as passing on version PR
-        if: steps.changesets.outputs.hasChangesets == 'true'
-        run: |
-          SHA=$(git rev-parse origin/changeset-release/main)
-          gh api repos/${{ github.repository }}/statuses/$SHA \
-            --method POST \
-            -f state=success \
-            -f context=ci \
-            -f description="Skipped — version PR only changes package.json and CHANGELOG.md"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create git tag and GitHub release
-        if: steps.changesets.outputs.hasChangesets == 'false'
         run: |
           VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}"
