@@ -7,8 +7,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/index.ts'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.types.ts', 'src/index.ts', 'src/types.ts'],
       thresholds: { 100: true },
+      reporter: ['text', 'json-summary'],
     },
     benchmark: {
       include: ['bench/**/*.bench.ts'],

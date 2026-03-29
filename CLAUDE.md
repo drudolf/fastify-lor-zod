@@ -41,6 +41,8 @@ Enforcement:
 
 Test names in `test-spec.md` must exactly match the `it('...')` strings.
 
+**Parallel agent rule**: When multiple agents work in parallel, `test-spec.md` is append-only. Add new entries at the bottom of the relevant section — never edit or reorder existing lines. Conflicts are then trivially auto-resolvable at merge. Only the orchestrator (Picard) reorganizes the file.
+
 ## Linting and formatting
 
 - **Biome** for linting and formatting
@@ -54,7 +56,7 @@ Test names in `test-spec.md` must exactly match the `it('...')` strings.
 
 - **commitlint** with **@commitlint/config-conventional** enforced via husky commit-msg hook
 - Follow Conventional Commits format: `type(scope): description`
-- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `poc`
 - Keep subject line under 72 characters
 - Use imperative mood in the subject (`add` not `added`)
 
@@ -129,6 +131,13 @@ CI must run all of the following — nothing merges without passing:
 - Accept `ErrorOptions` param, forward to `super()` for cause chaining
 - No `Object.setPrototypeOf`, no `Error.captureStackTrace` — unnecessary with ES2022+ targets
 - Export error classes as public API
+
+## Worktree workflow
+
+- For any non-trivial code change, suggest entering a worktree before starting work
+- Name worktrees using the same type prefixes as Conventional Commits: `feat-`, `fix-`, `refactor-`, `chore-`, `docs-`, `perf-`, `test-`, `ci-`, `poc-`
+- Format: `<type>-<short-description>` using lowercase kebab-case (e.g. `feat-auto-input-detection`, `fix-schema-path`)
+- Propose the worktree name as part of the suggestion so the user can confirm or adjust before entering
 
 ## Information gathering
 

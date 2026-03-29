@@ -4,16 +4,16 @@ import get from 'lodash-es/get.js';
 import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
-import { ResponseSerializationError } from './errors.js';
 import type { FastifyLorZodTypeProvider, FastifyPluginAsyncZod } from './index.js';
 import {
   createJsonSchemaTransform,
   createJsonSchemaTransformObject,
   jsonSchemaTransform,
   jsonSchemaTransformObject,
-} from './schema-transform.js';
-import { serializerCompiler } from './serializer.js';
-import { validatorCompiler } from './validator.js';
+} from './openapi/schema-transform.js';
+import { ResponseSerializationError } from './serializer/errors.js';
+import { serializerCompiler } from './serializer/serializer.js';
+import { validatorCompiler } from './validator/validator.js';
 
 /**
  * Builds a full Fastify app with Zod type provider, validator, serializer,

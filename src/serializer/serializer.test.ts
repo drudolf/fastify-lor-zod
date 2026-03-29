@@ -2,15 +2,15 @@ import Fastify from 'fastify';
 import type { FastifySerializerCompiler } from 'fastify/types/schema';
 import { z } from 'zod';
 
+import type { FastifyLorZodTypeProvider } from '../index.js';
+import { validatorCompiler } from '../validator/validator.js';
 import { ResponseSerializationError } from './errors.js';
-import type { FastifyLorZodTypeProvider } from './index.js';
 import {
   createSerializerCompiler,
   fastSerializerCompiler,
   parseSerializerCompiler,
   serializerCompiler,
 } from './serializer.js';
-import { validatorCompiler } from './validator.js';
 
 const buildApp = (compiler: FastifySerializerCompiler<z.ZodType>) => {
   const app = Fastify();

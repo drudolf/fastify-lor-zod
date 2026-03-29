@@ -3,8 +3,8 @@ import { Validator } from '@seriousme/openapi-schema-validator';
 import Fastify from 'fastify';
 import { z } from 'zod';
 
-import type { FastifyLorZodTypeProvider } from './index.js';
-import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from './index.js';
+import type { FastifyLorZodTypeProvider } from '../index.js';
+import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from '../index.js';
 
 const validator = new Validator();
 

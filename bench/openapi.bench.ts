@@ -15,9 +15,9 @@ import {
 import { bench, describe } from 'vitest';
 
 import type { FastifyLorZodTypeProvider } from '../src/index.js';
-import { jsonSchemaTransform as lorZodTransform } from '../src/schema-transform.js';
-import { serializerCompiler as lorZodSerializer } from '../src/serializer.js';
-import { validatorCompiler as lorZodValidator } from '../src/validator.js';
+import { jsonSchemaTransform as lorZodTransform } from '../src/openapi/schema-transform.js';
+import { serializerCompiler as lorZodSerializer } from '../src/serializer/serializer.js';
+import { validatorCompiler as lorZodValidator } from '../src/validator/validator.js';
 import { benchOpts, FullRouteSchema } from './schemas.js';
 
 let _result: unknown;

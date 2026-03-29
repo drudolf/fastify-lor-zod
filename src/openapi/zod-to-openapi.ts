@@ -27,11 +27,13 @@ interface ZodRegistryInternal {
   _idmap: Map<string, z.ZodType>;
 }
 
-const asInternal = (entity: unknown): ZodInternal => entity as unknown as ZodInternal;
+/** Type guard verifying the internal Zod shape this library depends on is still intact. */
+export const isZodInternal = (entity: unknown): entity is ZodInternal =>
+  entity instanceof $ZodType && '_zod' in entity && 'toJSONSchema' in entity;
 
-/* v8 ignore start -- defensive guard: callers always pass ZodType */
+/* v8 ignore start -- callers always pass ZodType */
 const getZodDef = (entity: unknown): ZodDef | undefined =>
-  entity instanceof $ZodType ? asInternal(entity)._zod.def : undefined;
+  isZodInternal(entity) ? entity._zod.def : undefined;
 /* v8 ignore stop */
 
 // --- Zod-to-JSON helpers ---
@@ -154,6 +156,13 @@ export const zodSchemaToJson = (
   httpPart?: string,
   withInputSchema = false,
 ): JSONSchemaRecord => {
+  if (!isZodInternal(zodSchema)) {
+    throw new Error(
+      '[fastify-lor-zod] Zod v4 internal API has changed — _zod or toJSONSchema is missing. ' +
+        'Please open an issue: https://github.com/drudolf/fastify-lor-zod/issues',
+    );
+  }
+
   const defaultTarget = oasVersion === '3.0' ? 'openapi-3.0' : 'draft-2020-12';
   const target = config.target ?? defaultTarget;
 
@@ -175,13 +184,13 @@ export const zodSchemaToJson = (
 
   // If the schema isn't registered, add it under a temp id so Zod's external mechanism
   // can resolve it. Registered schemas are already in externalRegistry under their real id.
-  if (!schemaId) externalRegistry.add(zodSchema, { id: schemaId ?? '__target__' });
+  if (!schemaId) externalRegistry.add(zodSchema, { id: '__target__' });
 
   // Zod populates `defs` with extracted definitions (e.g. from z.json() cycles).
   // We merge them back into the result as `definitions` so $ref paths resolve.
   const defs: Record<string, JSONSchemaRecord> = {};
 
-  const result = asInternal(zodSchema).toJSONSchema({
+  const result = zodSchema.toJSONSchema({
     target,
     io,
     unrepresentable: 'any',
@@ -249,10 +258,10 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
 
   for (const key of OAS30_DELETE_KEYS) delete clone[key];
 
-  const recursive = (v: unknown): unknown =>
-    Array.isArray(v)
-      ? v.map((item) => jsonSchemaToOAS30(item as JSONSchemaRecord))
-      : jsonSchemaToOAS30(v as JSONSchemaRecord);
+  const recursive = (
+    v: JSONSchemaRecord | JSONSchemaRecord[],
+  ): JSONSchemaRecord | JSONSchemaRecord[] =>
+    Array.isArray(v) ? v.map((item) => jsonSchemaToOAS30(item)) : jsonSchemaToOAS30(v);
 
   if (clone.properties && typeof clone.properties === 'object') {
     for (const [k, v] of Object.entries(clone.properties as Record<string, JSONSchemaRecord>)) {
@@ -261,12 +270,12 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
   }
 
   if (clone.items && typeof clone.items === 'object' && !Array.isArray(clone.items)) {
-    clone.items = recursive(clone.items);
+    clone.items = recursive(clone.items as JSONSchemaRecord);
   }
 
   for (const key of ['allOf', 'anyOf', 'oneOf', 'not', 'then', 'else', 'if', 'contains'] as const) {
     if (clone[key]) {
-      clone[key] = recursive(clone[key]);
+      clone[key] = recursive(clone[key] as JSONSchemaRecord | JSONSchemaRecord[]);
     }
   }
 

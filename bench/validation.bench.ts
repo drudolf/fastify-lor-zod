@@ -2,7 +2,7 @@ import { validatorCompiler as turkerValidator } from 'fastify-type-provider-zod'
 import { validatorCompiler as samchungyValidator } from 'fastify-zod-openapi';
 import { bench, describe } from 'vitest';
 
-import { validatorCompiler as lorZodValidator } from '../src/validator.js';
+import { validatorCompiler as lorZodValidator } from '../src/validator/validator.js';
 import {
   benchOpts,
   CreateUserBody,

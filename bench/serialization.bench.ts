@@ -6,7 +6,7 @@ import {
   fastSerializerCompiler as lorZodFastSerializer,
   parseSerializerCompiler as lorZodParseSerializer,
   serializerCompiler as lorZodSerializer,
-} from '../src/serializer.js';
+} from '../src/serializer/serializer.js';
 import {
   benchOpts,
   OrderSchema,
