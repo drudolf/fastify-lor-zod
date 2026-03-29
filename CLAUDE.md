@@ -135,7 +135,7 @@ CI must run all of the following — nothing merges without passing:
 - For any non-trivial code change, suggest entering a worktree before starting work
 - Name worktrees using the same type prefixes as Conventional Commits: `feat-`, `fix-`, `refactor-`, `chore-`, `docs-`, `perf-`, `test-`, `ci-`
 - Format: `<type>-<short-description>` using lowercase kebab-case (e.g. `feat-auto-input-detection`, `fix-schema-path`)
-- Propose the worktree name as part of the suggestion so the user can confirm or adjust before entering
+- Propose the worktree name as part of the suggestion so the Captain can confirm or adjust before entering
 
 ## Information gathering
 
