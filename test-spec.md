@@ -140,7 +140,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Should allow specification of Zod target to handle OpenAPI 3.1
 - [x] Should generate Input variant schemas with withInputSchema: true
 
-## OAS Converter (`openapi/zod-to-openapi.test.ts`) — 11 tests
+## OAS Converter (`openapi/zod-to-openapi.test.ts`) — 14 tests
 
 - [x] Passes through schema for OAS 3.1
 - [x] Removes OAS 3.0 incompatible keys
@@ -153,6 +153,9 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Preserves $ref schemas as-is
 - [x] Handles additionalProperties recursively for OAS 3.0
 - [x] throws on unsupported OpenAPI version
+- [x] isZodInternal returns true for a valid Zod schema
+- [x] isZodInternal returns false for non-ZodType input
+- [x] zodSchemaToJson throws if Zod internal API is absent
 
 ## Integration & Type Inference (`index.test.ts`) — 13 tests
 
@@ -177,4 +180,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 133 tests across 10 test files**
+**Total: 136 tests across 10 test files**

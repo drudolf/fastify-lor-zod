@@ -1,4 +1,11 @@
-import { getOASVersion, jsonSchemaToOAS } from './zod-to-openapi.js';
+import { z } from 'zod';
+
+import {
+  getOASVersion,
+  isZodInternal,
+  jsonSchemaToOAS,
+  zodSchemaToJson,
+} from './zod-to-openapi.js';
 
 describe('zod-to-openapi', () => {
   it('passes through schema for OAS 3.1', () => {
@@ -165,5 +172,21 @@ describe('zod-to-openapi', () => {
         openapiObject: { openapi: '2.0.0' } as Record<string, unknown>,
       } as Parameters<typeof getOASVersion>[0]),
     ).toThrow('Unsupported OpenAPI document object');
+  });
+  // --- Scaffolded from test-spec.md ---
+  it('isZodInternal returns true for a valid Zod schema', () => {
+    expect(isZodInternal(z.string())).toBe(true);
+  });
+
+  it('isZodInternal returns false for non-ZodType input', () => {
+    expect(isZodInternal({})).toBe(false);
+    expect(isZodInternal(null)).toBe(false);
+    expect(isZodInternal('string')).toBe(false);
+  });
+
+  it('zodSchemaToJson throws if Zod internal API is absent', () => {
+    expect(() =>
+      zodSchemaToJson({} as unknown as z.ZodType, z.globalRegistry, 'output', '3.0'),
+    ).toThrow('[fastify-lor-zod] Zod v4 internal API has changed');
   });
 });
