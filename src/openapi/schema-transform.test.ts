@@ -1252,7 +1252,7 @@ describe('schema-transform', () => {
       expect(schema.$ref).toBe('#/components/schemas/Health');
     });
 
-    it('registered schema response without description is unchanged (FR-004 regression)', async () => {
+    it('registered schema response without description is unchanged', async () => {
       const registry = z.registry<z.GlobalMeta>();
       const ItemSchema = z.object({ id: z.number() });
       registry.add(ItemSchema, { id: 'Item' });
