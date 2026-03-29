@@ -1,5 +1,13 @@
 # fastify-lor-zod
 
+## 0.1.0-beta.12
+
+### Minor Changes
+
+- [#33](https://github.com/drudolf/fastify-lor-zod/pull/33) [`1abdd1d`](https://github.com/drudolf/fastify-lor-zod/commit/1abdd1d8f7b440da1bc991f259742876e5f1760b) Thanks [@drudolf](https://github.com/drudolf)! - Export `ZodToJsonConfig` from the main entry point.
+
+  Previously consumers who wanted to type the `zodToJsonConfig` option in `SchemaTransformOptions` had to import it from an internal submodule. It is now available directly from `fastify-lor-zod`.
+
 ## 0.1.0-beta.11
 
 ### Patch Changes
