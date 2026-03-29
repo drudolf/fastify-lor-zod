@@ -285,7 +285,10 @@ describe('schema-transform', () => {
         openapiObject: { openapi: '3.0.3' },
       });
 
-      expect(result.schema.body).toBeDefined();
+      const body = result.schema.body as Record<string, unknown>;
+      expect(body.type).toBe('object');
+      // OAS 3.0 stripping should have removed $schema
+      expect(body.$schema).toBeUndefined();
     });
 
     it('allows custom override to strip pattern from uuid (#233)', async () => {
@@ -644,8 +647,10 @@ describe('schema-transform', () => {
         openapiObject: {} as Partial<Record<string, unknown>>,
       });
 
-      // Should not throw — defaults to 3.0
-      expect(result.schema.body).toBeDefined();
+      const body = result.schema.body as Record<string, unknown>;
+      expect(body.type).toBe('object');
+      // Defaults to 3.0, so $schema should be stripped
+      expect(body.$schema).toBeUndefined();
     });
   });
 
