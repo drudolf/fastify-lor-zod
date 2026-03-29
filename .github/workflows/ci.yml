@@ -30,7 +30,25 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test:coverage
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage
+          path: coverage/coverage-summary.json
       - run: pnpm test:spec-check
       - name: Enforce no todo tests on main
         if: github.ref == 'refs/heads/main'
         run: pnpm test:spec-check --strict
+
+  coverage-report:
+    needs: ci
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: coverage
+      - uses: davelosert/vitest-coverage-report-action@2500dafcee7dd64f85ab689c0b83798a8359770e # v2
+        with:
+          json-summary-path: coverage-summary.json
