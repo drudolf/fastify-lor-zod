@@ -244,6 +244,20 @@ describe('schema-transform', () => {
       expect(result.schema.hide).toBe(true);
     });
 
+    it('hides route when schema has hide: true', () => {
+      const transform = createJsonSchemaTransform();
+
+      const result = transform({
+        schema: { hide: true, body: z.object({ name: z.string() }) },
+        url: '/health',
+        route: { method: 'GET', url: '/health', handler: () => ({ ok: true }) },
+        openapiObject: { openapi: '3.0.3' },
+      });
+
+      expect(result.schema).toEqual({ hide: true });
+      expect(result.url).toBe('/health');
+    });
+
     it('allows zodToJsonConfig passthrough', () => {
       const transform = createJsonSchemaTransform({
         zodToJsonConfig: {

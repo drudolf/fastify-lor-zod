@@ -89,6 +89,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Handles all httpParts uniformly including params and querystring
 - [x] Generates nullable types correctly for OAS 3.0 (#193)
 - [x] Skips documentation routes by default
+- [x] hides route when schema has hide: true
 - [x] Allows zodToJsonConfig passthrough (#233)
 - [x] Allows custom override to strip pattern from uuid (#233)
 - [x] Handles readonly schemas (#71)
