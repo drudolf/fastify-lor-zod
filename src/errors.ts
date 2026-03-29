@@ -85,7 +85,7 @@ export class RequestValidationError extends Error {
   }
 
   private static formatIssuePath(path?: PropertyKey[]) {
-    return path?.length ? `/${path.join('/')}` : '';
+    return path?.length ? path.join('/') : '';
   }
 
   private static toValidationError(
@@ -93,11 +93,11 @@ export class RequestValidationError extends Error {
     httpPart: string | undefined = '',
   ): FastifySchemaValidationError[] {
     return issues.map(({ path, code, message, ...params }) => ({
-      instancePath: RequestValidationError.formatIssuePath(path),
+      instancePath: path?.length ? `/${RequestValidationError.formatIssuePath(path)}` : '',
       keyword: code,
       message,
       params,
-      schemaPath: `#/${httpPart}`,
+      schemaPath: `#${httpPart ? `/${httpPart}` : ''}/${RequestValidationError.formatIssuePath(path)}`,
     }));
   }
 }
