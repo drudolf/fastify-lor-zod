@@ -119,6 +119,9 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] anyOf with 3+ items preserved correctly (#195)
 - [x] excludes Input variants from components by default (#214)
 - [x] response description preserved from wrapper object (#47)
+- [x] response description preserved when inner schema is registered (produces $ref)
+- [x] registered schema response without description is unchanged (FR-004 regression)
+- [x] empty string description ignored for registered schema response
 - [x] body content type wrappers supported (#132)
 
 ## OpenAPI Snapshot (`openapi/openapi-snapshot.test.ts`) — 14 tests
