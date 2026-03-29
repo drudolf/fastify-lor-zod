@@ -1,5 +1,13 @@
 # fastify-lor-zod
 
+## 0.1.0-beta.11
+
+### Patch Changes
+
+- [#31](https://github.com/drudolf/fastify-lor-zod/pull/31) [`e4b9827`](https://github.com/drudolf/fastify-lor-zod/commit/e4b9827c83c80512c70770c9b93dcc356b3e2d8a) Thanks [@drudolf](https://github.com/drudolf)! - Include the field path in `schemaPath` for validation errors.
+
+  Previously `schemaPath` was always `#/{httpPart}` (e.g. `#/body`), regardless of which field failed. It now includes the full issue path: `#/body/user/name`, `#/querystring/page`, etc. `instancePath` is unchanged.
+
 ## 0.1.0-beta.10
 
 ### Patch Changes
