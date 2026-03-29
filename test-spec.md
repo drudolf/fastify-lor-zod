@@ -55,6 +55,8 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns true for lazy schema with codec
 - [x] returns false for enum schema (options are primitives, not schemas)
 - [x] returns false for non-ZodType input
+- [x] returns true for intersection with codec side
+- [x] returns false for intersection without codec
 - [x] handles circular schema without stack overflow
 
 ## Error Handling (`validator/errors.test.ts`) — 2 tests
