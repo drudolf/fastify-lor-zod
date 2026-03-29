@@ -1,9 +1,9 @@
 import Fastify from 'fastify';
 import { z } from 'zod';
 
+import type { FastifyLorZodTypeProvider } from '../index.js';
+import { serializerCompiler } from '../serializer/serializer.js';
 import { RequestValidationError } from './errors.js';
-import type { FastifyLorZodTypeProvider } from './index.js';
-import { serializerCompiler } from './serializer.js';
 import { validatorCompiler } from './validator.js';
 
 const buildApp = () => {

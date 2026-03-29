@@ -3,14 +3,14 @@ import Fastify from 'fastify';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import type { FastifyLorZodTypeProvider } from './index.js';
+import type { FastifyLorZodTypeProvider } from '../index.js';
 import {
   createJsonSchemaTransform,
   createJsonSchemaTransformObject,
   jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
-} from './index.js';
+} from '../index.js';
 
 const OPENAPI_ROOT = {
   openapi: {

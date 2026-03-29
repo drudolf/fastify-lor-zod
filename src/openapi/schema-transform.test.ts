@@ -3,15 +3,15 @@ import Fastify from 'fastify';
 import get from 'lodash-es/get.js';
 import { z } from 'zod';
 
-import type { FastifyLorZodTypeProvider } from './index.js';
+import type { FastifyLorZodTypeProvider } from '../index.js';
+import { serializerCompiler } from '../serializer/serializer.js';
+import { validatorCompiler } from '../validator/validator.js';
 import {
   createJsonSchemaTransform,
   createJsonSchemaTransformObject,
   jsonSchemaTransform,
   jsonSchemaTransformObject,
 } from './schema-transform.js';
-import { serializerCompiler } from './serializer.js';
-import { validatorCompiler } from './validator.js';
 
 const buildAppWithSwagger = async (oasVersion: '3.0.3' | '3.1.0' = '3.0.3') => {
   const app = Fastify();

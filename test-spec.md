@@ -1,6 +1,6 @@
 # Test Specification
 
-## Request Validation (`validator.test.ts`) — 9 tests
+## Request Validation (`validator/validator.test.ts`) — 9 tests
 
 - [x] Accepts valid querystring parameters
 - [x] Accepts requests on routes without schema
@@ -12,7 +12,7 @@
 - [x] Uses undefined as httpPart fallback when not provided
 - [x] Headers can be modified after validation (#209)
 
-## Serialization (`serializer.test.ts`) — 25 tests
+## Serialization (`serializer/serializer.test.ts`) — 25 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -57,12 +57,12 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns false for non-ZodType input
 - [x] handles circular schema without stack overflow
 
-## Error Handling (`errors.test.ts`) — 2 tests
+## Error Handling (`validator/errors.test.ts`) — 2 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 
-## OpenAPI/Swagger (`schema-transform.test.ts`) — 36 tests
+## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 36 tests
 
 ### Spec generation — 17 tests
 
@@ -112,7 +112,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] response description preserved from wrapper object (#47)
 - [x] body content type wrappers supported (#132)
 
-## OpenAPI Snapshot (`openapi-snapshot.test.ts`) — 14 tests
+## OpenAPI Snapshot (`openapi/openapi-snapshot.test.ts`) — 14 tests
 
 Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify-swagger.spec.ts.snap`.
 
@@ -131,7 +131,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Should allow specification of Zod target to handle OpenAPI 3.1
 - [x] Should generate Input variant schemas with withInputSchema: true
 
-## OAS Converter (`zod-to-openapi.test.ts`) — 11 tests
+## OAS Converter (`openapi/zod-to-openapi.test.ts`) — 11 tests
 
 - [x] Passes through schema for OAS 3.1
 - [x] Removes OAS 3.0 incompatible keys
@@ -161,7 +161,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Infers output type for schemas with transforms
 - [x] Infers output type for response schemas with preprocess
 
-## OpenAPI Metaschema Validation (`openapi-metaschema.test.ts`) — 2 tests
+## OpenAPI Metaschema Validation (`openapi/openapi-metaschema.test.ts`) — 2 tests
 
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation

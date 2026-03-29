@@ -2,8 +2,8 @@ import fastJsonStringify from 'fast-json-stringify';
 import type { FastifySerializerCompiler } from 'fastify/types/schema';
 import { z } from 'zod';
 
+import { hasCodecInTree } from '../utils/has-codec-in-tree.js';
 import { ResponseSerializationError } from './errors.js';
-import { hasCodecInTree } from './utils/has-codec-in-tree.js';
 
 /**
  * Options for the serializer compiler factories.

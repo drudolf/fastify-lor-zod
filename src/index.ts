@@ -51,14 +51,15 @@ export interface FastifyLorZodTypeProvider extends FastifyTypeProvider {
   readonly serializer: this['schema'] extends z.ZodType ? SerializerType<this['schema']> : unknown;
 }
 
-export { RequestValidationError, ResponseSerializationError } from './errors.js';
 export {
   createJsonSchemaTransform,
   createJsonSchemaTransformObject,
   jsonSchemaTransform,
   jsonSchemaTransformObject,
   type SchemaTransformOptions,
-} from './schema-transform.js';
+} from './openapi/schema-transform.js';
+export { jsonSchemaToOAS } from './openapi/zod-to-openapi.js';
+export { ResponseSerializationError } from './serializer/errors.js';
 export {
   createFastSerializerCompiler,
   createParseSerializerCompiler,
@@ -67,9 +68,9 @@ export {
   parseSerializerCompiler,
   type SerializerCompilerOptions,
   serializerCompiler,
-} from './serializer.js';
-export { validatorCompiler } from './validator.js';
-export { jsonSchemaToOAS } from './zod-to-openapi.js';
+} from './serializer/serializer.js';
+export { RequestValidationError } from './validator/errors.js';
+export { validatorCompiler } from './validator/validator.js';
 /**
  * Typed Fastify plugin callback with `FastifyLorZodTypeProvider` pre-configured.
  *
