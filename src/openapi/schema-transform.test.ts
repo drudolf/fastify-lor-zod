@@ -127,7 +127,20 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'User'])).toBeDefined();
+      const component = get(spec, ['components', 'schemas', 'User']);
+      expect(component).toMatchObject({ type: 'object', properties: { name: { type: 'string' } } });
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/user',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseSchema?.$ref).toBe('#/components/schemas/User');
     });
 
     it('handles all httpParts uniformly including params and querystring', async () => {
@@ -191,10 +204,8 @@ describe('schema-transform', () => {
         'schema',
       ]);
 
-      expect(bodySchema?.required).toBeDefined();
-      if (Array.isArray(bodySchema?.required)) {
-        expect(bodySchema.required).not.toContain('role');
-      }
+      expect(Array.isArray(bodySchema?.required)).toBe(true);
+      expect(bodySchema.required).not.toContain('role');
     });
 
     it('generates nullable types correctly for OAS 3.0', async () => {
@@ -362,7 +373,20 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'Product'])).toBeDefined();
+      const component = get(spec, ['components', 'schemas', 'Product']);
+      expect(component).toMatchObject({ type: 'object', properties: { id: { type: 'number' } } });
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/product',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseSchema?.$ref).toBe('#/components/schemas/Product');
     });
 
     it('handles nested and circular refs', async () => {
@@ -379,8 +403,20 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'TreeNode'])).toBeDefined();
-      expect(get(spec, ['paths', '/tree', 'get'])).toBeDefined();
+      const component = get(spec, ['components', 'schemas', 'TreeNode']);
+      expect(component).toMatchObject({ type: 'object', properties: { id: { type: 'number' } } });
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/tree',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseSchema?.$ref).toBe('#/components/schemas/TreeNode');
     });
 
     it('generates referenced input and output schemas', async () => {
@@ -403,8 +439,33 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'CreateUser'])).toBeDefined();
-      expect(get(spec, ['components', 'schemas', 'UserResponse'])).toBeDefined();
+      expect(get(spec, ['components', 'schemas', 'CreateUser'])).toMatchObject({ type: 'object' });
+      expect(get(spec, ['components', 'schemas', 'UserResponse'])).toMatchObject({
+        type: 'object',
+      });
+
+      const bodyRef = get(spec, [
+        'paths',
+        '/users',
+        'post',
+        'requestBody',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(bodyRef?.$ref).toBe('#/components/schemas/CreateUser');
+
+      const responseRef = get(spec, [
+        'paths',
+        '/users',
+        'post',
+        'responses',
+        '201',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseRef?.$ref).toBe('#/components/schemas/UserResponse');
     });
 
     it('generates referenced schemas for registered schemas', async () => {
@@ -424,8 +485,23 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'Address'])).toBeDefined();
-      expect(get(spec, ['components', 'schemas', 'Person'])).toBeDefined();
+      expect(get(spec, ['components', 'schemas', 'Address'])).toMatchObject({ type: 'object' });
+      expect(get(spec, ['components', 'schemas', 'Person'])).toMatchObject({
+        type: 'object',
+        properties: { address: { $ref: '#/components/schemas/Address' } },
+      });
+
+      const responseRef = get(spec, [
+        'paths',
+        '/person',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseRef?.$ref).toBe('#/components/schemas/Person');
     });
 
     it('allows Zod target configuration for OAS 3.1', async () => {
