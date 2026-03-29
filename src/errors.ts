@@ -1,5 +1,7 @@
-import type { FastifySchemaValidationError } from 'fastify/types/schema';
-import type { z } from 'zod';
+import type { FastifySchemaValidationError } from 'fastify';
+import type z from 'zod';
+
+import { mapIssueToValidationError } from './utils/error';
 
 /**
  * Error thrown when response serialization fails.
@@ -80,24 +82,7 @@ export class RequestValidationError extends Error {
     errorOptions?: ErrorOptions,
   ) {
     super('Request validation failed', errorOptions);
-    this.validation = RequestValidationError.toValidationError(issues, context);
+    this.validation = mapIssueToValidationError(issues, context);
     this.context = context;
-  }
-
-  private static formatIssuePath(path?: PropertyKey[]) {
-    return path?.length ? path.join('/') : '';
-  }
-
-  private static toValidationError(
-    issues: z.ZodError['issues'][number][],
-    httpPart: string | undefined = '',
-  ): FastifySchemaValidationError[] {
-    return issues.map(({ path, code, message, ...params }) => ({
-      instancePath: path?.length ? `/${RequestValidationError.formatIssuePath(path)}` : '',
-      keyword: code,
-      message,
-      params,
-      schemaPath: `#${httpPart ? `/${httpPart}` : ''}/${RequestValidationError.formatIssuePath(path)}`,
-    }));
   }
 }
