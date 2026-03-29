@@ -1,6 +1,6 @@
-import { afterEach } from 'vitest';
+import { beforeEach } from 'vitest';
 import { z } from 'zod';
 
-afterEach(() => {
+beforeEach(() => {
   z.globalRegistry.clear();
 });
