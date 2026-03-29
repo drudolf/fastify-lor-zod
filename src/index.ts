@@ -5,7 +5,7 @@ export {
   jsonSchemaTransformObject,
   type SchemaTransformOptions,
 } from './openapi/schema-transform.js';
-export { jsonSchemaToOAS } from './openapi/zod-to-openapi.js';
+export { jsonSchemaToOAS, type ZodToJsonConfig } from './openapi/zod-to-openapi.js';
 export { ResponseSerializationError } from './serializer/errors.js';
 export {
   createFastSerializerCompiler,

@@ -4,14 +4,15 @@ import { mapIssueToValidationError } from './error.js';
 
 const makeIssue = (
   overrides: Partial<z.ZodError['issues'][number]> = {},
-): z.ZodError['issues'][number] => ({
-  code: 'invalid_type',
-  expected: 'string',
-  received: 'number',
-  path: [],
-  message: 'Expected string, received number',
-  ...overrides,
-});
+): z.ZodError['issues'][number] =>
+  ({
+    code: 'invalid_type',
+    expected: 'string',
+    input: 42,
+    path: [],
+    message: 'Expected string, received number',
+    ...overrides,
+  }) as z.ZodError['issues'][number];
 
 describe('Error mapping', () => {
   it('maps issue path to instancePath', () => {
@@ -36,10 +37,10 @@ describe('Error mapping', () => {
 
   it('spreads remaining issue properties into params', () => {
     const [result] = mapIssueToValidationError(
-      [makeIssue({ expected: 'string', received: 'number' })],
+      [makeIssue({ expected: 'string', input: 42 })],
       'body',
     );
-    expect(result.params).toMatchObject({ expected: 'string', received: 'number' });
+    expect(result.params).toMatchObject({ expected: 'string', input: 42 });
   });
 
   it('maps multiple issues', () => {
