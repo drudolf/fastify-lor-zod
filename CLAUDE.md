@@ -56,7 +56,7 @@ Test names in `test-spec.md` must exactly match the `it('...')` strings.
 
 - **commitlint** with **@commitlint/config-conventional** enforced via husky commit-msg hook
 - Follow Conventional Commits format: `type(scope): description`
-- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
+- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `poc`
 - Keep subject line under 72 characters
 - Use imperative mood in the subject (`add` not `added`)
 
@@ -135,7 +135,7 @@ CI must run all of the following — nothing merges without passing:
 ## Worktree workflow
 
 - For any non-trivial code change, suggest entering a worktree before starting work
-- Name worktrees using the same type prefixes as Conventional Commits: `feat-`, `fix-`, `refactor-`, `chore-`, `docs-`, `perf-`, `test-`, `ci-`
+- Name worktrees using the same type prefixes as Conventional Commits: `feat-`, `fix-`, `refactor-`, `chore-`, `docs-`, `perf-`, `test-`, `ci-`, `poc-`
 - Format: `<type>-<short-description>` using lowercase kebab-case (e.g. `feat-auto-input-detection`, `fix-schema-path`)
 - Propose the worktree name as part of the suggestion so the user can confirm or adjust before entering
 
