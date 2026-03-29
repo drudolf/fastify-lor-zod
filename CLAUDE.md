@@ -41,6 +41,8 @@ Enforcement:
 
 Test names in `test-spec.md` must exactly match the `it('...')` strings.
 
+**Parallel agent rule**: When multiple agents work in parallel, `test-spec.md` is append-only. Add new entries at the bottom of the relevant section — never edit or reorder existing lines. Conflicts are then trivially auto-resolvable at merge. Only the orchestrator (Picard) reorganizes the file.
+
 ## Linting and formatting
 
 - **Biome** for linting and formatting
