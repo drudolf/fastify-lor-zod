@@ -130,6 +130,13 @@ CI must run all of the following — nothing merges without passing:
 - No `Object.setPrototypeOf`, no `Error.captureStackTrace` — unnecessary with ES2022+ targets
 - Export error classes as public API
 
+## Worktree workflow
+
+- For any non-trivial code change, suggest entering a worktree before starting work
+- Name worktrees using the same type prefixes as Conventional Commits: `feat-`, `fix-`, `refactor-`, `chore-`, `docs-`, `perf-`, `test-`, `ci-`
+- Format: `<type>-<short-description>` using lowercase kebab-case (e.g. `feat-auto-input-detection`, `fix-schema-path`)
+- Propose the worktree name as part of the suggestion so Dirk can confirm or adjust before entering
+
 ## Information gathering
 
 - Use the `gh` CLI to fetch GitHub data (issues, PRs) — do not guess or assume
