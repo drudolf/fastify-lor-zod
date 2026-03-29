@@ -962,11 +962,9 @@ describe('schema-transform', () => {
         'data',
       ]);
 
+      // z.json() resolves to a $ref pointing to an auto-generated component schema
       expect(bodySchema).toBeDefined();
-      // Should either inline the anyOf or have a valid $ref with definitions
-      const hasType = 'type' in (bodySchema ?? {}) || 'anyOf' in (bodySchema ?? {});
-      const hasValidRef = bodySchema?.$ref && !(bodySchema.$ref as string).includes('__shared');
-      expect(hasType || hasValidRef).toBe(true);
+      expect(bodySchema.$ref).toBe('#/components/schemas/schema0');
     });
 
     it('nested content types supported (#227)', async () => {
