@@ -168,4 +168,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 123 tests across 9 test files**
+**Total: 127 tests across 9 test files**

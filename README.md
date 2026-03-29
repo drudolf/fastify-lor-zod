@@ -95,7 +95,7 @@ import {
 app.setSerializerCompiler(serializerCompiler);
 ```
 
-Each has a factory variant (`createSerializerCompiler`, `createParseSerializerCompiler`, `createFastSerializerCompiler`) that accepts a `replacer` option for `JSON.stringify`.
+`createSerializerCompiler` and `createParseSerializerCompiler` each accept a `replacer` option for `JSON.stringify`. `createFastSerializerCompiler` takes no options — `fast-json-stringify` pre-compiles the serializer at route registration time and does not use `JSON.stringify`.
 
 ### Benchmarks
 
