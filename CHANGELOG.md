@@ -6,6 +6,7 @@
 
 - 9723915: Add migration guide from fastify-type-provider-zod and update README stability notice for stable release.
 
+
 ## 0.1.0
 
 ### Minor Changes
