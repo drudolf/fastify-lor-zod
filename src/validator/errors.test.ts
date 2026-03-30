@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
+import { RequestValidationError } from './errors.js';
 import { validatorCompiler } from './validator.js';
 
 const buildApp = () => {
@@ -14,7 +15,12 @@ const buildApp = () => {
 
 describe('error handling', () => {
   it('returns 400 with structured error on body validation error', async () => {
+    let caughtError: unknown;
     const app = buildApp();
+    app.setErrorHandler((error: Error, _req, reply) => {
+      caughtError = error;
+      reply.code(400).send({ statusCode: 400, error: 'Bad Request', message: error.message });
+    });
     app.post(
       '/',
       {
@@ -32,14 +38,20 @@ describe('error handling', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    const body = response.json();
-    expect(body).toHaveProperty('statusCode', 400);
-    expect(body).toHaveProperty('error', 'Bad Request');
-    expect(body).toHaveProperty('message');
+    expect(caughtError).toBeInstanceOf(RequestValidationError);
+    const err = caughtError as RequestValidationError;
+    expect(err.code).toBe('ERR_REQUEST_VALIDATION');
+    expect(err.context).toBe('body');
+    expect(err.validation.length).toBeGreaterThan(0);
   });
 
   it('produces empty instancePath for root-level validation errors', async () => {
+    let caughtError: unknown;
     const app = buildApp();
+    app.setErrorHandler((error, _req, reply) => {
+      caughtError = error;
+      reply.code(400).send({ statusCode: 400 });
+    });
     app.post(
       '/',
       {
@@ -58,5 +70,8 @@ describe('error handling', () => {
     });
 
     expect(response.statusCode).toBe(400);
+    expect(caughtError).toBeInstanceOf(RequestValidationError);
+    const err = caughtError as RequestValidationError;
+    expect(err.validation[0].instancePath).toBe('');
   });
 });

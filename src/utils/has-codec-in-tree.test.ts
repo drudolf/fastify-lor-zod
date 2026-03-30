@@ -64,11 +64,31 @@ describe('hasCodecInTree', () => {
     expect(hasCodecInTree({ description: 'not a schema' } as unknown as z.ZodType)).toBe(false);
   });
 
+  it('returns true for intersection with codec side', () => {
+    expect(
+      hasCodecInTree(z.intersection(z.object({ a: z.string() }), z.object({ d: dateCodec }))),
+    ).toBe(true);
+  });
+
+  it('returns false for intersection without codec', () => {
+    expect(
+      hasCodecInTree(z.intersection(z.object({ a: z.string() }), z.object({ b: z.number() }))),
+    ).toBe(false);
+  });
+
   it('handles circular schema without stack overflow', () => {
     type Node = { value: string; child?: Node };
     const nodeSchema: z.ZodType<Node> = z.lazy(() =>
       z.object({ value: z.string(), child: nodeSchema.optional() }),
     );
     expect(hasCodecInTree(nodeSchema)).toBe(false);
+  });
+
+  it('detects codec in circular schema', () => {
+    type Node = { value: Date; child?: Node };
+    const nodeSchema: z.ZodType<Node> = z.lazy(() =>
+      z.object({ value: dateCodec, child: nodeSchema.optional() }),
+    );
+    expect(hasCodecInTree(nodeSchema)).toBe(true);
   });
 });

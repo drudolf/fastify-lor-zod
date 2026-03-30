@@ -1,4 +1,5 @@
 import swagger from '@fastify/swagger';
+import type { FastifyInstance } from 'fastify';
 import Fastify from 'fastify';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
@@ -24,6 +25,65 @@ const OPENAPI_ROOT = {
   },
 };
 
+const registerSampleRoutes = (app: FastifyInstance) => {
+  const loginSchema = z.object({
+    username: z.string().max(32).describe('someDescription'),
+    seed: z.number().min(1).max(1000),
+    code: z.number().lt(10000),
+    password: z.string().max(32),
+  });
+
+  const unauthorizedSchema = z.object({
+    required_role: z.literal('admin').nullable(),
+    scopes: z.tuple([z.literal('read'), z.literal('write'), z.null()]),
+  });
+
+  app
+    .withTypeProvider<FastifyLorZodTypeProvider>()
+    .route({
+      method: 'POST',
+      url: '/login',
+      schema: {
+        description: 'login route',
+        summary: 'login your account',
+        consumes: ['application/json'],
+        deprecated: false,
+        hide: false,
+        tags: ['auth'],
+        externalDocs: { url: 'https://google.com', description: 'check google' },
+        body: loginSchema,
+        response: {
+          200: z.string(),
+          401: unauthorizedSchema,
+        },
+      },
+      handler: (_req, res) => {
+        res.send('ok');
+      },
+    })
+    .route({
+      method: 'POST',
+      url: '/no-schema',
+      schema: undefined,
+      handler: (_req, res) => {
+        res.send('ok');
+      },
+    })
+    .route({
+      method: 'DELETE',
+      url: '/delete',
+      schema: {
+        description: 'delete route',
+        response: {
+          204: z.undefined().describe('Empty response'),
+        },
+      },
+      handler: (_req, res) => {
+        res.status(204).send();
+      },
+    });
+};
+
 describe('transformer', () => {
   it('generates types for fastify-swagger correctly', async () => {
     const app = Fastify();
@@ -43,64 +103,7 @@ describe('transformer', () => {
       transform: jsonSchemaTransform,
     });
 
-    const LOGIN_SCHEMA = z.object({
-      username: z.string().max(32).describe('someDescription'),
-      seed: z.number().min(1).max(1000),
-      code: z.number().lt(10000),
-      password: z.string().max(32),
-    });
-
-    const UNAUTHORIZED_SCHEMA = z.object({
-      required_role: z.literal('admin').nullable(),
-      scopes: z.tuple([z.literal('read'), z.literal('write'), z.null()]),
-    });
-
-    app.after(() => {
-      app
-        .withTypeProvider<FastifyLorZodTypeProvider>()
-        .route({
-          method: 'POST',
-          url: '/login',
-          schema: {
-            description: 'login route',
-            summary: 'login your account',
-            consumes: ['application/json'],
-            deprecated: false,
-            hide: false,
-            tags: ['auth'],
-            externalDocs: { url: 'https://google.com', description: 'check google' },
-            body: LOGIN_SCHEMA,
-            response: {
-              200: z.string(),
-              401: UNAUTHORIZED_SCHEMA,
-            },
-          },
-          handler: (_req, res) => {
-            res.send('ok');
-          },
-        })
-        .route({
-          method: 'POST',
-          url: '/no-schema',
-          schema: undefined,
-          handler: (_req, res) => {
-            res.send('ok');
-          },
-        })
-        .route({
-          method: 'DELETE',
-          url: '/delete',
-          schema: {
-            description: 'delete route',
-            response: {
-              204: z.undefined().describe('Empty response'),
-            },
-          },
-          handler: (_req, res) => {
-            res.status(204).send();
-          },
-        });
-    });
+    app.after(() => registerSampleRoutes(app));
 
     await app.ready();
     expect(app.swagger()).toMatchSnapshot();
@@ -128,64 +131,7 @@ describe('transformer', () => {
       }),
     });
 
-    const LOGIN_SCHEMA = z.object({
-      username: z.string().max(32).describe('someDescription'),
-      seed: z.number().min(1).max(1000),
-      code: z.number().lt(10000),
-      password: z.string().max(32),
-    });
-
-    const UNAUTHORIZED_SCHEMA = z.object({
-      required_role: z.literal('admin').nullable(),
-      scopes: z.tuple([z.literal('read'), z.literal('write'), z.null()]),
-    });
-
-    app.after(() => {
-      app
-        .withTypeProvider<FastifyLorZodTypeProvider>()
-        .route({
-          method: 'POST',
-          url: '/login',
-          schema: {
-            description: 'login route',
-            summary: 'login your account',
-            consumes: ['application/json'],
-            deprecated: false,
-            hide: false,
-            tags: ['auth'],
-            externalDocs: { url: 'https://google.com', description: 'check google' },
-            body: LOGIN_SCHEMA,
-            response: {
-              200: z.string(),
-              401: UNAUTHORIZED_SCHEMA,
-            },
-          },
-          handler: (_req, res) => {
-            res.send('ok');
-          },
-        })
-        .route({
-          method: 'POST',
-          url: '/no-schema',
-          schema: undefined,
-          handler: (_req, res) => {
-            res.send('ok');
-          },
-        })
-        .route({
-          method: 'DELETE',
-          url: '/delete',
-          schema: {
-            description: 'delete route',
-            response: {
-              204: z.undefined().describe('Empty response'),
-            },
-          },
-          handler: (_req, res) => {
-            res.status(204).send();
-          },
-        });
-    });
+    app.after(() => registerSampleRoutes(app));
 
     await app.ready();
     expect(app.swagger()).toMatchSnapshot();
@@ -208,64 +154,7 @@ describe('transformer', () => {
       transform: jsonSchemaTransform,
     });
 
-    const LOGIN_SCHEMA = z.object({
-      username: z.string().max(32).describe('someDescription'),
-      seed: z.number().min(1).max(1000),
-      code: z.number().lt(10000),
-      password: z.string().max(32),
-    });
-
-    const UNAUTHORIZED_SCHEMA = z.object({
-      required_role: z.literal('admin').nullable(),
-      scopes: z.tuple([z.literal('read'), z.literal('write'), z.null()]),
-    });
-
-    app.after(() => {
-      app
-        .withTypeProvider<FastifyLorZodTypeProvider>()
-        .route({
-          method: 'POST',
-          url: '/login',
-          schema: {
-            description: 'login route',
-            summary: 'login your account',
-            consumes: ['application/json'],
-            deprecated: false,
-            hide: false,
-            tags: ['auth'],
-            externalDocs: { url: 'https://google.com', description: 'check google' },
-            body: LOGIN_SCHEMA,
-            response: {
-              200: z.string(),
-              401: UNAUTHORIZED_SCHEMA,
-            },
-          },
-          handler: (_req, res) => {
-            res.send('ok');
-          },
-        })
-        .route({
-          method: 'POST',
-          url: '/no-schema',
-          schema: undefined,
-          handler: (_req, res) => {
-            res.send('ok');
-          },
-        })
-        .route({
-          method: 'DELETE',
-          url: '/delete',
-          schema: {
-            description: 'delete route',
-            response: {
-              204: z.undefined().describe('Empty response'),
-            },
-          },
-          handler: (_req, res) => {
-            res.status(204).send();
-          },
-        });
-    });
+    app.after(() => registerSampleRoutes(app));
 
     await app.ready();
     expect(() => app.swagger()).toThrowError('OpenAPI 2.0 is not supported');
@@ -381,7 +270,6 @@ describe('transformer', () => {
     await app.ready();
 
     const openApiSpec = app.swagger();
-    z.globalRegistry.remove(TOKEN_SCHEMA);
 
     expect(openApiSpec).toMatchSnapshot();
   });

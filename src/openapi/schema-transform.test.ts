@@ -116,43 +116,31 @@ describe('schema-transform', () => {
     });
 
     it('generates refs via global registry', async () => {
-      const testRegistry = z.registry<z.GlobalMeta>();
-      const UserSchema = z.object({ name: z.string(), email: z.string() });
-      testRegistry.add(UserSchema, { id: 'User' });
+      const UserSchema = z.object({ name: z.string(), email: z.string() }).meta({ id: 'User' });
 
-      const app = Fastify();
-      app.setValidatorCompiler(validatorCompiler);
-      app.setSerializerCompiler(serializerCompiler);
-
-      const transform = createJsonSchemaTransform({ schemaRegistry: testRegistry });
-      const transformObject = createJsonSchemaTransformObject({
-        schemaRegistry: testRegistry,
-      });
-
-      await app.register(swagger, {
-        openapi: {
-          openapi: '3.0.3',
-          info: { title: 'Test', version: '1.0.0' },
-        },
-        transform,
-        transformObject,
-      });
-
-      const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
-      typedApp.get(
-        '/user',
-        {
-          schema: {
-            response: { 200: UserSchema },
-          },
-        },
-        () => ({ name: 'Alice', email: 'a@b.com' }),
-      );
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get('/user', { schema: { response: { 200: UserSchema } } }, () => ({
+        name: 'Alice',
+        email: 'a@b.com',
+      }));
 
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'User'])).toBeDefined();
+      const component = get(spec, ['components', 'schemas', 'User']);
+      expect(component).toMatchObject({ type: 'object', properties: { name: { type: 'string' } } });
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/user',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseSchema?.$ref).toBe('#/components/schemas/User');
     });
 
     it('handles all httpParts uniformly including params and querystring', async () => {
@@ -216,10 +204,8 @@ describe('schema-transform', () => {
         'schema',
       ]);
 
-      expect(bodySchema?.required).toBeDefined();
-      if (Array.isArray(bodySchema?.required)) {
-        expect(bodySchema.required).not.toContain('role');
-      }
+      expect(Array.isArray(bodySchema?.required)).toBe(true);
+      expect(bodySchema.required).not.toContain('role');
     });
 
     it('generates nullable types correctly for OAS 3.0', async () => {
@@ -269,6 +255,20 @@ describe('schema-transform', () => {
       expect(result.schema.hide).toBe(true);
     });
 
+    it('hides route when schema has hide: true', () => {
+      const transform = createJsonSchemaTransform();
+
+      const result = transform({
+        schema: { hide: true, body: z.object({ name: z.string() }) },
+        url: '/health',
+        route: { method: 'GET', url: '/health', handler: () => ({ ok: true }) },
+        openapiObject: { openapi: '3.0.3' },
+      });
+
+      expect(result.schema).toEqual({ hide: true });
+      expect(result.url).toBe('/health');
+    });
+
     it('allows zodToJsonConfig passthrough', () => {
       const transform = createJsonSchemaTransform({
         zodToJsonConfig: {
@@ -285,7 +285,10 @@ describe('schema-transform', () => {
         openapiObject: { openapi: '3.0.3' },
       });
 
-      expect(result.schema.body).toBeDefined();
+      const body = result.schema.body as Record<string, unknown>;
+      expect(body.type).toBe('object');
+      // OAS 3.0 stripping should have removed $schema
+      expect(body.$schema).toBeUndefined();
     });
 
     it('allows custom override to strip pattern from uuid (#233)', async () => {
@@ -362,28 +365,10 @@ describe('schema-transform', () => {
     });
 
     it('generates refs via z.registry', async () => {
-      const registry = z.registry<z.GlobalMeta>();
-      const ProductSchema = z.object({ id: z.number(), name: z.string() });
-      registry.add(ProductSchema, { id: 'Product' });
+      const ProductSchema = z.object({ id: z.number(), name: z.string() }).meta({ id: 'Product' });
 
-      const app = Fastify();
-      app.setValidatorCompiler(validatorCompiler);
-      app.setSerializerCompiler(serializerCompiler);
-
-      const transform = createJsonSchemaTransform({ schemaRegistry: registry });
-      const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
-
-      await app.register(swagger, {
-        openapi: {
-          openapi: '3.0.3',
-          info: { title: 'Test', version: '1.0.0' },
-        },
-        transform,
-        transformObject,
-      });
-
-      const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
-      typedApp.get('/product', { schema: { response: { 200: ProductSchema } } }, () => ({
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get('/product', { schema: { response: { 200: ProductSchema } } }, () => ({
         id: 1,
         name: 'Widget',
       }));
@@ -391,35 +376,29 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'Product'])).toBeDefined();
+      const component = get(spec, ['components', 'schemas', 'Product']);
+      expect(component).toMatchObject({ type: 'object', properties: { id: { type: 'number' } } });
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/product',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseSchema?.$ref).toBe('#/components/schemas/Product');
     });
 
     it('handles nested and circular refs', async () => {
-      const registry = z.registry<z.GlobalMeta>();
-      const NodeSchema: z.ZodType = z.object({
-        id: z.number(),
-        children: z.lazy(() => z.array(NodeSchema)),
-      });
-      registry.add(NodeSchema, { id: 'TreeNode' });
+      const NodeSchema: z.ZodType = z
+        .object({ id: z.number(), children: z.lazy(() => z.array(NodeSchema)) })
+        .meta({ id: 'TreeNode' });
 
-      const app = Fastify();
-      app.setValidatorCompiler(validatorCompiler);
-      app.setSerializerCompiler(serializerCompiler);
-
-      const transform = createJsonSchemaTransform({ schemaRegistry: registry });
-      const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
-
-      await app.register(swagger, {
-        openapi: {
-          openapi: '3.0.3',
-          info: { title: 'Test', version: '1.0.0' },
-        },
-        transform,
-        transformObject,
-      });
-
-      const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
-      typedApp.get('/tree', { schema: { response: { 200: NodeSchema } } }, () => ({
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get('/tree', { schema: { response: { 200: NodeSchema } } }, () => ({
         id: 1,
         children: [],
       }));
@@ -427,49 +406,34 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'TreeNode'])).toBeDefined();
-      expect(get(spec, ['paths', '/tree', 'get'])).toBeDefined();
+      const component = get(spec, ['components', 'schemas', 'TreeNode']);
+      expect(component).toMatchObject({ type: 'object', properties: { id: { type: 'number' } } });
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/tree',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseSchema?.$ref).toBe('#/components/schemas/TreeNode');
     });
 
     it('generates referenced input and output schemas', async () => {
-      const registry = z.registry<z.GlobalMeta>();
-      const CreateUserSchema = z.object({
-        name: z.string(),
-        role: z.string().default('user'),
-      });
-      const UserResponseSchema = z.object({
-        id: z.number(),
-        name: z.string(),
-        role: z.string(),
-      });
-      registry.add(CreateUserSchema, { id: 'CreateUser' });
-      registry.add(UserResponseSchema, { id: 'UserResponse' });
+      const CreateUserSchema = z
+        .object({ name: z.string(), role: z.string().default('user') })
+        .meta({ id: 'CreateUser' });
+      const UserResponseSchema = z
+        .object({ id: z.number(), name: z.string(), role: z.string() })
+        .meta({ id: 'UserResponse' });
 
-      const app = Fastify();
-      app.setValidatorCompiler(validatorCompiler);
-      app.setSerializerCompiler(serializerCompiler);
-
-      const transform = createJsonSchemaTransform({ schemaRegistry: registry });
-      const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
-
-      await app.register(swagger, {
-        openapi: {
-          openapi: '3.0.3',
-          info: { title: 'Test', version: '1.0.0' },
-        },
-        transform,
-        transformObject,
-      });
-
-      const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
-      typedApp.post(
+      const app = await buildAppWithSwagger('3.0.3');
+      app.post(
         '/users',
-        {
-          schema: {
-            body: CreateUserSchema,
-            response: { 201: UserResponseSchema },
-          },
-        },
+        { schema: { body: CreateUserSchema, response: { 201: UserResponseSchema } } },
         (req, reply) => {
           reply.code(201).send({ id: 1, name: req.body.name, role: req.body.role });
         },
@@ -478,35 +442,45 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'CreateUser'])).toBeDefined();
-      expect(get(spec, ['components', 'schemas', 'UserResponse'])).toBeDefined();
+      expect(get(spec, ['components', 'schemas', 'CreateUser'])).toMatchObject({ type: 'object' });
+      expect(get(spec, ['components', 'schemas', 'UserResponse'])).toMatchObject({
+        type: 'object',
+      });
+
+      const bodyRef = get(spec, [
+        'paths',
+        '/users',
+        'post',
+        'requestBody',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(bodyRef?.$ref).toBe('#/components/schemas/CreateUser');
+
+      const responseRef = get(spec, [
+        'paths',
+        '/users',
+        'post',
+        'responses',
+        '201',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseRef?.$ref).toBe('#/components/schemas/UserResponse');
     });
 
     it('generates referenced schemas for registered schemas', async () => {
-      const registry = z.registry<z.GlobalMeta>();
-      const AddressSchema = z.object({ street: z.string(), city: z.string() });
-      const PersonSchema = z.object({ name: z.string(), address: AddressSchema });
-      registry.add(AddressSchema, { id: 'Address' });
-      registry.add(PersonSchema, { id: 'Person' });
+      const AddressSchema = z
+        .object({ street: z.string(), city: z.string() })
+        .meta({ id: 'Address' });
+      const PersonSchema = z
+        .object({ name: z.string(), address: AddressSchema })
+        .meta({ id: 'Person' });
 
-      const app = Fastify();
-      app.setValidatorCompiler(validatorCompiler);
-      app.setSerializerCompiler(serializerCompiler);
-
-      const transform = createJsonSchemaTransform({ schemaRegistry: registry });
-      const transformObject = createJsonSchemaTransformObject({ schemaRegistry: registry });
-
-      await app.register(swagger, {
-        openapi: {
-          openapi: '3.0.3',
-          info: { title: 'Test', version: '1.0.0' },
-        },
-        transform,
-        transformObject,
-      });
-
-      const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
-      typedApp.get('/person', { schema: { response: { 200: PersonSchema } } }, () => ({
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get('/person', { schema: { response: { 200: PersonSchema } } }, () => ({
         name: 'Alice',
         address: { street: '123 Main', city: 'Springfield' },
       }));
@@ -514,8 +488,23 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['components', 'schemas', 'Address'])).toBeDefined();
-      expect(get(spec, ['components', 'schemas', 'Person'])).toBeDefined();
+      expect(get(spec, ['components', 'schemas', 'Address'])).toMatchObject({ type: 'object' });
+      expect(get(spec, ['components', 'schemas', 'Person'])).toMatchObject({
+        type: 'object',
+        properties: { address: { $ref: '#/components/schemas/Address' } },
+      });
+
+      const responseRef = get(spec, [
+        'paths',
+        '/person',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]);
+      expect(responseRef?.$ref).toBe('#/components/schemas/Person');
     });
 
     it('allows Zod target configuration for OAS 3.1', async () => {
@@ -658,8 +647,10 @@ describe('schema-transform', () => {
         openapiObject: {} as Partial<Record<string, unknown>>,
       });
 
-      // Should not throw — defaults to 3.0
-      expect(result.schema.body).toBeDefined();
+      const body = result.schema.body as Record<string, unknown>;
+      expect(body.type).toBe('object');
+      // Defaults to 3.0, so $schema should be stripped
+      expect(body.$schema).toBeUndefined();
     });
   });
 
@@ -747,41 +738,17 @@ describe('schema-transform', () => {
 
   describe('provider issues', () => {
     it('registered querystring schema generates valid params (#244)', async () => {
-      const app = Fastify();
-      app.setValidatorCompiler(validatorCompiler);
-      app.setSerializerCompiler(serializerCompiler);
+      const UserQuery = z.object({ name: z.string() }).meta({ id: 'UserQuery' });
+      const UserSchema = z.object({ id: z.number(), name: z.string() }).meta({ id: 'User' });
 
-      const schemaRegistry = z.registry<{ id: string }>();
-      const UserQuery = z.object({ name: z.string() });
-      const UserSchema = z.object({ id: z.number(), name: z.string() });
-      schemaRegistry.add(UserQuery, { id: 'UserQuery' });
-      schemaRegistry.add(UserSchema, { id: 'User' });
-
-      await app.register(swagger, {
-        openapi: {
-          openapi: '3.0.3',
-          info: { title: 'Test', version: '1.0.0' },
-          servers: [],
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get(
+        '/users',
+        { schema: { querystring: UserQuery, response: { 200: z.array(UserSchema) } } },
+        (_req, res) => {
+          res.send([]);
         },
-        transform: createJsonSchemaTransform({ schemaRegistry }),
-        transformObject: createJsonSchemaTransformObject({ schemaRegistry }),
-      });
-
-      app.after(() => {
-        app.withTypeProvider<FastifyLorZodTypeProvider>().route({
-          method: 'GET',
-          url: '/users',
-          schema: {
-            querystring: UserQuery,
-            response: {
-              200: z.array(UserSchema),
-            },
-          },
-          handler: (_req, res) => {
-            res.send([]);
-          },
-        });
-      });
+      );
 
       await app.ready();
       const spec = app.swagger();
@@ -881,7 +848,6 @@ describe('schema-transform', () => {
 
       await app.ready();
       const spec = app.swagger();
-      z.globalRegistry.remove(UserSchema);
 
       // Response should reference the schema
       const items = get(spec, [
@@ -996,11 +962,9 @@ describe('schema-transform', () => {
         'data',
       ]);
 
+      // z.json() resolves to a $ref pointing to an auto-generated component schema
       expect(bodySchema).toBeDefined();
-      // Should either inline the anyOf or have a valid $ref with definitions
-      const hasType = 'type' in (bodySchema ?? {}) || 'anyOf' in (bodySchema ?? {});
-      const hasValidRef = bodySchema?.$ref && !(bodySchema.$ref as string).includes('__shared');
-      expect(hasType || hasValidRef).toBe(true);
+      expect(bodySchema.$ref).toBe('#/components/schemas/schema0');
     });
 
     it('nested content types supported (#227)', async () => {
@@ -1143,39 +1107,16 @@ describe('schema-transform', () => {
     });
 
     it('excludes Input variants from components by default (#214)', async () => {
-      const app = Fastify();
-      app.setValidatorCompiler(validatorCompiler);
-      app.setSerializerCompiler(serializerCompiler);
+      const TokenSchema = z.string().length(12).meta({ id: 'Token' });
 
-      const schemaRegistry = z.registry<{ id: string }>();
-      const TokenSchema = z.string().length(12);
-      schemaRegistry.add(TokenSchema, { id: 'Token' });
-
-      await app.register(swagger, {
-        openapi: {
-          openapi: '3.0.3',
-          info: { title: 'Test', version: '1.0.0' },
-          servers: [],
+      const app = await buildAppWithSwagger('3.0.3');
+      app.post(
+        '/login',
+        { schema: { body: z.object({ access_token: TokenSchema, refresh_token: TokenSchema }) } },
+        (_req, res) => {
+          res.send('ok');
         },
-        transform: createJsonSchemaTransform({ schemaRegistry }),
-        transformObject: createJsonSchemaTransformObject({ schemaRegistry }),
-      });
-
-      app.after(() => {
-        app.withTypeProvider<FastifyLorZodTypeProvider>().route({
-          method: 'POST',
-          url: '/login',
-          schema: {
-            body: z.object({
-              access_token: TokenSchema,
-              refresh_token: TokenSchema,
-            }),
-          },
-          handler: (_req, res) => {
-            res.send('ok');
-          },
-        });
-      });
+      );
 
       await app.ready();
       const spec = app.swagger() as Record<string, unknown>;
@@ -1213,6 +1154,113 @@ describe('schema-transform', () => {
         | undefined;
 
       expect(response?.description).toBe('Healthy');
+    });
+
+    it('response description preserved when inner schema is registered (produces $ref)', async () => {
+      const HealthSchema = z.object({ status: z.boolean() }).meta({ id: 'Health' });
+
+      const app = Fastify();
+      app.setValidatorCompiler(validatorCompiler);
+      app.setSerializerCompiler(serializerCompiler);
+
+      await app.register(swagger, {
+        openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
+        transform: createJsonSchemaTransform(),
+        transformObject: createJsonSchemaTransformObject(),
+      });
+
+      app.withTypeProvider<FastifyLorZodTypeProvider>().get(
+        '/health',
+        {
+          schema: {
+            response: {
+              200: {
+                description: 'Healthy',
+                properties: HealthSchema,
+              },
+            },
+          },
+        },
+        () => ({ status: true }),
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const response = get(spec, ['paths', '/health', 'get', 'responses', '200']);
+      expect(response.description).toBe('Healthy');
+
+      const schema = get(response, ['content', 'application/json', 'schema']);
+      expect(schema.$ref).toBe('#/components/schemas/Health');
+    });
+
+    it('registered schema response without description is unchanged', async () => {
+      const ItemSchema = z.object({ id: z.number() }).meta({ id: 'Item' });
+
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get('/item', { schema: { response: { 200: ItemSchema } } }, () => ({ id: 1 }));
+
+      await app.ready();
+      const spec = app.swagger();
+
+      expect(get(spec, ['components', 'schemas', 'Item'])).toBeDefined();
+
+      const responseSchema = get(spec, [
+        'paths',
+        '/item',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]) as Record<string, unknown> | undefined;
+      expect(responseSchema?.['allOf']).toBeUndefined();
+      expect(responseSchema?.['$ref']).toBe('#/components/schemas/Item');
+    });
+
+    it('empty string description ignored for registered schema response', async () => {
+      const PingSchema = z.object({ ok: z.boolean() }).meta({ id: 'Ping' });
+
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get(
+        '/ping',
+        {
+          schema: {
+            response: {
+              200: {
+                description: '',
+                properties: PingSchema,
+              },
+            },
+          },
+        },
+        () => ({ ok: true }),
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const response = get(spec, ['paths', '/ping', 'get', 'responses', '200']) as
+        | Record<string, unknown>
+        | undefined;
+
+      // Empty string description must not appear in the OAS output
+      expect(response?.description).not.toBe('');
+
+      // Schema must be a bare $ref — no allOf wrapping (empty string treated as absent)
+      const schema = get(spec, [
+        'paths',
+        '/ping',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]) as Record<string, unknown> | undefined;
+      expect(schema?.['allOf']).toBeUndefined();
+      expect(schema?.['$ref']).toBe('#/components/schemas/Ping');
     });
 
     it('body content type wrappers supported (#132)', async () => {

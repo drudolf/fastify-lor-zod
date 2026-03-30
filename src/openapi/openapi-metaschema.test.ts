@@ -4,7 +4,12 @@ import Fastify from 'fastify';
 import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
-import { jsonSchemaTransform, serializerCompiler, validatorCompiler } from '../index.js';
+import {
+  jsonSchemaTransform,
+  jsonSchemaTransformObject,
+  serializerCompiler,
+  validatorCompiler,
+} from '../index.js';
 
 const validator = new Validator();
 
@@ -19,9 +24,12 @@ const buildApp = async (oasVersion: '3.0.3' | '3.1.0') => {
       info: { title: 'Metaschema Test', version: '1.0.0' },
     },
     transform: jsonSchemaTransform,
+    transformObject: jsonSchemaTransformObject,
   });
 
   const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
+
+  const ErrorSchema = z.object({ error: z.string() }).meta({ id: 'ErrorResponse' });
 
   typedApp.post('/users', {
     schema: {
@@ -30,7 +38,7 @@ const buildApp = async (oasVersion: '3.0.3' | '3.1.0') => {
       headers: z.object({ 'x-api-key': z.string() }).loose(),
       response: {
         201: z.object({ id: z.number(), name: z.string() }),
-        400: z.object({ error: z.string() }),
+        400: ErrorSchema,
       },
     },
     handler: async (_req, reply) => {

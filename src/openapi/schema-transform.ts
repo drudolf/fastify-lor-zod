@@ -237,6 +237,7 @@ export const createJsonSchemaTransform = (
         }
 
         const oasSchema = jsonSchemaToOAS(jsonSchema, oasVersion);
+        if (extras.description === '') delete extras.description;
         (transformed.response as JSONSchemaRecord)[prop] = { ...extras, ...oasSchema };
       }
     }

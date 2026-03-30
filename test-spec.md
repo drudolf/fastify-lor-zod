@@ -29,6 +29,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
 - [x] Returns 500 on incorrect object response
+- [x] returns 500 when required field is missing from response
 
 ### Default values — safeEncode + safeParse only (×2 = 2 tests)
 
@@ -55,7 +56,10 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns true for lazy schema with codec
 - [x] returns false for enum schema (options are primitives, not schemas)
 - [x] returns false for non-ZodType input
+- [x] returns true for intersection with codec side
+- [x] returns false for intersection without codec
 - [x] handles circular schema without stack overflow
+- [x] detects codec in circular schema
 
 ## Error Handling (`validator/errors.test.ts`) — 2 tests
 
@@ -89,6 +93,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Handles all httpParts uniformly including params and querystring
 - [x] Generates nullable types correctly for OAS 3.0 (#193)
 - [x] Skips documentation routes by default
+- [x] hides route when schema has hide: true
 - [x] Allows zodToJsonConfig passthrough (#233)
 - [x] Allows custom override to strip pattern from uuid (#233)
 - [x] Handles readonly schemas (#71)
@@ -119,6 +124,9 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] anyOf with 3+ items preserved correctly (#195)
 - [x] excludes Input variants from components by default (#214)
 - [x] response description preserved from wrapper object (#47)
+- [x] response description preserved when inner schema is registered (produces $ref)
+- [x] registered schema response without description is unchanged
+- [x] empty string description ignored for registered schema response
 - [x] body content type wrappers supported (#132)
 
 ## OpenAPI Snapshot (`openapi/openapi-snapshot.test.ts`) — 14 tests
@@ -151,7 +159,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Recursively converts allOf entries for OAS 3.0
 - [x] Does not mutate original schema
 - [x] Preserves $ref schemas as-is
-- [x] Handles additionalProperties recursively for OAS 3.0
+- [x] does not recurse into additionalProperties for OAS 3.0
 - [x] throws on unsupported OpenAPI version
 - [x] isZodInternal returns true for a valid Zod schema
 - [x] isZodInternal returns false for non-ZodType input
