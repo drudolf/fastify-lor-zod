@@ -37,10 +37,17 @@ describe('Error mapping', () => {
 
   it('spreads remaining issue properties into params', () => {
     const [result] = mapIssueToValidationError(
-      [makeIssue({ expected: 'string', input: 42 })],
+      [
+        makeIssue({
+          expected: 'string',
+          input: 42,
+          minimum: 5,
+          inclusive: true,
+        } as Partial<z.ZodError['issues'][number]>),
+      ],
       'body',
     );
-    expect(result.params).toMatchObject({ expected: 'string', input: 42 });
+    expect(result.params).toEqual({ expected: 'string', input: 42, minimum: 5, inclusive: true });
   });
 
   it('maps multiple issues', () => {
