@@ -6,11 +6,14 @@
 
 - [`3c0e28f`](https://github.com/drudolf/fastify-lor-zod/commit/3c0e28f) Add custom changelog generator with clickable commit links, migration guide, and updated benchmark results.
 
+
 ## 0.1.1
 
 ### Patch Changes
 
 - 9723915: Add migration guide from fastify-type-provider-zod and update README stability notice for stable release.
+
+
 
 ## 0.1.0
 
