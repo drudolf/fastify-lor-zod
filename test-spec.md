@@ -29,6 +29,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
 - [x] Returns 500 on incorrect object response
+- [x] returns 500 when required field is missing from response
 
 ### Default values — safeEncode + safeParse only (×2 = 2 tests)
 
@@ -58,6 +59,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns true for intersection with codec side
 - [x] returns false for intersection without codec
 - [x] handles circular schema without stack overflow
+- [x] detects codec in circular schema
 
 ## Error Handling (`validator/errors.test.ts`) — 2 tests
 

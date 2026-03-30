@@ -108,7 +108,11 @@ describe.each(validatingSerializers)('serializer — $name — validation errors
     const app = buildApp(compiler);
     app.setErrorHandler((error, _req, reply) => {
       if (error instanceof ResponseSerializationError) {
-        reply.code(500).send({ error: 'serialization failed' });
+        reply.code(500).send({
+          code: error.code,
+          method: error.method,
+          url: error.url,
+        });
         return;
       }
       reply.send(error);
@@ -120,13 +124,22 @@ describe.each(validatingSerializers)('serializer — $name — validation errors
     const response = await app.inject({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(500);
+    expect(response.json()).toMatchObject({
+      code: 'ERR_RESPONSE_SERIALIZATION',
+      method: 'GET',
+      url: '/',
+    });
   });
 
   it('returns 500 on incorrect string response', async () => {
     const app = buildApp(compiler);
     app.setErrorHandler((error, _req, reply) => {
       if (error instanceof ResponseSerializationError) {
-        reply.code(500).send({ error: 'serialization failed' });
+        reply.code(500).send({
+          code: error.code,
+          method: error.method,
+          url: error.url,
+        });
         return;
       }
       reply.send(error);
@@ -136,13 +149,22 @@ describe.each(validatingSerializers)('serializer — $name — validation errors
     const response = await app.inject({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(500);
+    expect(response.json()).toMatchObject({
+      code: 'ERR_RESPONSE_SERIALIZATION',
+      method: 'GET',
+      url: '/',
+    });
   });
 
   it('returns 500 on incorrect object response', async () => {
     const app = buildApp(compiler);
     app.setErrorHandler((error, _req, reply) => {
       if (error instanceof ResponseSerializationError) {
-        reply.code(500).send({ error: 'serialization failed' });
+        reply.code(500).send({
+          code: error.code,
+          method: error.method,
+          url: error.url,
+        });
         return;
       }
       reply.send(error);
@@ -156,6 +178,40 @@ describe.each(validatingSerializers)('serializer — $name — validation errors
     const response = await app.inject({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(500);
+    expect(response.json()).toMatchObject({
+      code: 'ERR_RESPONSE_SERIALIZATION',
+      method: 'GET',
+      url: '/',
+    });
+  });
+
+  it('returns 500 when required field is missing from response', async () => {
+    const app = buildApp(compiler);
+    app.setErrorHandler((error, _req, reply) => {
+      if (error instanceof ResponseSerializationError) {
+        reply.code(500).send({
+          code: error.code,
+          method: error.method,
+          url: error.url,
+        });
+        return;
+      }
+      reply.send(error);
+    });
+    app.get(
+      '/',
+      { schema: { response: { 200: z.object({ name: z.string(), age: z.number() }) } } },
+      () => ({ name: 'Alice' }) as unknown as { name: string; age: number },
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json()).toMatchObject({
+      code: 'ERR_RESPONSE_SERIALIZATION',
+      method: 'GET',
+      url: '/',
+    });
   });
 });
 

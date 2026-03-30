@@ -83,4 +83,12 @@ describe('hasCodecInTree', () => {
     );
     expect(hasCodecInTree(nodeSchema)).toBe(false);
   });
+
+  it('detects codec in circular schema', () => {
+    type Node = { value: Date; child?: Node };
+    const nodeSchema: z.ZodType<Node> = z.lazy(() =>
+      z.object({ value: dateCodec, child: nodeSchema.optional() }),
+    );
+    expect(hasCodecInTree(nodeSchema)).toBe(true);
+  });
 });
