@@ -1,0 +1,74 @@
+# Migrating from fastify-type-provider-zod
+
+## 1. Install
+
+```bash
+pnpm remove fastify-type-provider-zod
+pnpm add fastify-lor-zod
+```
+
+## 2. Find & replace
+
+Three mechanical renames cover most of the migration:
+
+| Find | Replace |
+|------|---------|
+| `fastify-type-provider-zod` | `fastify-lor-zod` |
+| `ZodTypeProvider` | `FastifyLorZodTypeProvider` |
+| `ZodSerializerCompilerOptions` | `SerializerCompilerOptions` |
+
+Everything else keeps the same name: `validatorCompiler`, `serializerCompiler`, `createSerializerCompiler`, `jsonSchemaTransform`, `jsonSchemaTransformObject`, `createJsonSchemaTransform`, `createJsonSchemaTransformObject`, `FastifyPluginCallbackZod`, `FastifyPluginAsyncZod`.
+
+## 3. Error handling
+
+The upstream package uses `@fastify/error` constructors with type guard functions. fastify-lor-zod uses standard ES2022+ Error classes — use `instanceof` instead.
+
+### Validation errors
+
+```diff
+- import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
++ import { RequestValidationError } from 'fastify-lor-zod';
+
+  app.setErrorHandler((error, request, reply) => {
+-   if (hasZodFastifySchemaValidationErrors(error)) {
+-     reply.code(400).send({ error: error.validation });
++   if (error instanceof RequestValidationError) {
++     reply.code(400).send({ error: error.validation });
+    }
+  });
+```
+
+`RequestValidationError` exposes:
+- `code` — `'ERR_REQUEST_VALIDATION'`
+- `validation` — `FastifySchemaValidationError[]` (same shape as upstream)
+- `context` — `'body' | 'querystring' | 'params' | 'headers' | undefined`
+
+### Serialization errors
+
+```diff
+- import { isResponseSerializationError } from 'fastify-type-provider-zod';
++ import { ResponseSerializationError } from 'fastify-lor-zod';
+
+  app.setErrorHandler((error, request, reply) => {
+-   if (isResponseSerializationError(error)) {
+-     console.error(error.cause.issues);
++   if (error instanceof ResponseSerializationError) {
++     console.error(error.zodError.issues);
+    }
+  });
+```
+
+`ResponseSerializationError` exposes:
+- `code` — `'ERR_RESPONSE_SERIALIZATION'`
+- `method` — HTTP method
+- `url` — request URL
+- `zodError` — the `ZodError` (renamed from `cause`)
+
+## 4. What you get
+
+- **19+ upstream bug fixes** — see the [Issues Addressed](README.md#issues-addressed) table
+- **Codec auto-detect** — the default serializer uses `z.safeEncode` for codec schemas and `z.safeParse` for everything else, chosen at compile time
+- **fast-json-stringify option** — `fastSerializerCompiler` for maximum throughput (no validation)
+- **`withInputSchema` control** — choose whether body `$ref`s generate separate Input components
+- **Smarter `.default()` typing** — handler return types make defaulted fields optional instead of required
+- **No `@fastify/error` dependency** — error classes are standard ES2022+ with cause chaining
