@@ -40,6 +40,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          VERSION=$(git show origin/main:package.json | grep '"version"' | sed 's/.*"\([^"]*\)".*/\1/')
+
           git merge --squash origin/main
-          git commit -m "chore: sync release into develop"
+          git commit -m "chore: sync v${VERSION} release into develop"
           git push origin develop
