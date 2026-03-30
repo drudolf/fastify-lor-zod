@@ -1,19 +1,22 @@
 # fastify-lor-zod
 
+## 0.1.3
+
+### Patch Changes
+
+- [`8de7f18`](https://github.com/drudolf/fastify-lor-zod/commit/8de7f18) Fix sync workflow to auto-resolve version conflicts when syncing releases into develop.
+
 ## 0.1.2
 
 ### Patch Changes
 
 - [`3c0e28f`](https://github.com/drudolf/fastify-lor-zod/commit/3c0e28f) Add custom changelog generator with clickable commit links, migration guide, and updated benchmark results.
 
-
 ## 0.1.1
 
 ### Patch Changes
 
 - 9723915: Add migration guide from fastify-type-provider-zod and update README stability notice for stable release.
-
-
 
 ## 0.1.0
 
