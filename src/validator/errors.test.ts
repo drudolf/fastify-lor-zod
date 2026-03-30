@@ -17,7 +17,7 @@ describe('error handling', () => {
   it('returns 400 with structured error on body validation error', async () => {
     let caughtError: unknown;
     const app = buildApp();
-    app.setErrorHandler((error, _req, reply) => {
+    app.setErrorHandler((error: Error, _req, reply) => {
       caughtError = error;
       reply.code(400).send({ statusCode: 400, error: 'Bad Request', message: error.message });
     });
