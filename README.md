@@ -4,9 +4,8 @@
 [![npm version](https://img.shields.io/npm/v/fastify-lor-zod.svg)](https://www.npmjs.com/package/fastify-lor-zod)
 [![license](https://img.shields.io/npm/l/fastify-lor-zod.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue.svg)](https://www.typescriptlang.org/)
-![beta](https://img.shields.io/badge/status-beta-orange.svg)
 
-> **Beta** -- API may change before 1.0. Feedback and issues welcome.
+> **Note** -- Pre-1.0: minor versions may include breaking changes. Pin your version and check the [changelog](CHANGELOG.md) before upgrading.
 
 A Fastify type provider for **Zod v4** with full OpenAPI support.
 
