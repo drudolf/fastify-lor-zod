@@ -91,4 +91,23 @@ describe('hasCodecInTree', () => {
     );
     expect(hasCodecInTree(nodeSchema)).toBe(true);
   });
+
+  it('returns true for map with codec value', () => {
+    expect(hasCodecInTree(z.map(z.string(), dateCodec))).toBe(true);
+  });
+
+  it('returns true for set with codec element', () => {
+    expect(hasCodecInTree(z.set(dateCodec))).toBe(true);
+  });
+
+  it('returns true for discriminatedUnion with codec variant', () => {
+    expect(
+      hasCodecInTree(
+        z.discriminatedUnion('type', [
+          z.object({ type: z.literal('a'), value: z.string() }),
+          z.object({ type: z.literal('b'), value: dateCodec }),
+        ]),
+      ),
+    ).toBe(true);
+  });
 });

@@ -60,6 +60,15 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns false for intersection without codec
 - [x] handles circular schema without stack overflow
 - [x] detects codec in circular schema
+- [x] returns true for map with codec value
+- [x] returns true for set with codec element
+- [x] returns true for discriminatedUnion with codec variant
+
+## Schema tree traversal (`schema-tree.test.ts`) — 3 tests
+
+- [x] returns cached result from WeakMap
+- [x] independent predicates do not share cache
+- [x] findInTree handles non-ZodType input gracefully
 
 ## Error Handling (`validator/errors.test.ts`) — 2 tests
 
