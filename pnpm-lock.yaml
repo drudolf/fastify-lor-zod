@@ -11,12 +11,12 @@ importers:
       '@biomejs/biome':
         specifier: 2.4.9
         version: 2.4.9
-      '@changesets/changelog-git':
-        specifier: ^0.2.1
-        version: 0.2.1
       '@changesets/cli':
         specifier: 2.30.0
         version: 2.30.0(@types/node@25.5.0)
+      '@changesets/types':
+        specifier: ^6.1.0
+        version: 6.1.0
       '@commitlint/cli':
         specifier: 20.5.0
         version: 20.5.0(@types/node@25.5.0)(conventional-commits-parser@6.3.0)(typescript@6.0.2)

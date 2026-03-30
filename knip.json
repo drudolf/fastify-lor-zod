@@ -1,4 +1,5 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
-  "entry": ["scripts/publish.ts"]
+  "entry": ["scripts/publish.ts", "scripts/changelog-commit-links.ts"],
+  "ignore": [".changeset/config.json"]
 }
