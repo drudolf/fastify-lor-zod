@@ -102,12 +102,12 @@ Serialization throughput (ops/sec, higher is better):
 
 | Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | zod-openapi |
 |----------|---------|-----------------|----------------|-------------------|-------------|
-| Simple object | 305K | 305K | **624K** | 309K | 286K |
-| Simple object + date codec | 140K | Unsupported | **213K** | Unsupported | Unsupported |
-| Nested (10 items) | 34K | 35K | **78K** | 33K | 30K |
-| Nested + money codec | 30K | Unsupported | **87K** | Unsupported | Unsupported |
-| Discriminated union | **582K** | 541K | 652K | 457K | 341K |
-| Recursive tree | 393K | 372K | **1.21M** | 412K | 464K |
+| Simple object | 278K | 287K | 610K | 291K | 271K |
+| Simple object + date codec | 142K | Unsupported | 211K | Unsupported | Unsupported |
+| Nested (10 items) | 33K | 34K | 86K | 34K | 30K |
+| Nested + money codec | 29K | Unsupported | 90K | Unsupported | Unsupported |
+| Discriminated union | 499K | 487K | 651K | 505K | 316K |
+| Recursive tree | 407K | 383K | 1.13M | 397K | 438K |
 
 For non-codec schemas, `serializerCompiler` auto-detects and matches `parseSerializerCompiler` speed. For codec schemas, it automatically uses `safeEncode`.
 
@@ -115,10 +115,10 @@ Validation throughput (all libraries are within ~5% of each other):
 
 | Scenario | lor-zod | type-provider-zod | zod-openapi |
 |----------|---------|-------------------|-------------|
-| Simple object | 366K | 384K | 386K |
-| Nested (10 items) | 57K | 55K | 57K |
-| Discriminated union | 958K | 890K | 817K |
-| Recursive tree | 758K | 724K | 722K |
+| Simple object | 386K | 360K | 366K |
+| Nested (10 items) | 57K | 57K | 58K |
+| Discriminated union | 996K | 946K | 933K |
+| Recursive tree | 819K | 805K | 758K |
 
 > Measured on Apple M-series, Node.js 24, Zod 4.3.6. Run `pnpm bench` to reproduce.
 
@@ -283,7 +283,7 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
 |-----------------|---------|-----|------------------|---------------------|---------|
-| 0.1.0           | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 6.0 (optional, for `fastSerializerCompiler`) | >= 22 |
+| 0.1.x           | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 6.0 (optional, for `fastSerializerCompiler`) | >= 22 |
 
 ## Migrating from fastify-type-provider-zod
 
