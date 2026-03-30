@@ -12,6 +12,7 @@
     "fix-serializer-type-defaults",
     "fix-transform-types",
     "idempotent-publish",
-    "initial-beta"
+    "initial-beta",
+    "openapi-ref-response-description"
   ]
 }
