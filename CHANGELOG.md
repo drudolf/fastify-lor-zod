@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.1.1
+
+### Patch Changes
+
+- 9723915: Add migration guide from fastify-type-provider-zod and update README stability notice for stable release.
+
 ## 0.1.0
 
 ### Minor Changes
