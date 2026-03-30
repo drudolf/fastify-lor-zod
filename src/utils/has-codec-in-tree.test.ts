@@ -110,14 +110,4 @@ describe('hasCodecInTree', () => {
       ),
     ).toBe(true);
   });
-
-  it('returns cached result on repeated calls', () => {
-    const schema = z.object({ d: dateCodec });
-    const first = hasCodecInTree(schema);
-    const second = hasCodecInTree(schema);
-    expect(first).toBe(true);
-    expect(second).toBe(true);
-    // Same reference, same result — cache hit (no way to observe directly,
-    // but confirms the contract holds)
-  });
 });

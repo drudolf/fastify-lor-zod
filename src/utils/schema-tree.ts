@@ -77,7 +77,7 @@ const findInTree = (
  * caching the result in a `WeakMap` for subsequent calls. Useful when the
  * same schema appears in multiple routes.
  *
- * @param predicate - Returns `true` for schema nodes that match
+ * @param predicate - Pure function that returns `true` for schema nodes that match
  * @returns A function that checks whether any node in the tree matches
  */
 export const createTreePredicate = (

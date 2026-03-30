@@ -63,7 +63,6 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns true for map with codec value
 - [x] returns true for set with codec element
 - [x] returns true for discriminatedUnion with codec variant
-- [x] returns cached result on repeated calls
 
 ## Schema tree traversal (`schema-tree.test.ts`) — 3 tests
 
