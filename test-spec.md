@@ -1,6 +1,6 @@
 # Test Specification
 
-## Request Validation (`validator/validator.test.ts`) — 9 tests
+## Request Validation (`validator/validator.test.ts`) — 10 tests
 
 - [x] Accepts valid querystring parameters
 - [x] Accepts requests on routes without schema
@@ -11,6 +11,7 @@
 - [x] Validates params (#244)
 - [x] Uses undefined as httpPart fallback when not provided
 - [x] Headers can be modified after validation (#209)
+- [x] Exposes original input on validation error
 
 ## Serialization (`serializer/serializer.test.ts`) — 25 tests
 
@@ -76,10 +77,11 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] independent predicates do not share cache
 - [x] findInTree handles non-ZodType input gracefully
 
-## Error Handling (`validator/errors.test.ts`) — 2 tests
+## Error Handling (`validator/errors.test.ts`) — 3 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
+- [x] Stores input on RequestValidationError
 
 ## Error mapping (`validator/errors.test.ts`) — 5 tests
 

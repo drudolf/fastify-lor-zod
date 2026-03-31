@@ -47,6 +47,34 @@ describe('error handling', () => {
     expect(caughtError.validation.length).toBeGreaterThan(0);
   });
 
+  it('stores input on RequestValidationError', async () => {
+    let caughtError: unknown;
+    const app = buildApp();
+    app.setErrorHandler((error, _req, reply) => {
+      caughtError = error;
+      reply.code(400).send({ statusCode: 400 });
+    });
+    app.post(
+      '/',
+      {
+        schema: {
+          body: z.object({ name: z.string() }),
+        },
+      },
+      (req) => req.body,
+    );
+
+    const payload = { name: 42 };
+    await app.inject({
+      method: 'POST',
+      url: '/',
+      payload,
+    });
+
+    assert(caughtError instanceof RequestValidationError);
+    expect(caughtError.input).toEqual(payload);
+  });
+
   it('produces empty instancePath for root-level validation errors', async () => {
     let caughtError: unknown;
     const app = buildApp();

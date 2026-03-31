@@ -19,6 +19,7 @@ import type z from 'zod';
  *       error: error.code,           // 'ERR_REQUEST_VALIDATION'
  *       issues: error.validation,    // FastifySchemaValidationError[]
  *       context: error.context,      // 'body' | 'querystring' | 'params' | 'headers'
+ *       input: error.input,          // the original data that failed validation
  *     });
  *   }
  * });
@@ -29,15 +30,18 @@ export class RequestValidationError extends Error {
   readonly code = 'ERR_REQUEST_VALIDATION' as const;
   readonly validation: FastifySchemaValidationError[];
   readonly context: string | undefined;
+  readonly input: unknown;
 
   constructor(
     issues: z.ZodError['issues'][number][],
     context: string | undefined,
+    input?: unknown,
     errorOptions?: ErrorOptions,
   ) {
     super('Request validation failed', errorOptions);
     this.validation = issues.map((issue) => mapIssueToValidationError(issue, context));
     this.context = context;
+    this.input = input;
   }
 }
 
