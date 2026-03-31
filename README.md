@@ -190,6 +190,26 @@ const usersPlugin: FastifyPluginAsyncZod = async (app) => {
 await app.register(usersPlugin);
 ```
 
+### Typed Handlers
+
+Use `RouteHandler` to define handlers in separate files while preserving Zod type inference:
+
+```ts
+import type { RouteHandler } from 'fastify-lor-zod';
+
+const schema = {
+  params: z.object({ id: z.coerce.number() }),
+  response: { 200: z.object({ name: z.string() }) },
+} as const;
+
+const getUser: RouteHandler<typeof schema> = (req) => {
+  req.params.id; // number
+  return { name: 'Alice' };
+};
+
+app.get('/users/:id', { schema }, getUser);
+```
+
 ## Error Handling
 
 Both error classes use modern ES2022+ patterns with `instanceof` support, a stable `code` property for programmatic matching, and `cause` chaining via `ErrorOptions`.
