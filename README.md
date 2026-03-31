@@ -205,6 +205,8 @@ app.setErrorHandler((error, request, reply) => {
     reply.code(400).send({
       error: 'Validation failed',
       issues: error.validation,
+      context: error.context, // 'body' | 'querystring' | 'params' | 'headers'
+      input: error.input,     // the original data that failed validation
     });
     return;
   }

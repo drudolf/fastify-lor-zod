@@ -9,7 +9,9 @@ import type z from 'zod';
  * validation errors mapped from Zod issues.
  *
  * Use `instanceof` to catch in a Fastify error handler. The `code` property
- * (`'ERR_REQUEST_VALIDATION'`) is stable for programmatic matching.
+ * (`'ERR_REQUEST_VALIDATION'`) is stable for programmatic matching. The `input`
+ * property contains the raw data that failed validation — be mindful that it may
+ * contain sensitive fields; avoid logging it in production without redaction.
  *
  * @example
  * ```ts
