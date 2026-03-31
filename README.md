@@ -124,13 +124,35 @@ Validation throughput (all libraries are within ~5% of each other):
 
 ## OpenAPI / Swagger
 
+The library provides two `@fastify/swagger` hooks: `transform` (converts Zod schemas per route) and `transformObject` (populates `components.schemas` from a registry). Which ones you need depends on whether you use a schema registry:
+
+- **Without a registry** — `transform` alone is sufficient. All schemas are inlined.
+- **With a registry** — use both. `transform` emits `$ref`s for registered schemas, `transformObject` provides the component definitions they point to.
+
+### Basic Setup (no registry)
+
 ```ts
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import {
-  jsonSchemaTransform,
-  jsonSchemaTransformObject,
-} from 'fastify-lor-zod';
+import { jsonSchemaTransform } from 'fastify-lor-zod';
+
+await app.register(swagger, {
+  openapi: {
+    openapi: '3.0.3',
+    info: { title: 'My API', version: '1.0.0' },
+  },
+  transform: jsonSchemaTransform,
+});
+
+await app.register(swaggerUi, { routePrefix: '/documentation' });
+```
+
+### With a Registry
+
+When using `z.globalRegistry` or a custom registry, add `transformObject` to populate `components.schemas` with `$ref`-based definitions:
+
+```ts
+import { jsonSchemaTransform, jsonSchemaTransformObject } from 'fastify-lor-zod';
 
 await app.register(swagger, {
   openapi: {
@@ -140,8 +162,6 @@ await app.register(swagger, {
   transform: jsonSchemaTransform,
   transformObject: jsonSchemaTransformObject,
 });
-
-await app.register(swaggerUi, { routePrefix: '/documentation' });
 ```
 
 ### OpenAPI Features
@@ -156,12 +176,11 @@ await app.register(swaggerUi, { routePrefix: '/documentation' });
 
 ### Custom Schema Registry
 
+For a custom registry (instead of `z.globalRegistry`), use the factory functions with shared options:
+
 ```ts
 import { z } from 'zod';
-import {
-  createJsonSchemaTransform,
-  createJsonSchemaTransformObject,
-} from 'fastify-lor-zod';
+import { createJsonSchemaTransforms } from 'fastify-lor-zod';
 
 const registry = z.registry<{ id: string }>();
 const UserSchema = z.object({ id: z.number(), name: z.string() });
@@ -169,8 +188,23 @@ registry.add(UserSchema, { id: 'User' });
 
 await app.register(swagger, {
   openapi: { openapi: '3.0.3', info: { title: 'My API', version: '1.0.0' } },
-  transform: createJsonSchemaTransform({ schemaRegistry: registry }),
-  transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry }),
+  ...createJsonSchemaTransforms({ schemaRegistry: registry }),
+});
+```
+
+Or call the factories individually if you only need one:
+
+```ts
+import {
+  createJsonSchemaTransform,
+  createJsonSchemaTransformObject,
+} from 'fastify-lor-zod';
+
+const opts = { schemaRegistry: registry };
+await app.register(swagger, {
+  openapi: { openapi: '3.0.3', info: { title: 'My API', version: '1.0.0' } },
+  transform: createJsonSchemaTransform(opts),
+  transformObject: createJsonSchemaTransformObject(opts),
 });
 ```
 
@@ -191,8 +225,8 @@ await app.register(swagger, {
 });
 
 // components.schemas will contain both (auto-detected):
-//   CreateUser      — output shape (role required)
-//   CreateUserInput — input shape  (role optional, with default)
+// CreateUser      — output shape (role required)
+// CreateUserInput — input shape  (role optional, with default)
 // requestBody $ref → #/components/schemas/CreateUserInput
 // response    $ref → #/components/schemas/CreateUser
 ```

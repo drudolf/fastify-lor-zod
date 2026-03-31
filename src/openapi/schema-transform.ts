@@ -146,22 +146,35 @@ const transformContentTypes = (
 /**
  * Creates a Fastify Swagger `transform` function that converts Zod schemas to OpenAPI JSON Schema.
  *
- * Processes all HTTP parts uniformly (body, querystring, params, headers, response).
- * Automatically uses `io: "input"` for request schemas and `io: "output"` for response schemas.
- * Supports nested content types in body and response, and preserves extra wrapper keys
- * like `description`.
+ * Called once per route during spec generation. Converts Zod schemas in body, querystring,
+ * params, headers, and response to JSON Schema. Automatically uses `io: "input"` for request
+ * schemas and `io: "output"` for response schemas. Supports nested content types and
+ * preserves extra wrapper keys like `description`.
  *
- * When using a schema registry, registered schemas resolve to `$ref`s. Schemas whose
- * input and output shapes diverge (e.g. due to defaults, transforms, or codecs)
- * automatically get `{Id}Input` variants in `components.schemas`.
+ * Can be used standalone or paired with {@link createJsonSchemaTransformObject}:
+ *
+ * - **Without a registry**: works fully standalone — all schemas are inlined.
+ * - **With a registry**: registered schemas emit `$ref`s pointing to `components.schemas`.
+ *   Pair with {@link createJsonSchemaTransformObject} to populate those component definitions,
+ *   or use {@link createJsonSchemaTransforms} for a single-call setup.
  *
  * @param opts - Optional configuration (skip list, registry, JSON config)
+ * @param divergentIds - Pre-computed set of schema IDs whose input/output shapes diverge.
+ *   When omitted, resolved automatically from the registry on first invocation.
  * @returns A `transform` function compatible with `@fastify/swagger`
  *
  * @example
  * ```ts
+ * // Standalone (no registry)
  * app.register(swagger, {
- *   ...createJsonSchemaTransforms({ schemaRegistry: myRegistry }),
+ *   transform: createJsonSchemaTransform(),
+ * });
+ *
+ * // With registry — pair with transformObject
+ * const opts = { schemaRegistry: myRegistry };
+ * app.register(swagger, {
+ *   transform: createJsonSchemaTransform(opts),
+ *   transformObject: createJsonSchemaTransformObject(opts),
  * });
  * ```
  */
@@ -286,19 +299,26 @@ export const createJsonSchemaTransform = (
  * Creates a Fastify Swagger `transformObject` function that resolves Zod registry schemas
  * into OpenAPI `$ref`-based `components.schemas`.
  *
- * Iterates over all schemas in the registry, converts each to JSON Schema via
- * `zodSchemaToJson`, and merges them into the OpenAPI document's components.
- *
+ * Called once after all routes are processed. Iterates over all schemas in the registry,
+ * converts each to JSON Schema, and merges them into the OpenAPI document's components.
  * Schemas whose input and output shapes diverge (e.g. due to defaults, transforms, or codecs)
- * automatically get `{Id}Input` variants in `components.schemas`.
+ * automatically get `{Id}Input` variants.
+ *
+ * Only useful when using a schema registry — without one, there are no components to populate.
+ * Pair with {@link createJsonSchemaTransform} to convert route-level Zod schemas to JSON Schema,
+ * or use {@link createJsonSchemaTransforms} for a single-call setup.
  *
  * @param opts - Optional configuration (registry, JSON config)
+ * @param divergentIds - Pre-computed set of schema IDs whose input/output shapes diverge.
+ *   When omitted, resolved automatically from the registry.
  * @returns A `transformObject` function compatible with `@fastify/swagger`
  *
  * @example
  * ```ts
+ * const opts = { schemaRegistry: myRegistry };
  * app.register(swagger, {
- *   ...createJsonSchemaTransforms({ schemaRegistry: myRegistry }),
+ *   transform: createJsonSchemaTransform(opts),
+ *   transformObject: createJsonSchemaTransformObject(opts),
  * });
  * ```
  */
@@ -360,10 +380,17 @@ export const createJsonSchemaTransformObject = (
 };
 
 /**
- * Creates both `transform` and `transformObject` functions with shared auto-detection state.
+ * Convenience wrapper that creates both `transform` and `transformObject` from a single
+ * options object.
  *
- * This is the recommended API — it ensures both functions use the same divergent schema set,
- * and eliminates the need to pass options twice.
+ * Pre-computes the divergent schema set once and shares it between both functions, avoiding
+ * a redundant registry scan. Functionally equivalent to calling {@link createJsonSchemaTransform}
+ * and {@link createJsonSchemaTransformObject} separately — each resolves divergent IDs on its
+ * own when not provided.
+ *
+ * Use this when you need both transforms (i.e. you're using a schema registry). If you only
+ * need route-level conversion without a registry, {@link createJsonSchemaTransform} alone is
+ * sufficient.
  *
  * @param opts - Optional configuration (skip list, registry, JSON config)
  * @returns An object with `transform` and `transformObject` — spread directly into `swagger()` options
@@ -393,15 +420,17 @@ export const createJsonSchemaTransforms = (
 /**
  * Pre-configured JSON Schema transform for `@fastify/swagger`.
  *
- * Uses `z.globalRegistry` and default settings. For custom configuration,
- * use {@link createJsonSchemaTransforms} instead.
+ * Uses `z.globalRegistry` and default settings. Works standalone for projects without
+ * a custom registry. For custom configuration, use {@link createJsonSchemaTransform}
+ * or {@link createJsonSchemaTransforms}.
  */
 export const jsonSchemaTransform: SwaggerTransform<Schema> = createJsonSchemaTransform();
 
 /**
  * Pre-configured JSON Schema transform object for `@fastify/swagger`.
  *
- * Uses `z.globalRegistry` and default settings. For custom configuration,
- * use {@link createJsonSchemaTransforms} instead.
+ * Uses `z.globalRegistry` and default settings. Pair with {@link jsonSchemaTransform}
+ * when using `z.globalRegistry` for `$ref`-based component definitions. For custom
+ * configuration, use {@link createJsonSchemaTransformObject} or {@link createJsonSchemaTransforms}.
  */
 export const jsonSchemaTransformObject: SwaggerTransformObject = createJsonSchemaTransformObject();
