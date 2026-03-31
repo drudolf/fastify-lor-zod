@@ -16,7 +16,6 @@ try {
 
 const isPreRelease = /-(beta|alpha|rc)/.test(version);
 
-execSync(
-  `pnpm publish${isPreRelease ? ' --tag beta' : ''} --access public --no-git-checks --provenance`,
-  { stdio: 'inherit' },
-);
+execSync(`npm publish${isPreRelease ? ' --tag beta' : ''} --access public --provenance`, {
+  stdio: 'inherit',
+});
