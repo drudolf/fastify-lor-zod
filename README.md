@@ -176,11 +176,9 @@ await app.register(swagger, {
 
 ### Input/Output Schema Variants
 
-Zod schemas used as request bodies are processed with `io: "input"`, while response schemas use `io: "output"`. For most schemas these are identical, but schemas with transforms or defaults can produce different input and output shapes.
+Zod schemas used as request bodies are processed with `io: "input"`, while response schemas use `io: "output"`. For most schemas these are identical, but schemas with transforms, codecs, or defaults can produce different input and output shapes.
 
-By default (`withInputSchema: false`), body `$ref`s always use the output schema name — the spec is always valid and components are not duplicated. This is the right choice for the majority of APIs.
-
-Set `withInputSchema: true` on both `createJsonSchemaTransform` and `createJsonSchemaTransformObject` when you need the spec to accurately document the input shape separately from the output shape:
+Input variants are **auto-detected** — when a registered schema's input and output JSON Schema representations differ, an `{Id}Input` component is automatically generated alongside the output variant. No configuration needed.
 
 ```ts
 // CreateUserSchema has role: z.string().default('user')
@@ -189,18 +187,15 @@ registry.add(CreateUserSchema, { id: 'CreateUser' });
 
 await app.register(swagger, {
   openapi: { openapi: '3.0.3', info: { title: 'My API', version: '1.0.0' } },
-  transform: createJsonSchemaTransform({ schemaRegistry: registry, withInputSchema: true }),
-  transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry, withInputSchema: true }),
+  ...createJsonSchemaTransforms({ schemaRegistry: registry }),
 });
 
-// components.schemas will contain both:
+// components.schemas will contain both (auto-detected):
 //   CreateUser      — output shape (role required)
 //   CreateUserInput — input shape  (role optional, with default)
 // requestBody $ref → #/components/schemas/CreateUserInput
 // response    $ref → #/components/schemas/CreateUser
 ```
-
-Both options must be set consistently — mixing them will produce either orphaned components or broken `$ref`s.
 
 ## Typed Plugins
 

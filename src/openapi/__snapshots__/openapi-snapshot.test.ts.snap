@@ -960,7 +960,7 @@ exports[`transformer > should generate referenced input and output schemas corre
               "schema": {
                 "properties": {
                   "user": {
-                    "$ref": "#/components/schemas/User",
+                    "$ref": "#/components/schemas/UserInput",
                   },
                 },
                 "required": [
@@ -1050,7 +1050,7 @@ exports[`transformer > should generate referenced input and output schemas corre
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/User",
+                "$ref": "#/components/schemas/UserInput",
               },
             },
           },

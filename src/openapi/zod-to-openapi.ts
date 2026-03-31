@@ -3,7 +3,7 @@ import type { z } from 'zod';
 import type { JSONSchema } from 'zod/v4/core';
 import { $ZodRegistry, $ZodType, toJSONSchema } from 'zod/v4/core';
 
-type OASVersion = '3.0' | '3.1';
+export type OASVersion = '3.0' | '3.1';
 
 type JSONSchemaRecord = Record<string, unknown>;
 
@@ -38,11 +38,19 @@ const getZodDef = (entity: unknown): ZodDef | undefined =>
 
 // --- Zod-to-JSON helpers ---
 
-const getSchemaId = (id: string, io: 'input' | 'output', withInputSchema: boolean): string =>
-  io === 'input' && withInputSchema ? `${id}Input` : id;
+const EMPTY_SET: ReadonlySet<string> = new Set();
 
-const getReferenceUri = (id: string, io: 'input' | 'output', withInputSchema: boolean): string =>
-  `#/components/schemas/${getSchemaId(id, io, withInputSchema)}`;
+const getSchemaId = (
+  id: string,
+  io: 'input' | 'output',
+  inputSchemaIds: ReadonlySet<string>,
+): string => (io === 'input' && inputSchemaIds.has(id) ? `${id}Input` : id);
+
+const getReferenceUri = (
+  id: string,
+  io: 'input' | 'output',
+  inputSchemaIds: ReadonlySet<string>,
+): string => `#/components/schemas/${getSchemaId(id, io, inputSchemaIds)}`;
 
 /**
  * Returns the internal `id → schema` map from a Zod registry.
@@ -142,9 +150,9 @@ const PARAM_PARTS = new Set(['querystring', 'params', 'headers']);
  * @param oasVersion - Target OAS version
  * @param config - Optional configuration
  * @param httpPart - The HTTP part being converted (body, querystring, params, headers)
- * @param withInputSchema - When `true`, `$ref`s for input schemas use the `{Id}Input` naming
- *   convention. When `false` (default), all `$ref`s use the output schema name regardless of `io`,
- *   ensuring they always point to a component that exists in `components.schemas`.
+ * @param inputSchemaIds - Set of registered schema IDs that have divergent input shapes.
+ *   When a `$ref` is generated for an input schema whose ID is in this set, the `{Id}Input`
+ *   naming convention is used. Empty set (default) means all `$ref`s use the output name.
  * @returns JSON Schema object
  */
 export const zodSchemaToJson = (
@@ -154,7 +162,7 @@ export const zodSchemaToJson = (
   oasVersion: OASVersion,
   config: ZodToJsonConfig = {},
   httpPart?: string,
-  withInputSchema = false,
+  inputSchemaIds: ReadonlySet<string> = EMPTY_SET,
 ): JSONSchemaRecord => {
   if (!isZodInternal(zodSchema)) {
     throw new Error(
@@ -171,7 +179,7 @@ export const zodSchemaToJson = (
   // Registered schemas return $ref directly — except for querystring/params/headers
   // where @fastify/swagger needs inlined properties to generate individual parameters
   if (schemaId && (!httpPart || !PARAM_PARTS.has(httpPart))) {
-    return { $ref: getReferenceUri(schemaId, io, withInputSchema) };
+    return { $ref: getReferenceUri(schemaId, io, inputSchemaIds) };
   }
 
   // Build an external registry containing only explicitly-registered schemas (those with
@@ -200,7 +208,7 @@ export const zodSchemaToJson = (
       registry: externalRegistry,
       uri: (id: string) => {
         if (id === '__target__' || id === '__shared') return '';
-        return getReferenceUri(id, io, withInputSchema);
+        return getReferenceUri(id, io, inputSchemaIds);
       },
       defs,
     },
