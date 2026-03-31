@@ -196,4 +196,12 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 136 tests across 10 test files**
+## isObject (`utils/isObject.test.ts`) — 5 tests
+
+- [x] returns true for plain object
+- [x] returns false for null
+- [x] returns false for array
+- [x] returns false for primitives
+- [x] narrows type to Record<string, unknown>
+
+**Total: 141 tests across 11 test files**
