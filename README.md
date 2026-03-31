@@ -79,7 +79,7 @@ app.listen({ port: 3000 });
 Three strategies for different trade-offs:
 
 | Compiler | Validates | Codecs | Speed | Use when |
-|----------|-----------|--------|-------|----------|
+| -------- | --------- | ------ | ----- | -------- |
 | `serializerCompiler` | Yes | Auto-detect | Fastest validating | **Recommended default** -- uses `safeParse` for plain schemas, `safeEncode` only when codecs are present |
 | `parseSerializerCompiler` | Yes | No | Same as above | Explicit opt-in to always use `safeParse` |
 | `fastSerializerCompiler` | No | No | Fastest overall | You trust your handlers and want maximum throughput |
@@ -101,7 +101,7 @@ app.setSerializerCompiler(serializerCompiler);
 Serialization throughput (ops/sec, higher is better):
 
 | Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | zod-openapi |
-|----------|---------|-----------------|----------------|-------------------|-------------|
+| -------- | ------- | --------------- | -------------- | ----------------- | ----------- |
 | Simple object | 278K | 287K | 610K | 291K | 271K |
 | Simple object + date codec | 142K | Unsupported | 211K | Unsupported | Unsupported |
 | Nested (10 items) | 33K | 34K | 86K | 34K | 30K |
@@ -114,7 +114,7 @@ For non-codec schemas, `serializerCompiler` auto-detects and matches `parseSeria
 Validation throughput (all libraries are within ~5% of each other):
 
 | Scenario | lor-zod | type-provider-zod | zod-openapi |
-|----------|---------|-------------------|-------------|
+| -------- | ------- | ----------------- | ----------- |
 | Simple object | 386K | 360K | 366K |
 | Nested (10 items) | 57K | 57K | 58K |
 | Discriminated union | 996K | 946K | 933K |
@@ -124,34 +124,11 @@ Validation throughput (all libraries are within ~5% of each other):
 
 ## OpenAPI / Swagger
 
-The library provides two `@fastify/swagger` hooks: `transform` (converts Zod schemas per route) and `transformObject` (populates `components.schemas` from a registry). Which ones you need depends on whether you use a schema registry:
-
-- **No registered schemas** — `transform` alone is sufficient. All schemas are inlined.
-- **With registered schemas** (via `z.globalRegistry` or a custom registry) — use both. `transform` emits `$ref`s for registered schemas, `transformObject` provides the component definitions they point to.
-
-### Basic Setup (no registry)
+Integrate with `@fastify/swagger` for automatic OpenAPI spec generation. `transform` converts Zod schemas per route, `transformObject` populates `components.schemas` from a registry (safe to include even without one):
 
 ```ts
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { jsonSchemaTransform } from 'fastify-lor-zod';
-
-await app.register(swagger, {
-  openapi: {
-    openapi: '3.0.3',
-    info: { title: 'My API', version: '1.0.0' },
-  },
-  transform: jsonSchemaTransform,
-});
-
-await app.register(swaggerUi, { routePrefix: '/documentation' });
-```
-
-### With a Registry
-
-When using `z.globalRegistry` or a custom registry, add `transformObject` to populate `components.schemas` with `$ref`-based definitions:
-
-```ts
 import { jsonSchemaTransform, jsonSchemaTransformObject } from 'fastify-lor-zod';
 
 await app.register(swagger, {
@@ -162,21 +139,20 @@ await app.register(swagger, {
   transform: jsonSchemaTransform,
   transformObject: jsonSchemaTransformObject,
 });
-```
 
-### OpenAPI Features
+await app.register(swaggerUi, { routePrefix: '/documentation' });
+```
 
 - OAS 3.0 and 3.1 support
 - Automatic `io: "input"` for request schemas, `io: "output"` for response schemas
-- `z.registry()` and `z.globalRegistry` resolve to `$ref` components
 - Nullable types, discriminated unions, recursive schemas handled correctly
-- Nested content types in body and response (`application/json`, `multipart/form-data`, etc.)
+- Nested content types (`application/json`, `multipart/form-data`, etc.)
 - Response `description` preserved from wrapper objects
 - `zodToJsonConfig` passthrough for custom `z.toJSONSchema()` options
 
-### Custom Schema Registry
+### Schema Registry
 
-For a custom registry (instead of `z.globalRegistry`), use the factory functions with shared options:
+Register schemas with `z.globalRegistry` or a custom registry to generate `$ref`-based `components.schemas`:
 
 ```ts
 import { z } from 'zod';
@@ -192,44 +168,7 @@ await app.register(swagger, {
 });
 ```
 
-The individual factories are also available — useful when you need different options per function or want to pass pre-computed `divergentIds`:
-
-```ts
-import {
-  createJsonSchemaTransform,
-  createJsonSchemaTransformObject,
-} from 'fastify-lor-zod';
-
-const opts = { schemaRegistry: registry };
-await app.register(swagger, {
-  openapi: { openapi: '3.0.3', info: { title: 'My API', version: '1.0.0' } },
-  transform: createJsonSchemaTransform(opts),
-  transformObject: createJsonSchemaTransformObject(opts),
-});
-```
-
-### Input/Output Schema Variants
-
-Zod schemas used as request bodies are processed with `io: "input"`, while response schemas use `io: "output"`. For most schemas these are identical, but schemas with transforms, codecs, or defaults can produce different input and output shapes.
-
-Input variants are **auto-detected** — when a registered schema's input and output JSON Schema representations differ, an `{Id}Input` component is automatically generated alongside the output variant. No configuration needed.
-
-```ts
-// CreateUserSchema has role: z.string().default('user')
-// Input shape: role is optional. Output shape: role is always present.
-registry.add(CreateUserSchema, { id: 'CreateUser' });
-
-await app.register(swagger, {
-  openapi: { openapi: '3.0.3', info: { title: 'My API', version: '1.0.0' } },
-  ...createJsonSchemaTransforms({ schemaRegistry: registry }),
-});
-
-// components.schemas will contain both (auto-detected):
-// CreateUser      — output shape (role required)
-// CreateUserInput — input shape  (role optional, with default)
-// requestBody $ref → #/components/schemas/CreateUserInput
-// response    $ref → #/components/schemas/CreateUser
-```
+Schemas whose input and output shapes diverge (e.g. due to `.default()`, transforms, or codecs) automatically get `{Id}Input` variants in `components.schemas`. No configuration needed.
 
 ## Typed Plugins
 
@@ -311,7 +250,7 @@ app.get(
 ## Compatibility
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
-|-----------------|---------|-----|------------------|---------------------|---------|
+| --------------- | ------- | --- | ---------------- | ------------------- | ------- |
 | 0.1.x           | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 24 |
 
 ## Migrating from fastify-type-provider-zod
@@ -323,7 +262,7 @@ See [MIGRATION.md](MIGRATION.md) for a step-by-step guide.
 Fixes issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
 
 | Issue | Description |
-|-------|-------------|
+| ----- | ----------- |
 | [#244](https://github.com/turkerdev/fastify-type-provider-zod/issues/244) | params/querystring missing from OpenAPI |
 | [#233](https://github.com/turkerdev/fastify-type-provider-zod/issues/233) | Cannot tweak `toJSONSchema` options |
 | [#214](https://github.com/turkerdev/fastify-type-provider-zod/issues/214) | Input schema variants leak into components |
@@ -352,7 +291,7 @@ pnpm install
 ```
 
 | Command | Description |
-|---------|-------------|
+| ------- | ----------- |
 | `pnpm test` | Run tests |
 | `pnpm test:coverage` | Run tests with 100% coverage enforcement |
 | `pnpm check` | Lint + format (Biome) |
