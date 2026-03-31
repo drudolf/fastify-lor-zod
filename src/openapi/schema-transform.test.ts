@@ -9,6 +9,7 @@ import { validatorCompiler } from '../validator/validator.js';
 import {
   createJsonSchemaTransform,
   createJsonSchemaTransformObject,
+  createJsonSchemaTransforms,
   jsonSchemaTransform,
   jsonSchemaTransformObject,
 } from './schema-transform.js';
@@ -1268,6 +1269,108 @@ describe('schema-transform', () => {
       ]);
 
       expect(textSchema).toMatchObject({ type: 'string' });
+    });
+  });
+
+  describe('createJsonSchemaTransforms', () => {
+    it('auto-detects divergent schemas and generates Input variants', async () => {
+      const schemaRegistry = z.registry<{ id: string }>();
+      const UserSchema = z.object({ name: z.string(), role: z.string().default('user') });
+      const ItemSchema = z.object({ id: z.number(), title: z.string() });
+      schemaRegistry.add(UserSchema, { id: 'User' });
+      schemaRegistry.add(ItemSchema, { id: 'Item' });
+
+      const app = Fastify();
+      app.setValidatorCompiler(validatorCompiler);
+      app.setSerializerCompiler(serializerCompiler);
+
+      await app.register(swagger, {
+        openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
+        ...createJsonSchemaTransforms({ schemaRegistry }),
+      });
+
+      app.withTypeProvider<FastifyLorZodTypeProvider>().post(
+        '/users',
+        {
+          schema: {
+            body: UserSchema,
+            response: { 200: ItemSchema },
+          },
+        },
+        (_req, reply) => {
+          reply.send({ id: 1, title: 'Widget' });
+        },
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      // User has .default() → divergent → UserInput exists
+      expect(get(spec, ['components', 'schemas', 'User'])).toBeDefined();
+      expect(get(spec, ['components', 'schemas', 'UserInput'])).toBeDefined();
+
+      // Item has no divergence → no ItemInput
+      expect(get(spec, ['components', 'schemas', 'Item'])).toBeDefined();
+      expect(get(spec, ['components', 'schemas', 'ItemInput'])).toBeUndefined();
+
+      // Body ref uses Input variant
+      expect(
+        get(spec, [
+          'paths',
+          '/users',
+          'post',
+          'requestBody',
+          'content',
+          'application/json',
+          'schema',
+        ]),
+      ).toMatchObject({ $ref: '#/components/schemas/UserInput' });
+
+      // Response ref uses output variant
+      expect(
+        get(spec, [
+          'paths',
+          '/users',
+          'post',
+          'responses',
+          '200',
+          'content',
+          'application/json',
+          'schema',
+        ]),
+      ).toMatchObject({ $ref: '#/components/schemas/Item' });
+    });
+
+    it('withInputSchema: false suppresses all Input variants', async () => {
+      const schemaRegistry = z.registry<{ id: string }>();
+      const UserSchema = z.object({ name: z.string(), role: z.string().default('user') });
+      schemaRegistry.add(UserSchema, { id: 'User' });
+
+      const app = Fastify();
+      app.setValidatorCompiler(validatorCompiler);
+      app.setSerializerCompiler(serializerCompiler);
+
+      await app.register(swagger, {
+        openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
+        ...createJsonSchemaTransforms({ schemaRegistry, withInputSchema: false }),
+      });
+
+      app
+        .withTypeProvider<FastifyLorZodTypeProvider>()
+        .post(
+          '/users',
+          { schema: { body: UserSchema, response: { 200: UserSchema } } },
+          (_req, reply) => {
+            reply.send({ name: 'Alice', role: 'user' });
+          },
+        );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      // withInputSchema: false → no Input variant even though schema diverges
+      expect(get(spec, ['components', 'schemas', 'User'])).toBeDefined();
+      expect(get(spec, ['components', 'schemas', 'UserInput'])).toBeUndefined();
     });
   });
 });

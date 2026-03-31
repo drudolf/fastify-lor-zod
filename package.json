@@ -1,6 +1,6 @@
 {
   "name": "fastify-lor-zod",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A Fastify type provider integrating Zod for schema validation and type-safe route definitions",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
@@ -65,7 +65,7 @@
     "fastify-type-provider-zod": "6.1.0",
     "fastify-zod-openapi": "5.6.0",
     "husky": "9.1.7",
-    "knip": "6.1.0",
+    "knip": "6.1.1",
     "lint-staged": "16.4.0",
     "lodash-es": "4.17.23",
     "openapi-types": "12.1.3",
