@@ -153,8 +153,8 @@ const transformContentTypes = (
  *
  * Can be used standalone or paired with {@link createJsonSchemaTransformObject}:
  *
- * - **Without a registry**: works fully standalone — all schemas are inlined.
- * - **With a registry**: registered schemas emit `$ref`s pointing to `components.schemas`.
+ * - **No registered schemas**: works fully standalone — all schemas are inlined.
+ * - **With registered schemas**: registered schemas emit `$ref`s pointing to `components.schemas`.
  *   Pair with {@link createJsonSchemaTransformObject} to populate those component definitions,
  *   or use {@link createJsonSchemaTransforms} for a single-call setup.
  *

@@ -126,8 +126,8 @@ Validation throughput (all libraries are within ~5% of each other):
 
 The library provides two `@fastify/swagger` hooks: `transform` (converts Zod schemas per route) and `transformObject` (populates `components.schemas` from a registry). Which ones you need depends on whether you use a schema registry:
 
-- **Without a registry** — `transform` alone is sufficient. All schemas are inlined.
-- **With a registry** — use both. `transform` emits `$ref`s for registered schemas, `transformObject` provides the component definitions they point to.
+- **No registered schemas** — `transform` alone is sufficient. All schemas are inlined.
+- **With registered schemas** (via `z.globalRegistry` or a custom registry) — use both. `transform` emits `$ref`s for registered schemas, `transformObject` provides the component definitions they point to.
 
 ### Basic Setup (no registry)
 
@@ -192,7 +192,7 @@ await app.register(swagger, {
 });
 ```
 
-Or call the factories individually if you only need one:
+The individual factories are also available — useful when you need different options per function or want to pass pre-computed `divergentIds`:
 
 ```ts
 import {
