@@ -326,13 +326,18 @@ describe('RouteHandler', () => {
 
     const schema = {
       params: z.object({ id: z.coerce.number() }),
+      querystring: z.object({ fields: z.string().optional() }),
+      headers: z.object({ 'x-api-key': z.string() }).loose(),
       body: z.object({ name: z.string() }),
       response: { 200: z.object({ id: z.number(), name: z.string() }) },
     } as const;
 
-    const handler: RouteHandler<typeof schema> = (req) => {
+    const handler: RouteHandler<typeof schema> = (req, reply) => {
       expectTypeOf(req.params).toEqualTypeOf<{ id: number }>();
+      expectTypeOf(req.query).toEqualTypeOf<{ fields?: string | undefined }>();
+      expectTypeOf(req.headers['x-api-key']).toBeString();
       expectTypeOf(req.body).toEqualTypeOf<{ name: string }>();
+      expectTypeOf(reply.send).parameter(0).toExtend<{ id: number; name: string } | undefined>();
       return { id: req.params.id, name: req.body.name };
     };
 
@@ -340,7 +345,8 @@ describe('RouteHandler', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/users/42',
+      url: '/users/42?fields=name',
+      headers: { 'x-api-key': 'secret' },
       payload: { name: 'Alice' },
     });
 
