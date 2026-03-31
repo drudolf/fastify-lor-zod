@@ -1,6 +1,7 @@
 export {
   createJsonSchemaTransform,
   createJsonSchemaTransformObject,
+  createJsonSchemaTransforms,
   jsonSchemaTransform,
   jsonSchemaTransformObject,
   type SchemaTransformOptions,

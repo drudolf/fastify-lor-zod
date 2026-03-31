@@ -72,7 +72,7 @@
       "!**/dist",
       "!**/node_modules",
       "!**/coverage",
-      "!**/.claude",
+      "!.claude",
       "!bench/results.json"
     ]
   }

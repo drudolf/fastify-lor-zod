@@ -19,6 +19,8 @@ Three mechanical renames cover most of the migration:
 
 Everything else keeps the same name: `validatorCompiler`, `serializerCompiler`, `createSerializerCompiler`, `jsonSchemaTransform`, `jsonSchemaTransformObject`, `createJsonSchemaTransform`, `createJsonSchemaTransformObject`, `FastifyPluginCallbackZod`, `FastifyPluginAsyncZod`.
 
+> **New:** `createJsonSchemaTransforms` (plural) is a convenience wrapper that returns both `transform` and `transformObject` in one call — handy when using a custom registry. If you don't use a registry, `jsonSchemaTransform` alone is sufficient (no need for `transformObject`).
+
 ## 3. Error handling
 
 The upstream package uses `@fastify/error` constructors with type guard functions. fastify-lor-zod uses standard ES2022+ Error classes — use `instanceof` instead.

@@ -40,11 +40,11 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] serializer uses encode for codec schemas
 - [x] Custom serializer replacer modifies JSON.stringify output
 
-## Auto-detect codec (`has-codec-in-tree.test.ts`) — 15 tests
+## Schema divergence detection (`utils/schema-diverges.test.ts`) — 27 tests
 
 - [x] returns false for plain object schema
-- [x] returns true for schema with transform (pipe in Zod v4)
-- [x] returns false for lazy schema without codec
+- [x] returns true for schema with transform
+- [x] returns false for lazy schema without divergence
 - [x] returns true for object with codec field
 - [x] returns true for array of codec elements
 - [x] returns true for optional codec
@@ -54,15 +54,21 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns true for tuple with codec element
 - [x] returns true for record with codec value
 - [x] returns true for lazy schema with codec
-- [x] returns false for enum schema (options are primitives, not schemas)
-- [x] returns false for non-ZodType input
+- [x] returns false for enum schema
 - [x] returns true for intersection with codec side
-- [x] returns false for intersection without codec
-- [x] handles circular schema without stack overflow
-- [x] detects codec in circular schema
-- [x] returns true for map with codec value
-- [x] returns true for set with codec element
+- [x] returns false for intersection without divergence
+- [x] returns false for map with codec value (unrepresentable in JSON Schema)
+- [x] returns false for set with codec element (unrepresentable in JSON Schema)
 - [x] returns true for discriminatedUnion with codec variant
+- [x] returns false for plain pipe without transform
+- [x] returns false for preprocess
+- [x] returns true for object with default field
+- [x] returns true for nested object with default
+- [x] returns true for optional with default
+- [x] returns false for nullable without default
+- [x] returns false for optional without default
+- [x] returns false for plain string
+- [x] returns false for array of plain objects
 
 ## Schema tree traversal (`schema-tree.test.ts`) — 3 tests
 
@@ -137,6 +143,11 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] empty string description ignored for registered schema response
 - [x] body content type wrappers supported (#132)
 
+### createJsonSchemaTransforms — 2 tests
+
+- [x] auto-detects divergent schemas and generates Input variants
+- [x] withInputSchema: false suppresses all Input variants
+
 ## OpenAPI Snapshot (`openapi/openapi-snapshot.test.ts`) — 14 tests
 
 Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify-swagger.spec.ts.snap`.
@@ -204,4 +215,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] returns false for primitives
 - [x] narrows type to Record<string, unknown>
 
-**Total: 141 tests across 11 test files**
+**Total: 148 tests across 11 test files**

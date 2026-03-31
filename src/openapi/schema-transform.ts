@@ -3,10 +3,12 @@ import type { FastifySchema } from 'fastify';
 import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 import { z } from 'zod';
 
+import { schemaDiverges } from '../utils/schema-diverges.js';
 import {
   getOASVersion,
   getRegistryIdMap,
   jsonSchemaToOAS,
+  type OASVersion,
   type ZodToJsonConfig,
   zodSchemaToJson,
 } from './zod-to-openapi.js';
@@ -27,13 +29,13 @@ export interface SchemaTransformOptions {
   /**
    * Controls how request body `$ref`s and `components.schemas` Input variants are generated.
    *
-   * - `false` (default): body `$ref`s use the output schema name (e.g. `#/components/schemas/User`).
-   *   No `{Id}Input` variants are added to `components.schemas`. The spec is always valid.
-   * - `true`: body `$ref`s use `{Id}Input` (e.g. `#/components/schemas/UserInput`), and both
-   *   the output (`{Id}`) and input (`{Id}Input`) variants are added to `components.schemas`.
-   *   Useful when a schema has transforms or defaults that make its input and output shapes differ.
+   * @deprecated No longer needed — input schema variants are now auto-detected by comparing
+   * each registered schema's input and output JSON Schema representations. Schemas with
+   * transforms, codecs, or defaults that cause divergence automatically get `{Id}Input` variants.
    *
-   * Must be set consistently on both `createJsonSchemaTransform` and `createJsonSchemaTransformObject`.
+   * - `undefined` (default): auto-detect — only divergent schemas get Input variants.
+   * - `true`: force Input variants for **all** registered schemas (legacy behavior).
+   * - `false`: suppress all Input variants.
    */
   withInputSchema?: boolean;
   /** Configuration for Zod-to-JSON Schema conversion (e.g. custom `target` or `override`). */
@@ -76,13 +78,39 @@ const isContentTypeWrapper = (value: unknown): boolean =>
   'content' in value &&
   typeof (value as Record<string, unknown>).content === 'object';
 
+const EMPTY_SET: ReadonlySet<string> = new Set();
+
+/**
+ * Builds the set of registered schema IDs whose input/output shapes diverge.
+ *
+ * - `withInputSchema === true`: returns all registry IDs (legacy: generate Input for everything)
+ * - `withInputSchema === false`: returns empty set (suppress all Input variants)
+ * - `withInputSchema === undefined`: auto-detect via JSON schema comparison
+ */
+const resolveDivergentIds = (
+  schemaRegistry: typeof z.globalRegistry,
+  withInputSchema: boolean | undefined,
+): ReadonlySet<string> => {
+  const idmap = getRegistryIdMap(schemaRegistry);
+
+  if (withInputSchema === true) return new Set(idmap.keys());
+  if (withInputSchema === false) return EMPTY_SET;
+
+  // Auto-detect: compare input vs output JSON schemas
+  const ids = new Set<string>();
+  for (const [id, schema] of idmap) {
+    if (schemaDiverges(schema)) ids.add(id);
+  }
+  return ids;
+};
+
 const transformContentTypes = (
   wrapper: Record<string, unknown>,
   schemaRegistry: typeof z.globalRegistry,
   io: 'input' | 'output',
-  oasVersion: '3.0' | '3.1',
+  oasVersion: OASVersion,
   zodToJsonConfig: ZodToJsonConfig,
-  withInputSchema = false,
+  inputSchemaIds: ReadonlySet<string> = EMPTY_SET,
 ): Record<string, unknown> => {
   const content = wrapper.content as Record<string, unknown>;
   const transformedContent: Record<string, unknown> = {};
@@ -98,7 +126,7 @@ const transformContentTypes = (
           oasVersion,
           zodToJsonConfig,
           undefined,
-          withInputSchema,
+          inputSchemaIds,
         );
         transformedContent[mimeType] = {
           ...(mimeEntry as Record<string, unknown>),
@@ -118,39 +146,50 @@ const transformContentTypes = (
 /**
  * Creates a Fastify Swagger `transform` function that converts Zod schemas to OpenAPI JSON Schema.
  *
- * Processes all HTTP parts uniformly (body, querystring, params, headers, response).
- * Automatically uses `io: "input"` for request schemas and `io: "output"` for response schemas.
- * Supports nested content types in body and response, and preserves extra wrapper keys
- * like `description`.
+ * Called once per route during spec generation. Converts Zod schemas in body, querystring,
+ * params, headers, and response to JSON Schema. Automatically uses `io: "input"` for request
+ * schemas and `io: "output"` for response schemas. Supports nested content types and
+ * preserves extra wrapper keys like `description`.
  *
- * When using a schema registry, registered schemas resolve to `$ref`s. By default
- * (`withInputSchema: false`), body `$ref`s use the output schema name so they always point
- * to a component that exists. Set `withInputSchema: true` (on both this and
- * `createJsonSchemaTransformObject`) to generate `{Id}Input` body refs alongside explicit
- * Input variants in `components.schemas`.
+ * Can be used standalone or paired with {@link createJsonSchemaTransformObject}:
  *
- * @param opts - Optional configuration (skip list, registry, withInputSchema, JSON config)
+ * - **No registered schemas**: works fully standalone — all schemas are inlined.
+ * - **With registered schemas**: registered schemas emit `$ref`s pointing to `components.schemas`.
+ *   Pair with {@link createJsonSchemaTransformObject} to populate those component definitions,
+ *   or use {@link createJsonSchemaTransforms} for a single-call setup.
+ *
+ * @param opts - Optional configuration (skip list, registry, JSON config)
+ * @param divergentIds - Pre-computed set of schema IDs whose input/output shapes diverge.
+ *   When omitted, resolved automatically from the registry on first invocation.
  * @returns A `transform` function compatible with `@fastify/swagger`
  *
  * @example
  * ```ts
+ * // Standalone (no registry)
  * app.register(swagger, {
- *   transform: createJsonSchemaTransform({
- *     schemaRegistry: myRegistry,
- *     zodToJsonConfig: { override: (ctx) => { ... } },
- *   }),
+ *   transform: createJsonSchemaTransform(),
+ * });
+ *
+ * // With registry — pair with transformObject
+ * const opts = { schemaRegistry: myRegistry };
+ * app.register(swagger, {
+ *   transform: createJsonSchemaTransform(opts),
+ *   transformObject: createJsonSchemaTransformObject(opts),
  * });
  * ```
  */
 export const createJsonSchemaTransform = (
   opts: SchemaTransformOptions = {},
+  divergentIds?: ReadonlySet<string>,
 ): SwaggerTransform<Schema> => {
   const {
     skipList = DEFAULT_SKIP_LIST,
     schemaRegistry = z.globalRegistry,
-    withInputSchema = false,
+    withInputSchema,
     zodToJsonConfig = {},
   } = opts;
+
+  let inputSchemaIds = divergentIds;
 
   return (input) => {
     if ('swaggerObject' in input) throw new Error('OpenAPI 2.0 is not supported');
@@ -172,6 +211,9 @@ export const createJsonSchemaTransform = (
 
     const oasVersion = getOASVersion(input);
 
+    // Lazily resolve divergent IDs on first invocation (when OAS version is known)
+    inputSchemaIds ??= resolveDivergentIds(schemaRegistry, withInputSchema);
+
     const zodSchemas: Record<string, unknown> = { headers, querystring, body, params };
 
     for (const prop in zodSchemas) {
@@ -186,7 +228,7 @@ export const createJsonSchemaTransform = (
           'input',
           oasVersion,
           zodToJsonConfig,
-          withInputSchema,
+          inputSchemaIds,
         );
         continue;
       }
@@ -198,7 +240,7 @@ export const createJsonSchemaTransform = (
         oasVersion,
         zodToJsonConfig,
         prop,
-        withInputSchema,
+        inputSchemaIds,
       );
       transformed[prop] = jsonSchemaToOAS(jsonSchema, oasVersion);
     }
@@ -257,30 +299,34 @@ export const createJsonSchemaTransform = (
  * Creates a Fastify Swagger `transformObject` function that resolves Zod registry schemas
  * into OpenAPI `$ref`-based `components.schemas`.
  *
- * Iterates over all schemas in the registry, converts each to JSON Schema via
- * `zodSchemaToJson`, and merges them into the OpenAPI document's components.
+ * Called once after all routes are processed. Iterates over all schemas in the registry,
+ * converts each to JSON Schema, and merges them into the OpenAPI document's components.
+ * Schemas whose input and output shapes diverge (e.g. due to defaults, transforms, or codecs)
+ * automatically get `{Id}Input` variants.
  *
- * By default (`withInputSchema: false`), only the output schema (`{Id}`) is added to components.
- * Set `withInputSchema: true` to also add `{Id}Input` variants — must be set consistently with
- * `createJsonSchemaTransform` so that body `$ref`s and component definitions stay in sync.
+ * Only useful when using a schema registry — without one, there are no components to populate.
+ * Pair with {@link createJsonSchemaTransform} to convert route-level Zod schemas to JSON Schema,
+ * or use {@link createJsonSchemaTransforms} for a single-call setup.
  *
- * @param opts - Optional configuration (registry, withInputSchema, JSON config)
+ * @param opts - Optional configuration (registry, JSON config)
+ * @param divergentIds - Pre-computed set of schema IDs whose input/output shapes diverge.
+ *   When omitted, resolved automatically from the registry.
  * @returns A `transformObject` function compatible with `@fastify/swagger`
  *
  * @example
  * ```ts
- * const registry = z.registry<{ id: string }>();
- * registry.add(UserSchema, { id: 'User' });
- *
+ * const opts = { schemaRegistry: myRegistry };
  * app.register(swagger, {
- *   transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry }),
+ *   transform: createJsonSchemaTransform(opts),
+ *   transformObject: createJsonSchemaTransformObject(opts),
  * });
  * ```
  */
 export const createJsonSchemaTransformObject = (
   opts: SchemaTransformOptions = {},
+  divergentIds?: ReadonlySet<string>,
 ): SwaggerTransformObject => {
-  const { schemaRegistry = z.globalRegistry, withInputSchema = false, zodToJsonConfig = {} } = opts;
+  const { schemaRegistry = z.globalRegistry, withInputSchema, zodToJsonConfig = {} } = opts;
 
   return (documentObject) => {
     if ('swaggerObject' in documentObject) {
@@ -288,6 +334,7 @@ export const createJsonSchemaTransformObject = (
     }
 
     const oasVersion = getOASVersion(documentObject);
+    const inputSchemaIds = divergentIds ?? resolveDivergentIds(schemaRegistry, withInputSchema);
 
     const oasSchemas: Record<string, Record<string, unknown>> = {};
     const idmap = getRegistryIdMap(schemaRegistry);
@@ -305,7 +352,7 @@ export const createJsonSchemaTransformObject = (
       );
       oasSchemas[id] = jsonSchemaToOAS(outputJson, oasVersion);
 
-      if (withInputSchema) {
+      if (inputSchemaIds.has(id)) {
         const inputJson = zodSchemaToJson(
           schema,
           schemaRegistry,
@@ -313,7 +360,7 @@ export const createJsonSchemaTransformObject = (
           oasVersion,
           zodToJsonConfig,
           'params',
-          true,
+          inputSchemaIds,
         );
         oasSchemas[`${id}Input`] = jsonSchemaToOAS(inputJson, oasVersion);
       }
@@ -333,17 +380,57 @@ export const createJsonSchemaTransformObject = (
 };
 
 /**
+ * Convenience wrapper that creates both `transform` and `transformObject` from a single
+ * options object.
+ *
+ * Pre-computes the divergent schema set once and shares it between both functions, avoiding
+ * a redundant registry scan. Functionally equivalent to calling {@link createJsonSchemaTransform}
+ * and {@link createJsonSchemaTransformObject} separately — each resolves divergent IDs on its
+ * own when not provided.
+ *
+ * Use this when you need both transforms (i.e. you're using a schema registry). If you only
+ * need route-level conversion without a registry, {@link createJsonSchemaTransform} alone is
+ * sufficient.
+ *
+ * @param opts - Optional configuration (skip list, registry, JSON config)
+ * @returns An object with `transform` and `transformObject` — spread directly into `swagger()` options
+ *
+ * @example
+ * ```ts
+ * await app.register(swagger, {
+ *   openapi: { openapi: '3.0.3', info: { title: 'My API', version: '1.0.0' } },
+ *   ...createJsonSchemaTransforms({ schemaRegistry: myRegistry }),
+ * });
+ * ```
+ */
+export const createJsonSchemaTransforms = (
+  opts: SchemaTransformOptions = {},
+): { transform: SwaggerTransform<Schema>; transformObject: SwaggerTransformObject } => {
+  const { schemaRegistry = z.globalRegistry, withInputSchema } = opts;
+
+  // Shared divergent IDs — resolved once, shared between both functions
+  const ids = resolveDivergentIds(schemaRegistry, withInputSchema);
+
+  return {
+    transform: createJsonSchemaTransform(opts, ids),
+    transformObject: createJsonSchemaTransformObject(opts, ids),
+  };
+};
+
+/**
  * Pre-configured JSON Schema transform for `@fastify/swagger`.
  *
- * Uses `z.globalRegistry` and default settings. For custom configuration,
- * use {@link createJsonSchemaTransform} instead.
+ * Uses `z.globalRegistry` and default settings. Works standalone for projects without
+ * a custom registry. For custom configuration, use {@link createJsonSchemaTransform}
+ * or {@link createJsonSchemaTransforms}.
  */
 export const jsonSchemaTransform: SwaggerTransform<Schema> = createJsonSchemaTransform();
 
 /**
  * Pre-configured JSON Schema transform object for `@fastify/swagger`.
  *
- * Uses `z.globalRegistry` and default settings. For custom configuration,
- * use {@link createJsonSchemaTransformObject} instead.
+ * Uses `z.globalRegistry` and default settings. Pair with {@link jsonSchemaTransform}
+ * when using `z.globalRegistry` for `$ref`-based component definitions. For custom
+ * configuration, use {@link createJsonSchemaTransformObject} or {@link createJsonSchemaTransforms}.
  */
 export const jsonSchemaTransformObject: SwaggerTransformObject = createJsonSchemaTransformObject();
