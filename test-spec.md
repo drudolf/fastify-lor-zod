@@ -60,20 +60,28 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns false for intersection without codec
 - [x] handles circular schema without stack overflow
 - [x] detects codec in circular schema
+- [x] returns true for map with codec value
+- [x] returns true for set with codec element
+- [x] returns true for discriminatedUnion with codec variant
+
+## Schema tree traversal (`schema-tree.test.ts`) — 3 tests
+
+- [x] returns cached result from WeakMap
+- [x] independent predicates do not share cache
+- [x] findInTree handles non-ZodType input gracefully
 
 ## Error Handling (`validator/errors.test.ts`) — 2 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 
-## Error mapping (`utils/error.test.ts`) — 6 tests
+## Error mapping (`validator/errors.test.ts`) — 5 tests
 
 - [x] maps issue path to instancePath
 - [x] produces empty instancePath for root-level issue
 - [x] includes httpPart in schemaPath
 - [x] omits httpPart from schemaPath when undefined
 - [x] spreads remaining issue properties into params
-- [x] maps multiple issues
 
 ## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 36 tests
 
@@ -188,4 +196,12 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 
 ---
 
-**Total: 136 tests across 10 test files**
+## isObject (`utils/isObject.test.ts`) — 5 tests
+
+- [x] returns true for plain object
+- [x] returns false for null
+- [x] returns false for array
+- [x] returns false for primitives
+- [x] narrows type to Record<string, unknown>
+
+**Total: 141 tests across 11 test files**

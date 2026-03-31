@@ -3,7 +3,6 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
-import { RequestValidationError } from './errors.js';
 import { validatorCompiler } from './validator.js';
 
 const buildApp = () => {
@@ -165,12 +164,12 @@ describe('validator', () => {
       });
 
       const result = validate({ name: 123 });
-
-      expect(result).toHaveProperty('error');
-      const error = (result as { error: RequestValidationError }).error;
-      expect(error).toBeInstanceOf(RequestValidationError);
-      expect(error.context).toBeUndefined();
-      expect(error.validation[0].schemaPath).toBe('#/name');
+      expect(result).toMatchObject({
+        error: expect.objectContaining({
+          context: undefined,
+          validation: [expect.objectContaining({ schemaPath: '#/name' })],
+        }),
+      });
     });
   });
 

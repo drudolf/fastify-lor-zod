@@ -132,49 +132,50 @@ describe('integration', () => {
     expect(healthRes.json()).toEqual({ status: 'ok' });
 
     // --- Swagger endpoint returns valid OpenAPI spec ---
-    const spec = app.swagger() as Record<string, unknown>;
+    const spec = app.swagger();
 
-    expect(spec.openapi).toBe('3.0.3');
-    expect(get(spec, ['info', 'title'])).toBe('Integration Test API');
-
-    // All routes present
-    expect(get(spec, ['paths', '/users', 'post'])).toBeDefined();
-    expect(get(spec, ['paths', '/users/{id}', 'get'])).toBeDefined();
-    expect(get(spec, ['paths', '/health', 'get'])).toBeDefined();
+    expect(spec).toMatchObject({
+      openapi: '3.0.3',
+      info: { title: 'Integration Test API' },
+      paths: {
+        '/users': { post: expect.anything() },
+        '/users/{id}': { get: expect.anything() },
+        '/health': { get: expect.anything() },
+      },
+    });
 
     // Request body schema converted
-    const bodySchema = get(spec, [
-      'paths',
-      '/users',
-      'post',
-      'requestBody',
-      'content',
-      'application/json',
-      'schema',
-    ]) as Record<string, unknown>;
-    expect(bodySchema.type).toBe('object');
-    expect(bodySchema.properties).toBeDefined();
+    expect(
+      get(spec, [
+        'paths',
+        '/users',
+        'post',
+        'requestBody',
+        'content',
+        'application/json',
+        'schema',
+      ]),
+    ).toMatchObject({ type: 'object', properties: expect.anything() });
 
     // Params and querystring appear as parameters
-    const getUserParams = get(spec, ['paths', '/users/{id}', 'get', 'parameters']) as
-      | Array<Record<string, unknown>>
-      | undefined;
-    const paramNames = getUserParams?.map((p) => p.name);
-    expect(paramNames).toContain('id');
-    expect(paramNames).toContain('fields');
+    const paramNames = get(spec, ['paths', '/users/{id}', 'get', 'parameters'])?.map(
+      (p: Record<string, unknown>) => p.name,
+    );
+    expect(paramNames).toEqual(expect.arrayContaining(['id', 'fields']));
 
     // Response schemas converted
-    const responseSchema = get(spec, [
-      'paths',
-      '/health',
-      'get',
-      'responses',
-      '200',
-      'content',
-      'application/json',
-      'schema',
-    ]) as Record<string, unknown>;
-    expect(responseSchema.type).toBe('object');
+    expect(
+      get(spec, [
+        'paths',
+        '/health',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+      ]),
+    ).toMatchObject({ type: 'object' });
   });
 
   it('uses Zod codec encode for response serialization', async () => {
@@ -204,12 +205,13 @@ describe('integration', () => {
 
     const res = await app.inject({ method: 'GET', url: '/event' });
     expect(res.statusCode).toBe(200);
-    const body = res.json();
-    expect(body.name).toBe('Launch');
-    expect(body.startsAt).toBe('2025-01-01T00:00:00.000Z');
+    expect(res.json()).toMatchObject({
+      name: 'Launch',
+      startsAt: '2025-01-01T00:00:00.000Z',
+    });
 
     // Swagger spec still generated for codec routes
-    const spec = app.swagger() as Record<string, unknown>;
+    const spec = app.swagger();
     expect(get(spec, ['paths', '/event', 'get'])).toBeDefined();
   });
 
@@ -250,7 +252,7 @@ describe('integration', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual([{ id: 1, title: 'Widget' }]);
 
-    const spec = app.swagger() as Record<string, unknown>;
+    const spec = app.swagger();
     expect(get(spec, ['components', 'schemas', 'Item'])).toBeDefined();
   });
 
@@ -286,11 +288,12 @@ describe('integration', () => {
 
     const res = await app.inject({ method: 'GET', url: '/strict' });
     expect(res.statusCode).toBe(500);
-    const body = res.json();
-    expect(body.error).toBe('serialization_failed');
-    expect(body.code).toBe('ERR_RESPONSE_SERIALIZATION');
-    expect(body.method).toBe('GET');
-    expect(body.url).toBe('/strict');
+    expect(res.json()).toMatchObject({
+      error: 'serialization_failed',
+      code: 'ERR_RESPONSE_SERIALIZATION',
+      method: 'GET',
+      url: '/strict',
+    });
   });
 
   it('typed plugin works with FastifyPluginAsyncZod', async () => {

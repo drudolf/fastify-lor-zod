@@ -3,8 +3,9 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
-import { RequestValidationError } from './errors.js';
+import { mapIssueToValidationError, RequestValidationError } from './errors.js';
 import { validatorCompiler } from './validator.js';
+import assert from 'node:assert';
 
 const buildApp = () => {
   const app = Fastify();
@@ -38,11 +39,12 @@ describe('error handling', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(caughtError).toBeInstanceOf(RequestValidationError);
-    const err = caughtError as RequestValidationError;
-    expect(err.code).toBe('ERR_REQUEST_VALIDATION');
-    expect(err.context).toBe('body');
-    expect(err.validation.length).toBeGreaterThan(0);
+    assert(caughtError instanceof RequestValidationError);
+    expect(caughtError).toMatchObject({
+      code: 'ERR_REQUEST_VALIDATION',
+      context: 'body',
+    });
+    expect(caughtError.validation.length).toBeGreaterThan(0);
   });
 
   it('produces empty instancePath for root-level validation errors', async () => {
@@ -70,8 +72,49 @@ describe('error handling', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(caughtError).toBeInstanceOf(RequestValidationError);
-    const err = caughtError as RequestValidationError;
-    expect(err.validation[0].instancePath).toBe('');
+    assert(caughtError instanceof RequestValidationError);
+    expect(caughtError.validation[0].instancePath).toBe('');
+  });
+});
+
+describe('Error mapping', () => {
+  const makeIssue = (
+    overrides: Partial<z.core.$ZodIssueInvalidType> = {},
+  ): z.core.$ZodIssueInvalidType => ({
+    code: 'invalid_type',
+    expected: 'string',
+    input: 42,
+    path: [],
+    message: 'Expected string, received number',
+    ...overrides,
+  });
+
+  it('maps issue path to instancePath', () => {
+    const result = mapIssueToValidationError(makeIssue({ path: ['user', 'name'] }), 'body');
+    expect(result.instancePath).toBe('/user/name');
+  });
+
+  it('produces empty instancePath for root-level issue', () => {
+    const result = mapIssueToValidationError(makeIssue({ path: [] }), 'body');
+    expect(result.instancePath).toBe('');
+  });
+
+  it('includes httpPart in schemaPath', () => {
+    const result = mapIssueToValidationError(makeIssue({ path: ['name'] }), 'body');
+    expect(result.schemaPath).toBe('#/body/name');
+  });
+
+  it('omits httpPart from schemaPath when undefined', () => {
+    const result = mapIssueToValidationError(makeIssue({ path: ['name'] }));
+    expect(result.schemaPath).toBe('#/name');
+  });
+
+  it('spreads remaining issue properties into params', () => {
+    const extras = { minimum: 5, inclusive: true };
+    const result = mapIssueToValidationError(
+      { ...makeIssue({ expected: 'string', input: 42 }), ...extras },
+      'body',
+    );
+    expect(result.params).toEqual({ expected: 'string', input: 42, minimum: 5, inclusive: true });
   });
 });
