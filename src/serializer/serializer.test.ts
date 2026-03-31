@@ -97,9 +97,7 @@ describe.each(allSerializers)('serializer — $name', ({ compiler }) => {
     const response = await app.inject({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(200);
-    const body = response.json();
-    expect(body.id).toBe(1);
-    expect(body.secret).toBeUndefined();
+    expect(response.json()).toEqual({ id: 1 });
   });
 });
 
@@ -256,9 +254,7 @@ describe('serializer — safeEncode only', () => {
     const response = await app.inject({ method: 'GET', url: '/' });
 
     expect(response.statusCode).toBe(200);
-    const body = response.json();
-    expect(body.name).toBe('Alice');
-    expect(body.secret).toBe('[REDACTED]');
+    expect(response.json()).toEqual({ name: 'Alice', secret: '[REDACTED]' });
   });
 });
 

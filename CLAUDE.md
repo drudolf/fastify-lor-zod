@@ -115,6 +115,17 @@ CI must run all of the following — nothing merges without passing:
 - Keep tests focused — one behavior per test
 - 100% code coverage enforced via vitest V8 provider
 
+## Test assertion style
+
+- Prefer `toMatchObject` over sequential `expect(obj.prop)` calls for multiple properties
+- Use `toEqual` when exact shape matters (e.g., proving stripped keys are absent)
+- Use `expect.arrayContaining` / `expect.objectContaining` for partial matching
+- Use `assert()` from `node:assert` for type narrowing — vitest's `expect()` does not narrow TypeScript types
+- Narrow test fixture types to specific discriminant variants instead of casting with `as`
+- Drop `toBeDefined()` when followed by `toMatchObject` (it already fails on undefined)
+- Reserve `not.toHaveProperty` for tests where key absence is the behavior under test
+- `as unknown as T` double casts are acceptable for intentionally wrong-type inputs in error-path tests
+
 ## Code style
 
 - Arrow functions everywhere — no function declarations or function expressions

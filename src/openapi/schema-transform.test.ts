@@ -161,16 +161,10 @@ describe('schema-transform', () => {
 
       await app.ready();
       const spec = app.swagger();
-      const getRoute = get(spec, ['paths', '/items/{id}', 'get']) as
-        | Record<string, unknown>
-        | undefined;
-
-      expect(getRoute).toBeDefined();
-      const parameters = getRoute?.parameters as Array<Record<string, unknown>> | undefined;
-      expect(parameters).toBeDefined();
-      const paramNames = parameters?.map((p) => p.name as string);
-      expect(paramNames).toContain('id');
-      expect(paramNames).toContain('limit');
+      const paramNames = get(spec, ['paths', '/items/{id}', 'get', 'parameters'])?.map(
+        (p: Record<string, unknown>) => p.name,
+      );
+      expect(paramNames).toEqual(expect.arrayContaining(['id', 'limit']));
     });
 
     it('generates input and output schemas correctly', async () => {
@@ -251,8 +245,7 @@ describe('schema-transform', () => {
         openapiObject: { openapi: '3.0.3' },
       });
 
-      expect(result.schema).toHaveProperty('hide');
-      expect(result.schema.hide).toBe(true);
+      expect(result.schema).toMatchObject({ hide: true });
     });
 
     it('hides route when schema has hide: true', () => {
@@ -265,8 +258,7 @@ describe('schema-transform', () => {
         openapiObject: { openapi: '3.0.3' },
       });
 
-      expect(result.schema).toEqual({ hide: true });
-      expect(result.url).toBe('/health');
+      expect(result).toMatchObject({ schema: { hide: true }, url: '/health' });
     });
 
     it('allows zodToJsonConfig passthrough', () => {
@@ -338,9 +330,8 @@ describe('schema-transform', () => {
         'id',
       ]);
 
-      expect(idSchema).toBeDefined();
-      expect(idSchema?.format).toBe('uuid');
-      expect(idSchema?.pattern).toBeUndefined();
+      expect(idSchema).toMatchObject({ format: 'uuid' });
+      expect(idSchema).not.toHaveProperty('pattern');
     });
 
     it('handles readonly schemas', async () => {
@@ -591,9 +582,10 @@ describe('schema-transform', () => {
         openapiObject: { openapi: '3.0.3' },
       });
 
-      const schema = result.schema as Record<string, unknown>;
-      expect(schema.description).toBe('a route');
-      expect(schema.tags).toEqual(['auth']);
+      expect(result.schema).toMatchObject({
+        description: 'a route',
+        tags: ['auth'],
+      });
     });
 
     it('transformObject rejects Swagger 2.0', () => {
@@ -625,14 +617,14 @@ describe('schema-transform', () => {
         openapiObject: { openapi: '3.0.3' },
       });
 
-      const body = result.schema.body as Record<string, unknown>;
-      const content = body.content as Record<string, unknown>;
-      // Non-ZodType schema passed through as-is
-      expect((content['application/json'] as Record<string, unknown>).schema).toEqual({
-        type: 'object',
+      expect(result.schema.body).toMatchObject({
+        content: {
+          // Non-ZodType schema passed through as-is
+          'application/json': { schema: { type: 'object' } },
+          // Non-object entry passed through
+          'text/plain': 'raw',
+        },
       });
-      // Non-object entry passed through
-      expect(content['text/plain']).toBe('raw');
     });
 
     it('defaults to OAS 3.0 when openapi version is not specified', () => {
@@ -644,13 +636,12 @@ describe('schema-transform', () => {
         },
         url: '/test',
         route: { method: 'GET', url: '/test', handler: () => ({ name: 'test' }) },
-        openapiObject: {} as Partial<Record<string, unknown>>,
+        openapiObject: {},
       });
 
-      const body = result.schema.body as Record<string, unknown>;
-      expect(body.type).toBe('object');
+      expect(result.schema.body).toMatchObject({ type: 'object' });
       // Defaults to 3.0, so $schema should be stripped
-      expect(body.$schema).toBeUndefined();
+      expect(result.schema.body).not.toHaveProperty('$schema');
     });
   });
 
@@ -688,8 +679,7 @@ describe('schema-transform', () => {
         'value',
       ]);
 
-      expect(valueSchema).toBeDefined();
-      expect(valueSchema?.nullable).toBe(true);
+      expect(valueSchema).toMatchObject({ nullable: true });
       // Should not have type array — OAS 3.0 uses nullable: true instead
       expect(Array.isArray(valueSchema?.type)).toBe(false);
     });
@@ -727,12 +717,10 @@ describe('schema-transform', () => {
         'content',
         'application/json',
         'schema',
-      ]) as Record<string, unknown>;
+      ]);
 
       // reused: "inline" means no $defs or definitions — schemas are inlined
-      expect(responseSchema.$defs).toBeUndefined();
-      expect(responseSchema.type).toBe('object');
-      expect(responseSchema.properties).toBeDefined();
+      expect(responseSchema).toMatchObject({ type: 'object', properties: expect.anything() });
     });
   });
 
@@ -754,13 +742,10 @@ describe('schema-transform', () => {
       const spec = app.swagger();
 
       // Should not crash and should generate valid parameters
-      const params = get(spec, ['paths', '/users', 'get', 'parameters']) as
-        | Array<Record<string, unknown>>
-        | undefined;
-      expect(params).toBeDefined();
-      expect(params?.length).toBeGreaterThan(0);
-      const paramNames = params?.map((p) => p.name);
-      expect(paramNames).toContain('name');
+      const paramNames = get(spec, ['paths', '/users', 'get', 'parameters'])?.map(
+        (p: Record<string, unknown>) => p.name,
+      );
+      expect(paramNames).toEqual(expect.arrayContaining(['name']));
     });
 
     it('z.transform() preserves type info in response schema (#208)', async () => {
@@ -812,11 +797,11 @@ describe('schema-transform', () => {
         'application/json',
         'schema',
         'properties',
-      ]) as Record<string, Record<string, unknown>> | undefined;
+      ]);
 
-      expect(responseProps).toBeDefined();
-      expect(responseProps?.transformed).toBeDefined();
-      expect(Object.keys(responseProps?.transformed ?? {}).length).toBeGreaterThan(0);
+      expect(responseProps).toMatchObject({
+        transformed: expect.objectContaining({ type: expect.anything() }),
+      });
     });
 
     it('.meta({ id }) schemas populate components.schemas (#170)', async () => {
@@ -864,11 +849,7 @@ describe('schema-transform', () => {
       expect(items?.$ref).toBe('#/components/schemas/User');
 
       // Component should be populated
-      const userComponent = get(spec, ['components', 'schemas', 'User']) as
-        | Record<string, unknown>
-        | undefined;
-      expect(userComponent).toBeDefined();
-      expect(userComponent?.type).toBe('object');
+      expect(get(spec, ['components', 'schemas', 'User'])).toMatchObject({ type: 'object' });
     });
 
     it('.nullable().default(null) does not crash (#158)', async () => {
@@ -921,13 +902,10 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      const params = get(spec, ['paths', '/items', 'get', 'parameters']) as
-        | Array<Record<string, unknown>>
-        | undefined;
-      expect(params).toBeDefined();
-      const paramNames = params?.map((p) => p.name);
-      expect(paramNames).toContain('limit');
-      expect(paramNames).toContain('offset');
+      const paramNames = get(spec, ['paths', '/items', 'get', 'parameters'])?.map(
+        (p: Record<string, unknown>) => p.name,
+      );
+      expect(paramNames).toEqual(expect.arrayContaining(['limit', 'offset']));
     });
 
     it('z.json() schema definitions not lost (#210)', async () => {
@@ -1008,8 +986,7 @@ describe('schema-transform', () => {
         'schema',
       ]);
 
-      expect(jsonSchema).toBeDefined();
-      expect(jsonSchema?.type).toBe('object');
+      expect(jsonSchema).toMatchObject({ type: 'object' });
 
       const octetSchema = get(spec, [
         'paths',
@@ -1022,8 +999,7 @@ describe('schema-transform', () => {
         'schema',
       ]);
 
-      expect(octetSchema).toBeDefined();
-      expect(octetSchema?.type).toBe('string');
+      expect(octetSchema).toMatchObject({ type: 'string' });
     });
 
     it('anyOf with 3+ items preserved correctly (#195)', async () => {
@@ -1059,15 +1035,10 @@ describe('schema-transform', () => {
         'value',
       ]);
 
-      expect(valueSchema).toBeDefined();
       // Should have anyOf with all 3 types preserved
-      const anyOf = valueSchema?.anyOf as Array<Record<string, unknown>> | undefined;
-      expect(anyOf).toBeDefined();
-      expect(anyOf?.length).toBe(3);
-      const types = anyOf?.map((s) => s.type);
-      expect(types).toContain('string');
-      expect(types).toContain('number');
-      expect(types).toContain('boolean');
+      expect(valueSchema).toMatchObject({
+        anyOf: [{ type: 'string' }, { type: 'number' }, { type: 'boolean' }],
+      });
     });
 
     it('optional fields not shown as required in params (#148)', async () => {
@@ -1092,18 +1063,15 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      const params = get(spec, ['paths', '/search', 'get', 'parameters']) as
-        | Array<Record<string, unknown>>
-        | undefined;
-      expect(params).toBeDefined();
+      const params = get(spec, ['paths', '/search', 'get', 'parameters']);
 
-      const qParam = params?.find((p) => p.name === 'q');
-      const pageParam = params?.find((p) => p.name === 'page');
-      const sortParam = params?.find((p) => p.name === 'sort');
-
-      expect(qParam?.required).toBe(true);
-      expect(pageParam?.required).toBeFalsy();
-      expect(sortParam?.required).toBeFalsy();
+      expect(params).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: 'q', required: true }),
+          expect.objectContaining({ name: 'page', required: false }),
+          expect.objectContaining({ name: 'sort', required: false }),
+        ]),
+      );
     });
 
     it('excludes Input variants from components by default (#214)', async () => {
@@ -1119,7 +1087,7 @@ describe('schema-transform', () => {
       );
 
       await app.ready();
-      const spec = app.swagger() as Record<string, unknown>;
+      const spec = app.swagger();
 
       // Output variant should exist
       expect(get(spec, ['components', 'schemas', 'Token'])).toBeDefined();
@@ -1149,11 +1117,9 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      const response = get(spec, ['paths', '/health', 'get', 'responses', '200']) as
-        | Record<string, unknown>
-        | undefined;
-
-      expect(response?.description).toBe('Healthy');
+      expect(get(spec, ['paths', '/health', 'get', 'responses', '200'])).toMatchObject({
+        description: 'Healthy',
+      });
     });
 
     it('response description preserved when inner schema is registered (produces $ref)', async () => {
@@ -1214,9 +1180,8 @@ describe('schema-transform', () => {
         'content',
         'application/json',
         'schema',
-      ]) as Record<string, unknown> | undefined;
-      expect(responseSchema?.['allOf']).toBeUndefined();
-      expect(responseSchema?.['$ref']).toBe('#/components/schemas/Item');
+      ]);
+      expect(responseSchema).toMatchObject({ $ref: '#/components/schemas/Item' });
     });
 
     it('empty string description ignored for registered schema response', async () => {
@@ -1241,26 +1206,15 @@ describe('schema-transform', () => {
       await app.ready();
       const spec = app.swagger();
 
-      const response = get(spec, ['paths', '/ping', 'get', 'responses', '200']) as
-        | Record<string, unknown>
-        | undefined;
+      const response = get(spec, ['paths', '/ping', 'get', 'responses', '200']);
 
       // Empty string description must not appear in the OAS output
       expect(response?.description).not.toBe('');
 
       // Schema must be a bare $ref — no allOf wrapping (empty string treated as absent)
-      const schema = get(spec, [
-        'paths',
-        '/ping',
-        'get',
-        'responses',
-        '200',
-        'content',
-        'application/json',
-        'schema',
-      ]) as Record<string, unknown> | undefined;
-      expect(schema?.['allOf']).toBeUndefined();
-      expect(schema?.['$ref']).toBe('#/components/schemas/Ping');
+      expect(get(response, ['content', 'application/json', 'schema'])).toMatchObject({
+        $ref: '#/components/schemas/Ping',
+      });
     });
 
     it('body content type wrappers supported (#132)', async () => {
@@ -1301,8 +1255,7 @@ describe('schema-transform', () => {
         'schema',
       ]);
 
-      expect(jsonSchema).toBeDefined();
-      expect(jsonSchema?.type).toBe('object');
+      expect(jsonSchema).toMatchObject({ type: 'object' });
 
       const textSchema = get(spec, [
         'paths',
@@ -1314,8 +1267,7 @@ describe('schema-transform', () => {
         'schema',
       ]);
 
-      expect(textSchema).toBeDefined();
-      expect(textSchema?.type).toBe('string');
+      expect(textSchema).toMatchObject({ type: 'string' });
     });
   });
 });

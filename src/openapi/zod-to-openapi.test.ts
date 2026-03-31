@@ -1,3 +1,4 @@
+import get from 'lodash-es/get.js';
 import { z } from 'zod';
 
 import {
@@ -37,15 +38,10 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    expect(result.$schema).toBeUndefined();
-    expect(result.$id).toBeUndefined();
-    expect(result.unevaluatedProperties).toBeUndefined();
-    expect(result.dependentSchemas).toBeUndefined();
-    expect(result.patternProperties).toBeUndefined();
-    expect(result.propertyNames).toBeUndefined();
-    expect(result.contentEncoding).toBeUndefined();
-    expect(result.contentMediaType).toBeUndefined();
-    expect(result.properties).toBeDefined();
+    expect(result).toEqual({
+      type: 'object',
+      properties: { name: { type: 'string' } },
+    });
   });
 
   it('recursively converts properties for OAS 3.0', () => {
@@ -64,12 +60,14 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    const props = result.properties as Record<string, Record<string, unknown>>;
-    expect(props.name.$schema).toBeUndefined();
-    expect(props.name.type).toBe('string');
-    const nestedProps = props.nested.properties as Record<string, Record<string, unknown>>;
-    expect(nestedProps.value.$id).toBeUndefined();
-    expect(nestedProps.value.type).toBe('number');
+    expect(result).toMatchObject({
+      properties: {
+        name: { type: 'string' },
+        nested: { properties: { value: { type: 'number' } } },
+      },
+    });
+    expect(get(result, ['properties', 'name'])).not.toHaveProperty('$schema');
+    expect(get(result, ['properties', 'nested', 'properties', 'value'])).not.toHaveProperty('$id');
   });
 
   it('recursively converts items for OAS 3.0', () => {
@@ -80,9 +78,7 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    const items = result.items as Record<string, unknown>;
-    expect(items.$schema).toBeUndefined();
-    expect(items.type).toBe('string');
+    expect(result.items).toEqual({ type: 'string' });
   });
 
   it('recursively converts anyOf entries for OAS 3.0', () => {
@@ -92,10 +88,7 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    const entries = result.anyOf as Array<Record<string, unknown>>;
-    expect(entries).toHaveLength(2);
-    expect(entries[0].$id).toBeUndefined();
-    expect(entries[0].type).toBe('string');
+    expect(result.anyOf).toEqual([{ type: 'string' }, { type: 'number' }]);
   });
 
   it('recursively converts oneOf entries for OAS 3.0', () => {
@@ -105,9 +98,7 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    const entries = result.oneOf as Array<Record<string, unknown>>;
-    expect(entries).toHaveLength(2);
-    expect(entries[0].$schema).toBeUndefined();
+    expect(result.oneOf).toEqual([{ type: 'string' }, { type: 'number' }]);
   });
 
   it('recursively converts allOf entries for OAS 3.0', () => {
@@ -120,9 +111,10 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    const entries = result.allOf as Array<Record<string, unknown>>;
-    expect(entries).toHaveLength(2);
-    expect(entries[0].$id).toBeUndefined();
+    expect(result.allOf).toEqual([
+      { type: 'object', properties: { a: { type: 'string' } } },
+      { type: 'object', properties: { b: { type: 'number' } } },
+    ]);
   });
 
   it('does not mutate original schema', () => {
@@ -162,10 +154,12 @@ describe('zod-to-openapi', () => {
     const result = jsonSchemaToOAS(schema, '3.0');
 
     // additionalProperties is not recursed — nested $id must survive
-    expect(result.type).toBe('object');
-    const inner = (result.additionalProperties as Record<string, unknown>)
-      .additionalProperties as Record<string, unknown>;
-    expect(inner.$id).toBe('should-survive');
+    expect(result).toMatchObject({
+      type: 'object',
+      additionalProperties: {
+        additionalProperties: { $id: 'should-survive' },
+      },
+    });
   });
 
   it('throws on unsupported OpenAPI version', () => {
