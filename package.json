@@ -32,6 +32,7 @@
     "test:spec-check": "node --experimental-strip-types scripts/test-spec.ts check",
     "test:scaffold": "node --experimental-strip-types scripts/test-spec.ts scaffold",
     "bench": "vitest bench",
+    "bench:lib": "vitest bench -t",
     "changeset": "changeset",
     "prepare": "husky"
   },

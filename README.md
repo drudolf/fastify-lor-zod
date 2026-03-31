@@ -120,7 +120,7 @@ Validation throughput (all libraries are within ~5% of each other):
 | Discriminated union | 996K | 946K | 933K |
 | Recursive tree | 819K | 805K | 758K |
 
-> Measured on Apple M-series, Node.js 24, Zod 4.3.6. Run `pnpm bench` to reproduce.
+> Measured on Apple M-series, Node.js 24, Zod 4.3.6. Run `pnpm bench` to reproduce, or `pnpm bench:lib lor-zod` for this library only.
 
 ## OpenAPI / Swagger
 
@@ -329,7 +329,8 @@ pnpm install
 | `pnpm check` | Lint + format (Biome) |
 | `pnpm typecheck` | Type-check with `tsc --noEmit` |
 | `pnpm knip` | Detect unused exports and dependencies |
-| `pnpm bench` | Run benchmarks against other type providers |
+| `pnpm bench` | Run benchmarks against all type providers |
+| `pnpm bench:lib <filter>` | Run benchmarks for a single library (e.g. `lor-zod`, `type-provider`, `zod-openapi`) |
 | `pnpm build` | Build ESM output |
 
 Tests follow a spec-first workflow -- see [`test-spec.md`](test-spec.md) for the full test matrix and [`CLAUDE.md`](CLAUDE.md) for project conventions.
