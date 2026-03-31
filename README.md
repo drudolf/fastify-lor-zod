@@ -3,7 +3,7 @@
 [![CI](https://github.com/drudolf/fastify-lor-zod/actions/workflows/ci.yml/badge.svg)](https://github.com/drudolf/fastify-lor-zod/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/fastify-lor-zod.svg)](https://www.npmjs.com/package/fastify-lor-zod)
 [![license](https://img.shields.io/npm/l/fastify-lor-zod.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue.svg)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0+-blue.svg)](https://www.typescriptlang.org/)
 
 > **Note** -- Pre-1.0: minor versions may include breaking changes. Pin your version and check the [changelog](CHANGELOG.md) before upgrading.
 
@@ -283,7 +283,7 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
 |-----------------|---------|-----|------------------|---------------------|---------|
-| 0.1.x           | >= 5.8  | >= 4.3 | >= 9.5 (optional) | >= 6.0 (optional, for `fastSerializerCompiler`) | >= 22 |
+| 0.1.x           | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 24 |
 
 ## Migrating from fastify-type-provider-zod
 
@@ -331,7 +331,7 @@ pnpm install
 | `pnpm knip` | Detect unused exports and dependencies |
 | `pnpm bench` | Run benchmarks against all type providers |
 | `pnpm bench:lib <filter>` | Run benchmarks for a single library (e.g. `lor-zod`, `type-provider`, `zod-openapi`) |
-| `pnpm build` | Build ESM output |
+| `pnpm build` | Build the project (ESM and CJS) |
 
 Tests follow a spec-first workflow -- see [`test-spec.md`](test-spec.md) for the full test matrix and [`CLAUDE.md`](CLAUDE.md) for project conventions.
 
