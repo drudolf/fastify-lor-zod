@@ -24,7 +24,7 @@ export const validatorCompiler: FastifySchemaCompiler<z.ZodType> =
   (data: unknown) => {
     const result = schema.safeParse(data);
     if (!result.success) {
-      return { error: new RequestValidationError(result.error.issues, httpPart) };
+      return { error: new RequestValidationError(result.error.issues, httpPart, data) };
     }
     return { value: result.data };
   };
