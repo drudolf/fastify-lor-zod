@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.1.4
+
+### Patch Changes
+
+- [`cbc0013`](https://github.com/drudolf/fastify-lor-zod/commit/cbc0013) Internal improvements: refactor schema tree traversal utilities, simplify validation error mapping, improve test coverage and assertion style, fix CI sync workflow, and update README documentation.
+
 ## 0.1.3
 
 ### Patch Changes
