@@ -1,9 +1,15 @@
 import type {
+  ContextConfigDefault,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyPluginOptions,
+  FastifySchema,
   FastifyTypeProvider,
+  RawReplyDefaultExpression,
+  RawRequestDefaultExpression,
   RawServerDefault,
+  RouteGenericInterface,
+  RouteHandlerMethod,
 } from 'fastify';
 import type z from 'zod';
 
@@ -95,3 +101,37 @@ export type FastifyPluginCallbackZod<Options extends FastifyPluginOptions = Reco
  */
 export type FastifyPluginAsyncZod<Options extends FastifyPluginOptions = Record<never, never>> =
   FastifyPluginAsync<Options, RawServerDefault, FastifyLorZodTypeProvider>;
+
+/**
+ * Typed route handler with `FastifyLorZodTypeProvider` pre-configured.
+ *
+ * Use this to define handlers in separate files while preserving Zod type inference
+ * from the schema. The handler's `req.params`, `req.body`, `req.query`, `req.headers`,
+ * and return type are all inferred from the schema generic.
+ *
+ * @typeParam S - A Fastify schema object (e.g. `{ params: z.object(...), response: { 200: z.object(...) } }`)
+ *
+ * @example
+ * ```ts
+ * const schema = {
+ *   params: z.object({ id: z.coerce.number() }),
+ *   response: { 200: z.object({ name: z.string() }) },
+ * } as const;
+ *
+ * const getUser: RouteHandler<typeof schema> = (req) => {
+ *   req.params.id; // number
+ *   return { name: 'Alice' };
+ * };
+ *
+ * app.get('/users/:id', { schema }, getUser);
+ * ```
+ */
+export type RouteHandler<S extends FastifySchema = FastifySchema> = RouteHandlerMethod<
+  RawServerDefault,
+  RawRequestDefaultExpression<RawServerDefault>,
+  RawReplyDefaultExpression<RawServerDefault>,
+  RouteGenericInterface,
+  ContextConfigDefault,
+  S,
+  FastifyLorZodTypeProvider
+>;

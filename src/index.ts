@@ -21,6 +21,7 @@ export type {
   FastifyLorZodTypeProvider,
   FastifyPluginAsyncZod,
   FastifyPluginCallbackZod,
+  RouteHandler,
 } from './types.js';
 export { RequestValidationError } from './validator/errors.js';
 export { validatorCompiler } from './validator/validator.js';
