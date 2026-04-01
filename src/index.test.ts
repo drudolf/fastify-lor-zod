@@ -525,4 +525,28 @@ describe('type inference', () => {
 
     await app.ready();
   });
+
+  it('infers body type from content-type wrapper schema', async () => {
+    const app = buildApp();
+
+    app.post(
+      '/',
+      {
+        schema: {
+          body: {
+            content: {
+              'application/json': { schema: z.object({ name: z.string() }) },
+              'text/plain': { schema: z.string() },
+            },
+          },
+        },
+      },
+      (req) => {
+        expectTypeOf(req.body).toEqualTypeOf<{ name: string } | string>();
+        return { ok: true };
+      },
+    );
+
+    await app.ready();
+  });
 });

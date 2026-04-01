@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.2.1
+
+### Patch Changes
+
+- Infer `req.body` type from content-type wrapper schemas. Body schemas using `{ content: { 'application/json': { schema: ZodType } } }` now produce a correctly typed union instead of `unknown`.
+
 ## 0.2.0
 
 ### Minor Changes
