@@ -3,7 +3,7 @@
   "compilerOptions": {
     "types": [],
     "emitDeclarationOnly": true,
-    "declarationMap": false
+    "declarationMap": true
   },
   "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/__tests__"]
 }
