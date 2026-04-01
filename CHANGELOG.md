@@ -1,5 +1,29 @@
 # fastify-lor-zod
 
+## 0.4.0
+
+### Breaking Changes
+
+- **`RequestValidationError` is now an interface, not a class.** Use `isRequestValidationError()` type guard instead of `instanceof`. The validator compiler now augments the ZodError directly, eliminating Error constructor overhead.
+- `.context` replaced by `.validationContext` (set by Fastify)
+- `.code` (`'ERR_REQUEST_VALIDATION'`) removed — Fastify sets `.code` to `'FST_ERR_VALIDATION'`
+
+**Migration:**
+```diff
+- import { RequestValidationError } from 'fastify-lor-zod';
++ import { isRequestValidationError } from 'fastify-lor-zod';
+
+- if (error instanceof RequestValidationError) {
++ if (isRequestValidationError(error)) {
+-   error.context
++   error.validationContext
+```
+
+### Performance
+
+- Validation error path now matches turkerdev's end-to-end performance (previously 25% slower)
+- Added cold build and error path benchmarks
+
 ## 0.3.0
 
 ### Minor Changes
