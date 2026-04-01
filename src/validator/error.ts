@@ -2,51 +2,46 @@ import type { FastifySchemaValidationError } from 'fastify';
 import type z from 'zod';
 
 /**
- * Error thrown when request validation fails.
+ * Shape of validation error details augmented onto the ZodError by the validator compiler.
  *
- * Thrown by `validatorCompiler` when incoming data (body, querystring, params, headers)
- * does not pass the Zod schema. The `validation` array contains Fastify-compatible
- * validation errors mapped from Zod issues.
+ * The `validation` array contains Fastify-compatible errors mapped from Zod issues.
+ * The `validationContext` identifies the HTTP part that failed (set by Fastify).
+ * The `input` holds the raw data that failed validation.
  *
- * Use `instanceof` to catch in a Fastify error handler. The `code` property
- * (`'ERR_REQUEST_VALIDATION'`) is stable for programmatic matching. The `input`
- * property contains the raw data that failed validation — be mindful that it may
- * contain sensitive fields; avoid logging it in production without redaction.
+ * Use {@link isRequestValidationError} to detect in a Fastify error handler.
+ *
+ * The `input` property may contain sensitive fields (passwords, tokens) —
+ * avoid logging it in production without redaction.
+ */
+export interface RequestValidationError extends Error {
+  readonly validation: FastifySchemaValidationError[];
+  readonly validationContext: string;
+  readonly input: unknown;
+}
+
+/**
+ * Type guard for request validation errors produced by `validatorCompiler`.
+ *
+ * @param error - The error from a Fastify error handler
+ * @returns `true` if the error is an augmented ZodError with validation details
  *
  * @example
  * ```ts
  * app.setErrorHandler((error, request, reply) => {
- *   if (error instanceof RequestValidationError) {
+ *   if (isRequestValidationError(error)) {
  *     // Log input server-side only — it may contain sensitive fields (passwords, tokens)
- *     request.log.error({ input: error.input, context: error.context });
+ *     request.log.error({ input: error.input });
  *     reply.code(400).send({
- *       error: error.code,           // 'ERR_REQUEST_VALIDATION'
- *       issues: error.validation,    // FastifySchemaValidationError[]
- *       context: error.context,      // 'body' | 'querystring' | 'params' | 'headers'
+ *       error: 'Validation failed',
+ *       issues: error.validation,          // FastifySchemaValidationError[]
+ *       context: error.validationContext,   // 'body' | 'querystring' | 'params' | 'headers'
  *     });
  *   }
  * });
  * ```
  */
-export class RequestValidationError extends Error {
-  override readonly name = 'RequestValidationError' as const;
-  readonly code = 'ERR_REQUEST_VALIDATION' as const;
-  readonly validation: FastifySchemaValidationError[];
-  readonly context: string | undefined;
-  readonly input: unknown;
-
-  constructor(
-    issues: z.ZodError['issues'][number][],
-    context: string | undefined,
-    input?: unknown,
-    errorOptions?: ErrorOptions,
-  ) {
-    super('Request validation failed', errorOptions);
-    this.validation = issues.map((issue) => mapIssueToValidationError(issue, context));
-    this.context = context;
-    this.input = input;
-  }
-}
+export const isRequestValidationError = (error: unknown): error is RequestValidationError =>
+  error instanceof Error && 'validation' in error && 'input' in error;
 
 /**
  * Maps Zod issue object to Fastify-compatible `FastifySchemaValidationError` entry.
