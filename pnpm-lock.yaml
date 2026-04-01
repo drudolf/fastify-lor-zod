@@ -45,14 +45,14 @@ importers:
         specifier: 6.1.0
         version: 6.1.0(@fastify/swagger@9.7.0)(fastify@5.8.4)(openapi-types@12.1.3)(zod@4.3.6)
       fastify-zod-openapi:
-        specifier: 5.6.0
-        version: 5.6.0(@fastify/swagger@9.7.0)(fastify@5.8.4)(zod@4.3.6)
+        specifier: 5.6.1
+        version: 5.6.1(@fastify/swagger@9.7.0)(fastify@5.8.4)(zod@4.3.6)
       husky:
         specifier: 9.1.7
         version: 9.1.7
       knip:
-        specifier: 6.1.1
-        version: 6.1.1(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
+        specifier: 6.2.0
+        version: 6.2.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)
       lint-staged:
         specifier: 16.4.0
         version: 16.4.0
@@ -1061,8 +1061,8 @@ packages:
       openapi-types: ^12.1.3
       zod: '>=4.1.5'
 
-  fastify-zod-openapi@5.6.0:
-    resolution: {integrity: sha512-I84NWaqf2XeqBQWQ+iPuxtK7NiEH/Ds/az22YQRDad+jqcKacAUVg5mtt+qCtiIVlVbh14pcScfEte1s9wanUA==}
+  fastify-zod-openapi@5.6.1:
+    resolution: {integrity: sha512-K0tzRYEViPuCV3aKu5Zcgqsew8k0OGzEqu0p1+7P+EvNGXGP7MvcyWNVoq31LUadaT0HiUtD+65tM4sKEQz0Qg==}
     engines: {node: '>=20'}
     peerDependencies:
       '@fastify/swagger': ^9.0.0
@@ -1281,8 +1281,8 @@ packages:
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
 
-  knip@6.1.1:
-    resolution: {integrity: sha512-BC/kbdxwCgv+p/3YkGbtlLxbOXhQDuR+CeKKFEpJyKb3BFwG1gZa+CMWSqAnPi+kUexz74m327d3zWxyn2fMew==}
+  knip@6.2.0:
+    resolution: {integrity: sha512-4OMUMJARvNble8e8TeFv12flp4fKzAITrQec1eKO4g2eA4HnNqEa8CXy2UOPLjuYuAETpe0N0r25jF9yY9FLig==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -2843,7 +2843,7 @@ snapshots:
       openapi-types: 12.1.3
       zod: 4.3.6
 
-  fastify-zod-openapi@5.6.0(@fastify/swagger@9.7.0)(fastify@5.8.4)(zod@4.3.6):
+  fastify-zod-openapi@5.6.1(@fastify/swagger@9.7.0)(fastify@5.8.4)(zod@4.3.6):
     dependencies:
       '@fastify/error': 4.2.0
       fast-json-stringify: 6.3.0
@@ -3054,7 +3054,7 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  knip@6.1.1(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1):
+  knip@6.2.0(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1):
     dependencies:
       '@nodelib/fs.walk': 1.2.8
       fast-glob: 3.3.3
