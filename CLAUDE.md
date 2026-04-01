@@ -26,7 +26,7 @@ fastify-lor-zod — a Fastify type provider that integrates Zod v4 for schema va
 - `pnpm bench` — run benchmarks (vitest bench)
 - `pnpm changeset` — create a changeset for versioning
 
-## Test-spec workflow
+## Testing
 
 Tests follow a spec-first workflow enforced by tooling:
 
@@ -43,13 +43,22 @@ Enforcement:
 
 Test names in `test-spec.md` must exactly match the `it('...')` strings.
 
-**Parallel agent rule**: When multiple agents work in parallel, `test-spec.md` is append-only. Add new entries at the bottom of the relevant section — never edit or reorder existing lines. Conflicts are then trivially auto-resolvable at merge. Only the orchestrator (Picard) reorganizes the file.
+Rules:
+
+- Features without tests are incomplete; every bug fix needs a regression test
+- Test both success and failure scenarios, including edge cases
+- Keep tests focused — one behavior per test
+- 100% code coverage enforced via vitest V8 provider
+- Use `assert()` from `node:assert` for type narrowing — vitest's `expect()` does not narrow
+- Prefer `toMatchObject` over sequential `expect(obj.prop)` calls
+- Use `toEqual` when exact shape matters (e.g., proving stripped keys are absent)
+- `as unknown as T` double casts are acceptable for intentionally wrong-type inputs in error-path tests
+
+**Parallel agent rule**: When multiple agents work in parallel, `test-spec.md` is append-only. Add new entries at the bottom of the relevant section — never edit or reorder existing lines. Only the orchestrator reorganizes the file.
 
 ## Linting and formatting
 
-- **Biome** for linting and formatting
 - **Knip** for detecting unused exports, dependencies, types, and files
-- **husky + lint-staged** for pre-commit enforcement (config in `.lintstagedrc.json`, not `package.json`)
 - All code must pass linting, formatting, and knip checks before commit
 - Never disable lint rules inline without justification
 - Run `pnpm typecheck`, `pnpm check` and `pnpm knip` before submitting changes
@@ -86,10 +95,12 @@ CI must run all of the following — nothing merges without passing:
 
 - All code in TypeScript — never JavaScript
 - No `console.log` or `debugger` in production code or tests (allowed in `scripts/`)
-- No `any` types — use `unknown` and narrow with type guards
 - Prefer Zod schemas for all validation; never validate manually
 - Export types alongside schemas where consumers need them
 - Use explicit return types on public API functions
+- Prefer named exports over default exports
+- Keep files focused — one concern per file
+- No `@ts-expect-error` as a shortcut — fix the actual types instead
 
 ## Documentation
 
@@ -109,43 +120,6 @@ CI must run all of the following — nothing merges without passing:
 - Use Fastify's built-in error handling (`reply.code().send()`) — do not throw raw errors
 - Zod validation errors must map to HTTP 400 responses with structured error details
 - Never swallow errors silently
-
-## Testing
-
-- Features without tests are incomplete
-- Every bug fix needs a regression test
-- Test both success and failure scenarios
-- Test edge cases: empty input, invalid types, missing fields
-- Keep tests focused — one behavior per test
-- 100% code coverage enforced via vitest V8 provider
-
-## Test assertion style
-
-- Prefer `toMatchObject` over sequential `expect(obj.prop)` calls for multiple properties
-- Use `toEqual` when exact shape matters (e.g., proving stripped keys are absent)
-- Use `expect.arrayContaining` / `expect.objectContaining` for partial matching
-- Use `assert()` from `node:assert` for type narrowing — vitest's `expect()` does not narrow TypeScript types
-- Narrow test fixture types to specific discriminant variants instead of casting with `as`
-- Drop `toBeDefined()` when followed by `toMatchObject` (it already fails on undefined)
-- Reserve `not.toHaveProperty` for tests where key absence is the behavior under test
-- `as unknown as T` double casts are acceptable for intentionally wrong-type inputs in error-path tests
-
-## Code style
-
-- Arrow functions everywhere — no function declarations or function expressions
-- Handle error case first (guard clauses) — early return/throw, happy path last
-- Use `const` by default, `let` only when reassignment is necessary
-- Prefer named exports over default exports
-- Keep files focused — one concern per file
-- No `@ts-expect-error` as a shortcut — fix the actual types instead
-
-## Custom errors (ES2022+)
-
-- `override readonly name = 'ErrorName' as const`
-- `readonly code = 'ERR_...' as const` for programmatic matching
-- Accept `ErrorOptions` param, forward to `super()` for cause chaining
-- No `Object.setPrototypeOf`, no `Error.captureStackTrace` — unnecessary with ES2022+ targets
-- Export error classes as public API
 
 ## Worktree workflow
 
