@@ -1,5 +1,12 @@
 # fastify-lor-zod
 
+## 0.4.2
+
+### Patch Changes
+
+- Ship TypeScript source files for IDE "Go to Definition" support, matching Zod and fastify-type-provider-zod's approach
+- Drop declaration maps (`.d.ts.map`) in favor of direct source resolution
+
 ## 0.4.1
 
 ### Patch Changes
