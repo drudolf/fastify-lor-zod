@@ -43,6 +43,14 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: pnpm test:spec-check --strict
 
+  ci-status:
+    needs: ci
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 1
+        if: contains(needs.ci.result, 'failure') || contains(needs.ci.result, 'cancelled')
+
   coverage-report:
     needs: ci
     if: github.event_name == 'pull_request'
