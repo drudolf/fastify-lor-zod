@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.4.1
+
+### Patch Changes
+
+- Export `mapIssueToValidationError` for consumers building custom validator compilers
+
 ## 0.4.0
 
 ### Breaking Changes
