@@ -1,6 +1,6 @@
 # Test Specification
 
-## Request Validation (`validator/validator.test.ts`) — 9 tests
+## Request Validation (`validator/validator.test.ts`) — 10 tests
 
 - [x] Accepts valid querystring parameters
 - [x] Accepts requests on routes without schema
@@ -11,6 +11,7 @@
 - [x] Validates params (#244)
 - [x] Uses undefined as httpPart fallback when not provided
 - [x] Headers can be modified after validation (#209)
+- [x] Exposes original input on validation error
 
 ## Serialization (`serializer/serializer.test.ts`) — 25 tests
 
@@ -76,10 +77,11 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] independent predicates do not share cache
 - [x] findInTree handles non-ZodType input gracefully
 
-## Error Handling (`validator/errors.test.ts`) — 2 tests
+## Error Handling (`validator/errors.test.ts`) — 3 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
+- [x] Stores input on RequestValidationError
 
 ## Error mapping (`validator/errors.test.ts`) — 5 tests
 
@@ -184,13 +186,14 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] isZodInternal returns false for non-ZodType input
 - [x] zodSchemaToJson throws if Zod internal API is absent
 
-## Integration & Type Inference (`index.test.ts`) — 13 tests
+## Integration & Type Inference (`index.test.ts`) — 14 tests
 
 - [x] Boots, handles requests, and produces a valid OpenAPI spec
 - [x] Uses Zod codec encode for response serialization
 - [x] Registered schemas appear as $ref components in OpenAPI spec
 - [x] ResponseSerializationError is catchable via custom error handler
 - [x] Typed plugin works with FastifyPluginAsyncZod
+- [x] Infers types from schema when handler is defined separately
 - [x] Infers body type from Zod schema
 - [x] Infers querystring type from Zod schema
 - [x] Infers params type from Zod schema

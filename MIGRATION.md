@@ -44,6 +44,7 @@ The upstream package uses `@fastify/error` constructors with type guard function
 - `code` — `'ERR_REQUEST_VALIDATION'`
 - `validation` — `FastifySchemaValidationError[]` (same shape as upstream)
 - `context` — `'body' | 'querystring' | 'params' | 'headers' | undefined`
+- `input` — the original data that failed validation
 
 ### Serialization errors
 

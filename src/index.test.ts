@@ -4,7 +4,7 @@ import get from 'lodash-es/get.js';
 import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
-import type { FastifyLorZodTypeProvider, FastifyPluginAsyncZod } from './index.js';
+import type { FastifyLorZodTypeProvider, FastifyPluginAsyncZod, RouteHandler } from './index.js';
 import {
   createJsonSchemaTransform,
   createJsonSchemaTransformObject,
@@ -317,6 +317,41 @@ describe('integration', () => {
     const res = await app.inject({ method: 'GET', url: '/ping' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ pong: true });
+  });
+});
+
+describe('RouteHandler', () => {
+  it('infers types from schema when handler is defined separately', async () => {
+    const app = await buildApp();
+
+    const schema = {
+      params: z.object({ id: z.coerce.number() }),
+      querystring: z.object({ fields: z.string().optional() }),
+      headers: z.object({ 'x-api-key': z.string() }).loose(),
+      body: z.object({ name: z.string() }),
+      response: { 200: z.object({ id: z.number(), name: z.string() }) },
+    } as const;
+
+    const handler: RouteHandler<typeof schema> = (req, reply) => {
+      expectTypeOf(req.params).toEqualTypeOf<{ id: number }>();
+      expectTypeOf(req.query).toEqualTypeOf<{ fields?: string | undefined }>();
+      expectTypeOf(req.headers['x-api-key']).toBeString();
+      expectTypeOf(req.body).toEqualTypeOf<{ name: string }>();
+      expectTypeOf(reply.send).parameter(0).toExtend<{ id: number; name: string } | undefined>();
+      return { id: req.params.id, name: req.body.name };
+    };
+
+    app.post('/users/:id', { schema }, handler);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/users/42?fields=name',
+      headers: { 'x-api-key': 'secret' },
+      payload: { name: 'Alice' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ id: 42, name: 'Alice' });
   });
 });
 
