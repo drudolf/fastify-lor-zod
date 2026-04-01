@@ -29,10 +29,25 @@ type SerializerType<T extends z.ZodType> =
     : z.output<T>;
 
 /**
+ * Extracts the union of Zod output types from a content-type wrapper.
+ *
+ * Handles `{ content: { 'application/json': { schema: ZodType }, ... } }` by producing
+ * a union of each inner schema's output type.
+ */
+type ContentSchemaOutput<T> = T extends { content: infer C }
+  ? C[keyof C] extends { schema: z.ZodType }
+    ? z.output<C[keyof C]['schema']>
+    : unknown
+  : unknown;
+
+/**
  * Fastify type provider that integrates Zod v4 for schema validation and serialization.
  *
  * The `validator` maps to `z.output` so request handlers receive the validated/transformed
- * output type. The `serializer` uses `z.input` when `output extends input` (plain schemas
+ * output type. For body schemas with content-type wrappers (`{ content: { mime: { schema } } }`),
+ * the validator extracts the union of all inner schema output types.
+ *
+ * The `serializer` uses `z.input` when `output extends input` (plain schemas
  * and schemas with `.default()`), making defaulted fields optional in handler return types —
  * returning `undefined` for such a field lets Zod apply the default during serialization.
  * For codec schemas where `output` diverges from `input` (e.g. `Date` vs `string`), the
@@ -52,18 +67,6 @@ type SerializerType<T extends z.ZodType> =
  * //               ^ typed as number
  * ```
  */
-/**
- * Extracts the union of Zod output types from a content-type wrapper.
- *
- * Handles `{ content: { 'application/json': { schema: ZodType }, ... } }` by producing
- * a union of each inner schema's output type.
- */
-type ContentSchemaOutput<T> = T extends { content: infer C }
-  ? C[keyof C] extends { schema: z.ZodType }
-    ? z.output<C[keyof C]['schema']>
-    : unknown
-  : unknown;
-
 export interface FastifyLorZodTypeProvider extends FastifyTypeProvider {
   readonly validator: this['schema'] extends z.ZodType
     ? z.output<this['schema']>
