@@ -6,9 +6,11 @@ fastify-lor-zod — a Fastify type provider that integrates Zod v4 for schema va
 
 ## Tech stack
 
-- TypeScript (strict mode), ES modules (`"type": "module"`)
+- TypeScript (strict mode), ES modules (`"type": "module"`), Node.js >= 24
 - Fastify v5, Zod v4, @fastify/swagger (optional peer dep)
-- lodash-es (runtime dep), fast-json-stringify (dev dep for fast serializer)
+- No runtime dependencies — Fastify, Zod, and fast-json-stringify are peer deps
+- Vite (JS bundling) + tsc (declaration emit) for build
+- All work happens on the `develop` branch; `main` is release-only (pre-commit hook blocks direct commits)
 
 ## Development commands
 
@@ -56,15 +58,17 @@ Test names in `test-spec.md` must exactly match the `it('...')` strings.
 
 - **commitlint** with **@commitlint/config-conventional** enforced via husky commit-msg hook
 - Follow Conventional Commits format: `type(scope): description`
-- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `poc`
+- Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`, `poc`, `release`
 - Keep subject line under 72 characters
 - Use imperative mood in the subject (`add` not `added`)
 
 ## Versioning and releases
 
 - **Changesets** (`@changesets/cli`) for version management and changelog generation
-- Every user-facing change (feat, fix, perf) must include a changeset
+- Every non-trivial change (feat, fix, perf, refactor) must include a changeset alongside the implementation on `develop`
 - Run `pnpm changeset` to create a changeset describing the change and its semver impact
+- Release flow: cut `release/vX.X.X` branch from `main`, merge `develop`, run `pnpm changeset version`, commit as `release: vX.X.X`, PR to `main`
+- CI publishes to npm on merge to `main`, then syncs `main` back into `develop`
 
 ## CI
 
@@ -74,7 +78,7 @@ CI must run all of the following — nothing merges without passing:
 - `pnpm knip`
 - `pnpm typecheck`
 - `pnpm build`
-- `pnpm test`
+- `pnpm test:coverage`
 - `pnpm test:spec-check`
 - `pnpm test:spec-check --strict` (main branch only — blocks `it.todo()`)
 
@@ -98,7 +102,7 @@ CI must run all of the following — nothing merges without passing:
 - Keep dependencies minimal — this is a library
 - Fastify and Zod must be **peer dependencies**, not direct dependencies
 - Avoid adding dependencies when the standard library or existing deps suffice
-- Pin exact versions for all dependencies (enforced by syncpack)
+- Pin exact versions for all dependencies
 
 ## Error handling
 
