@@ -17,7 +17,7 @@ Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.c
 - **Smart serializer** -- auto-detects codecs at compile time; falls back to `safeParse` for ~15% faster non-codec schemas
 - **Complete OpenAPI** -- all HTTP parts, nullable types, discriminated unions, recursive schemas, content types
 - **Type-safe end-to-end** -- `req.body`, `req.params`, `req.query`, `req.headers`, and `reply.send()` fully typed
-- **100% test coverage** -- 127 tests including snapshot parity with `fastify-type-provider-zod`
+- **100% test coverage** with snapshot parity against `fastify-type-provider-zod`
 - **Why "Lor"?** -- [Son of Zod](https://dc.fandom.com/wiki/Lor-Zod), here to power your `fastify` schemas.
 
 ## Table of Contents
