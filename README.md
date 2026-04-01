@@ -212,21 +212,22 @@ app.get('/users/:id', { schema }, getUser);
 
 ## Error Handling
 
-Both error classes use modern ES2022+ patterns with `instanceof` support, a stable `code` property for programmatic matching, and `cause` chaining via `ErrorOptions`.
+Validation errors are detected with the `isRequestValidationError` type guard. Serialization errors use `instanceof` on the `ResponseSerializationError` class.
 
 ```ts
 import {
-  RequestValidationError,
+  isRequestValidationError,
   ResponseSerializationError,
 } from 'fastify-lor-zod';
 
 app.setErrorHandler((error, request, reply) => {
-  if (error instanceof RequestValidationError) {
+  if (isRequestValidationError(error)) {
     // Log input server-side only — may contain sensitive fields
-    request.log.error({ input: error.input, context: error.context });
+    request.log.error({ input: error.input });
     reply.code(400).send({
       error: 'Validation failed',
-      issues: error.validation,
+      issues: error.validation,          // FastifySchemaValidationError[]
+      context: error.validationContext,   // 'body' | 'querystring' | 'params' | 'headers'
     });
     return;
   }

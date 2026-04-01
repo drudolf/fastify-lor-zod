@@ -3,9 +3,8 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
-import { mapIssueToValidationError, RequestValidationError } from './error.js';
+import { isRequestValidationError, mapIssueToValidationError } from './error.js';
 import { validatorCompiler } from './validator.js';
-import assert from 'node:assert';
 
 const buildApp = () => {
   const app = Fastify();
@@ -39,12 +38,11 @@ describe('error handling', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    assert(caughtError instanceof RequestValidationError);
-    expect(caughtError).toMatchObject({
-      code: 'ERR_REQUEST_VALIDATION',
-      context: 'body',
-    });
-    expect(caughtError.validation.length).toBeGreaterThan(0);
+    expect(isRequestValidationError(caughtError)).toBe(true);
+    if (isRequestValidationError(caughtError)) {
+      expect(caughtError.validationContext).toBe('body');
+      expect(caughtError.validation.length).toBeGreaterThan(0);
+    }
   });
 
   it('stores input on RequestValidationError', async () => {
@@ -71,8 +69,10 @@ describe('error handling', () => {
       payload,
     });
 
-    assert(caughtError instanceof RequestValidationError);
-    expect(caughtError.input).toEqual(payload);
+    expect(isRequestValidationError(caughtError)).toBe(true);
+    if (isRequestValidationError(caughtError)) {
+      expect(caughtError.input).toEqual(payload);
+    }
   });
 
   it('produces empty instancePath for root-level validation errors', async () => {
@@ -100,8 +100,10 @@ describe('error handling', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    assert(caughtError instanceof RequestValidationError);
-    expect(caughtError.validation[0].instancePath).toBe('');
+    expect(isRequestValidationError(caughtError)).toBe(true);
+    if (isRequestValidationError(caughtError)) {
+      expect(caughtError.validation[0].instancePath).toBe('');
+    }
   });
 });
 
