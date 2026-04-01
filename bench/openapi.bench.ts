@@ -39,7 +39,7 @@ const buildLorZodApp = async () => {
   });
   const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
   typedApp.post('/users/:id', { schema: FullRouteSchema }, (_req, reply) => {
-    reply.send({});
+    reply.send({} as never);
   });
   await app.ready();
   return app;
@@ -56,7 +56,7 @@ const buildTurkerApp = async () => {
   });
   const typedApp = app.withTypeProvider<ZodTypeProvider>();
   typedApp.post('/users/:id', { schema: FullRouteSchema }, (_req, reply) => {
-    reply.send({});
+    reply.send({} as never);
   });
   await app.ready();
   return app;
@@ -74,7 +74,7 @@ const buildSamchungyApp = async () => {
     transformObject: fastifyZodOpenApiTransformers.transformObject,
   });
   app.post('/users/:id', { schema: FullRouteSchema }, (_req, reply) => {
-    reply.send({});
+    reply.send({} as never);
   });
   await app.ready();
   return app;
@@ -140,20 +140,20 @@ describe('OpenAPI spec generation — cold (build + ready)', () => {
 describe('Validation — error path (validator only)', () => {
   const invalidBody = { name: 123, email: 'not-an-email' };
 
-  const lorZodValidate = lorZodValidator({
+  const validatorArgs = {
     schema: FullRouteSchema.body,
     httpPart: 'body',
-  } as Parameters<typeof lorZodValidator>[0]);
+    method: 'POST',
+    url: '/users/:id',
+  };
 
-  const turkerValidate = turkerValidator({
-    schema: FullRouteSchema.body,
-    httpPart: 'body',
-  } as Parameters<typeof turkerValidator>[0]);
+  const lorZodValidate = lorZodValidator(validatorArgs as Parameters<typeof lorZodValidator>[0]);
 
-  const samchungyValidate = samchungyValidator({
-    schema: FullRouteSchema.body,
-    httpPart: 'body',
-  } as Parameters<typeof samchungyValidator>[0]);
+  const turkerValidate = turkerValidator(validatorArgs as Parameters<typeof turkerValidator>[0]);
+
+  const samchungyValidate = samchungyValidator(
+    validatorArgs as Parameters<typeof samchungyValidator>[0],
+  );
 
   bench(
     'fastify-lor-zod',
