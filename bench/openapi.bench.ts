@@ -15,7 +15,10 @@ import {
 import { bench, describe } from 'vitest';
 
 import type { FastifyLorZodTypeProvider } from '../src/index.js';
-import { jsonSchemaTransform as lorZodTransform } from '../src/openapi/schema-transform.js';
+import {
+  jsonSchemaTransform as lorZodTransform,
+  jsonSchemaTransformObject as lorZodTransformObject,
+} from '../src/openapi/schema-transform.js';
 import { serializerCompiler as lorZodSerializer } from '../src/serializer/serializer.js';
 import { validatorCompiler as lorZodValidator } from '../src/validator/validator.js';
 import { benchOpts, FullRouteSchema } from './schemas.js';
@@ -32,6 +35,7 @@ const buildLorZodApp = async () => {
   await app.register(swagger, {
     openapi: { openapi: '3.0.3', info: { title: 'Bench', version: '1.0.0' } },
     transform: lorZodTransform,
+    transformObject: lorZodTransformObject,
   });
   const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
   typedApp.post('/users/:id', { schema: FullRouteSchema }, (_req, reply) => {
@@ -81,7 +85,7 @@ const lorZodApp = await buildLorZodApp();
 const turkerApp = await buildTurkerApp();
 const samchungyApp = await buildSamchungyApp();
 
-describe('OpenAPI spec generation — full app with route', () => {
+describe('OpenAPI spec generation — cached (app.swagger())', () => {
   bench(
     'fastify-lor-zod',
     () => {
@@ -102,6 +106,75 @@ describe('OpenAPI spec generation — full app with route', () => {
     'fastify-zod-openapi',
     () => {
       _result = samchungyApp.swagger();
+    },
+    benchOpts,
+  );
+});
+
+describe('OpenAPI spec generation — cold (build + ready)', () => {
+  bench(
+    'fastify-lor-zod',
+    async () => {
+      _result = await buildLorZodApp();
+    },
+    benchOpts,
+  );
+
+  bench(
+    'fastify-type-provider-zod',
+    async () => {
+      _result = await buildTurkerApp();
+    },
+    benchOpts,
+  );
+
+  bench(
+    'fastify-zod-openapi',
+    async () => {
+      _result = await buildSamchungyApp();
+    },
+    benchOpts,
+  );
+});
+
+describe('Validation — error path (invalid input)', () => {
+  const invalidBody = { name: 123, email: 'not-an-email' };
+
+  const lorZodValidate = lorZodValidator({
+    schema: FullRouteSchema.body,
+    httpPart: 'body',
+  } as Parameters<typeof lorZodValidator>[0]);
+
+  const turkerValidate = turkerValidator({
+    schema: FullRouteSchema.body,
+    httpPart: 'body',
+  } as Parameters<typeof turkerValidator>[0]);
+
+  const samchungyValidate = samchungyValidator({
+    schema: FullRouteSchema.body,
+    httpPart: 'body',
+  } as Parameters<typeof samchungyValidator>[0]);
+
+  bench(
+    'fastify-lor-zod',
+    () => {
+      _result = lorZodValidate(invalidBody);
+    },
+    benchOpts,
+  );
+
+  bench(
+    'fastify-type-provider-zod',
+    () => {
+      _result = turkerValidate(invalidBody);
+    },
+    benchOpts,
+  );
+
+  bench(
+    'fastify-zod-openapi',
+    () => {
+      _result = samchungyValidate(invalidBody);
     },
     benchOpts,
   );
