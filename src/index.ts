@@ -23,5 +23,9 @@ export type {
   FastifyPluginCallbackZod,
   RouteHandler,
 } from './types.js';
-export { isRequestValidationError, type RequestValidationError } from './validator/error.js';
+export {
+  isRequestValidationError,
+  mapIssueToValidationError,
+  type RequestValidationError,
+} from './validator/error.js';
 export { validatorCompiler } from './validator/validator.js';
