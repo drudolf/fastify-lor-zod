@@ -52,8 +52,22 @@ type SerializerType<T extends z.ZodType> =
  * //               ^ typed as number
  * ```
  */
+/**
+ * Extracts the union of Zod output types from a content-type wrapper.
+ *
+ * Handles `{ content: { 'application/json': { schema: ZodType }, ... } }` by producing
+ * a union of each inner schema's output type.
+ */
+type ContentSchemaOutput<T> = T extends { content: infer C }
+  ? C[keyof C] extends { schema: z.ZodType }
+    ? z.output<C[keyof C]['schema']>
+    : unknown
+  : unknown;
+
 export interface FastifyLorZodTypeProvider extends FastifyTypeProvider {
-  readonly validator: this['schema'] extends z.ZodType ? z.output<this['schema']> : unknown;
+  readonly validator: this['schema'] extends z.ZodType
+    ? z.output<this['schema']>
+    : ContentSchemaOutput<this['schema']>;
   readonly serializer: this['schema'] extends z.ZodType ? SerializerType<this['schema']> : unknown;
 }
 
