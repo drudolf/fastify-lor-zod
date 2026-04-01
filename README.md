@@ -222,11 +222,11 @@ import {
 
 app.setErrorHandler((error, request, reply) => {
   if (error instanceof RequestValidationError) {
+    // Log input server-side only — may contain sensitive fields
+    request.log.error({ input: error.input, context: error.context });
     reply.code(400).send({
       error: 'Validation failed',
       issues: error.validation,
-      context: error.context, // 'body' | 'querystring' | 'params' | 'headers'
-      input: error.input,     // the original data that failed validation
     });
     return;
   }
@@ -273,7 +273,7 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
 | --------------- | ------- | --- | ---------------- | ------------------- | ------- |
-| 0.1.x           | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 24 |
+| 0.x             | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 22 |
 
 ## Migrating from fastify-type-provider-zod
 

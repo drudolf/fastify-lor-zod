@@ -11,7 +11,7 @@ import {
   jsonSchemaTransform,
   jsonSchemaTransformObject,
 } from './openapi/schema-transform.js';
-import { ResponseSerializationError } from './serializer/errors.js';
+import { ResponseSerializationError } from './serializer/error.js';
 import { serializerCompiler } from './serializer/serializer.js';
 import { validatorCompiler } from './validator/validator.js';
 

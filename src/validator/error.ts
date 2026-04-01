@@ -17,11 +17,12 @@ import type z from 'zod';
  * ```ts
  * app.setErrorHandler((error, request, reply) => {
  *   if (error instanceof RequestValidationError) {
+ *     // Log input server-side only — it may contain sensitive fields (passwords, tokens)
+ *     request.log.error({ input: error.input, context: error.context });
  *     reply.code(400).send({
  *       error: error.code,           // 'ERR_REQUEST_VALIDATION'
  *       issues: error.validation,    // FastifySchemaValidationError[]
  *       context: error.context,      // 'body' | 'querystring' | 'params' | 'headers'
- *       input: error.input,          // the original data that failed validation
  *     });
  *   }
  * });
@@ -48,7 +49,7 @@ export class RequestValidationError extends Error {
 }
 
 /**
- * Maps Zod issue object to Fastify-compatible `FastifySchemaValidationError` entriy.
+ * Maps Zod issue object to Fastify-compatible `FastifySchemaValidationError` entry.
  *
  * @param issue - Zod issue object from a failed `safeParse`
  * @param httpPart - The HTTP part being validated (`'body'`, `'querystring'`, `'params'`, `'headers'`)
@@ -62,5 +63,5 @@ export const mapIssueToValidationError = (
   keyword: code,
   message,
   params,
-  schemaPath: `#${httpPart ? `/${httpPart}` : ''}/${path.join('/')}`,
+  schemaPath: `#${httpPart ? `/${httpPart}` : ''}${path?.length ? `/${path.join('/')}` : ''}`,
 });

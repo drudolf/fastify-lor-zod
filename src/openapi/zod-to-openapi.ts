@@ -247,7 +247,9 @@ export const getOASVersion = (documentObject: {
   if (openapiVersion.startsWith('3.1')) return '3.1';
   if (openapiVersion.startsWith('3.0')) return '3.0';
 
-  throw new Error('Unsupported OpenAPI document object');
+  throw new Error(
+    `[fastify-lor-zod] Unsupported OpenAPI version: ${openapiVersion}. Expected 3.0.x or 3.1.x`,
+  );
 };
 
 const OAS30_DELETE_KEYS = [
@@ -279,6 +281,20 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
 
   if (clone.items && typeof clone.items === 'object' && !Array.isArray(clone.items)) {
     clone.items = recursive(clone.items as JSONSchemaRecord);
+  }
+
+  if (
+    clone.additionalProperties &&
+    typeof clone.additionalProperties === 'object' &&
+    !Array.isArray(clone.additionalProperties)
+  ) {
+    clone.additionalProperties = jsonSchemaToOAS30(clone.additionalProperties as JSONSchemaRecord);
+  }
+
+  if (clone.definitions && typeof clone.definitions === 'object') {
+    for (const [k, v] of Object.entries(clone.definitions as Record<string, JSONSchemaRecord>)) {
+      (clone.definitions as Record<string, JSONSchemaRecord>)[k] = jsonSchemaToOAS30(v);
+    }
   }
 
   for (const key of ['allOf', 'anyOf', 'oneOf', 'not', 'then', 'else', 'if', 'contains'] as const) {

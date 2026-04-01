@@ -69,7 +69,9 @@ const resolveSchema = (maybeSchema: z.ZodType | { properties: z.ZodType }): Reso
     const { properties, ...extras } = maybeSchema as Record<string, unknown>;
     return { schema: properties as z.ZodType, extras };
   }
-  throw new Error(`Invalid schema: ${JSON.stringify(maybeSchema)}`);
+  throw new Error(
+    `[fastify-lor-zod] Expected a Zod schema or { properties: ZodType } wrapper, received: ${JSON.stringify(maybeSchema)}`,
+  );
 };
 
 const isContentTypeWrapper = (value: unknown): boolean =>

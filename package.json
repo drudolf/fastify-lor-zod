@@ -1,7 +1,7 @@
 {
   "name": "fastify-lor-zod",
   "version": "0.2.2",
-  "description": "A Fastify type provider integrating Zod for schema validation and type-safe route definitions",
+  "description": "A Fastify type provider integrating Zod v4 for schema validation, response serialization, and OpenAPI generation",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "exports": {
@@ -28,7 +28,6 @@
     "check:fix": "biome check --write .",
     "knip": "knip",
     "typecheck": "tsc --noEmit",
-    "syncpack": "syncpack",
     "test:spec-check": "node --experimental-strip-types scripts/test-spec.ts check",
     "test:scaffold": "node --experimental-strip-types scripts/test-spec.ts scaffold",
     "bench": "vitest bench",
@@ -69,7 +68,6 @@
     "lint-staged": "16.4.0",
     "lodash-es": "4.17.23",
     "openapi-types": "12.1.3",
-    "syncpack": "14.3.0",
     "typescript": "6.0.2",
     "vite": "8.0.3",
     "vitest": "4.1.2",
@@ -88,14 +86,18 @@
   "keywords": [
     "fastify",
     "zod",
+    "zod4",
+    "typescript",
     "validation",
+    "serialization",
     "openapi",
     "swagger",
     "type-provider",
-    "schema"
+    "schema",
+    "fastify-plugin"
   ],
   "engines": {
-    "node": ">=24"
+    "node": ">=22"
   },
   "main": "./dist/index.cjs"
 }
