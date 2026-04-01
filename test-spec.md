@@ -13,7 +13,7 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 25 tests
+## Serialization (`serializer/serializer.test.ts`) — 27 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -77,13 +77,13 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] independent predicates do not share cache
 - [x] findInTree handles non-ZodType input gracefully
 
-## Error Handling (`validator/errors.test.ts`) — 3 tests
+## Error Handling (`validator/error.test.ts`) — 3 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 - [x] Stores input on RequestValidationError
 
-## Error mapping (`validator/errors.test.ts`) — 5 tests
+## Error mapping (`validator/error.test.ts`) — 5 tests
 
 - [x] maps issue path to instancePath
 - [x] produces empty instancePath for root-level issue
@@ -91,7 +91,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] omits httpPart from schemaPath when undefined
 - [x] spreads remaining issue properties into params
 
-## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 36 tests
+## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 42 tests
 
 ### Spec generation — 17 tests
 
@@ -180,7 +180,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Recursively converts allOf entries for OAS 3.0
 - [x] Does not mutate original schema
 - [x] Preserves $ref schemas as-is
-- [x] does not recurse into additionalProperties for OAS 3.0
+- [x] recurses into additionalProperties for OAS 3.0
 - [x] throws on unsupported OpenAPI version
 - [x] isZodInternal returns true for a valid Zod schema
 - [x] isZodInternal returns false for non-ZodType input
@@ -209,14 +209,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
----
-
-## isObject (`utils/isObject.test.ts`) — 5 tests
-
-- [x] returns true for plain object
-- [x] returns false for null
-- [x] returns false for array
-- [x] returns false for primitives
-- [x] narrows type to Record<string, unknown>
-
-**Total: 148 tests across 11 test files**
+**Total: 147 spec entries, 162 tests across 10 test files**

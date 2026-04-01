@@ -1,5 +1,22 @@
 # fastify-lor-zod
 
+## 0.3.0
+
+### Minor Changes
+
+- Support Node.js >= 22 (previously required >= 24)
+
+### Patch Changes
+
+- Fix trailing slash in `schemaPath` for root-level validation errors
+- Fix OAS 3.0 key stripping — now recurses into `additionalProperties` and `definitions`
+- Remove schema details from `ResponseSerializationError.message` (security)
+- Improve error messages with `[fastify-lor-zod]` prefix and actionable context
+- Remove dead `isObject` utility
+- Rename `errors.ts` to `error.ts` in validator and serializer
+- Update npm description and keywords for discoverability
+- Add Node 22 to CI matrix
+
 ## 0.2.2
 
 ### Patch Changes
@@ -33,32 +50,25 @@
   - Simplified OpenAPI/Swagger README section
   - Clarified when `transform` and `transformObject` are needed independently
 
-### Patch Changes
-
-- [`c8f3e63`](https://github.com/drudolf/fastify-lor-zod/commit/c8f3e63) Auto-detect input schema variants: registered schemas with divergent input/output shapes (transforms, codecs, defaults) now automatically get `{Id}Input` components without configuration. The `withInputSchema` option is deprecated. Clarified when `transform` and `transformObject` are needed independently, and fixed Biome ignoring all files inside git worktrees.
-- [`ffcf9d0`](https://github.com/drudolf/fastify-lor-zod/commit/ffcf9d0) Fix missing README on npmjs.com by switching from `pnpm publish` to `npm publish`, which embeds README content in the registry metadata.
-- [`286619f`](https://github.com/drudolf/fastify-lor-zod/commit/286619f) Fix missing README on npmjs.com — inject README content into package.json before publish so npm includes it in per-version registry metadata (workaround for npm 11+ regression).
-
 ## 0.1.7
 
 ### Patch Changes
 
-- [`c8f3e63`](https://github.com/drudolf/fastify-lor-zod/commit/c8f3e63) Auto-detect input schema variants: registered schemas with divergent input/output shapes (transforms, codecs, defaults) now automatically get `{Id}Input` components without configuration. The `withInputSchema` option is deprecated. Clarified when `transform` and `transformObject` are needed independently, and fixed Biome ignoring all files inside git worktrees.
-- [`ffcf9d0`](https://github.com/drudolf/fastify-lor-zod/commit/ffcf9d0) Fix missing README on npmjs.com by switching from `pnpm publish` to `npm publish`, which embeds README content in the registry metadata.
-- [`286619f`](https://github.com/drudolf/fastify-lor-zod/commit/286619f) Fix missing README on npmjs.com — inject README content into package.json before publish so npm includes it in per-version registry metadata (workaround for npm 11+ regression).
+- Fix missing README on npmjs.com — inject README content into package.json before publish (npm 11+ workaround)
 
 ## 0.1.6
 
 ### Patch Changes
 
-- [`c8f3e63`](https://github.com/drudolf/fastify-lor-zod/commit/c8f3e63) Auto-detect input schema variants: registered schemas with divergent input/output shapes (transforms, codecs, defaults) now automatically get `{Id}Input` components without configuration. The `withInputSchema` option is deprecated. Clarified when `transform` and `transformObject` are needed independently, and fixed Biome ignoring all files inside git worktrees.
-- [`ffcf9d0`](https://github.com/drudolf/fastify-lor-zod/commit/ffcf9d0) Fix missing README on npmjs.com by switching from `pnpm publish` to `npm publish`, which embeds README content in the registry metadata.
+- Switch from `pnpm publish` to `npm publish` to include README in registry metadata
 
 ## 0.1.5
 
 ### Patch Changes
 
-- [`c8f3e63`](https://github.com/drudolf/fastify-lor-zod/commit/c8f3e63) Auto-detect input schema variants: registered schemas with divergent input/output shapes (transforms, codecs, defaults) now automatically get `{Id}Input` components without configuration. The `withInputSchema` option is deprecated. Clarified when `transform` and `transformObject` are needed independently, and fixed Biome ignoring all files inside git worktrees.
+- Auto-detect input schema variants for OpenAPI `{Id}Input` components (deprecates `withInputSchema`)
+- Clarify when `transform` and `transformObject` are needed independently
+- Fix Biome ignoring all files inside git worktrees
 
 ## 0.1.4
 

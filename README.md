@@ -17,7 +17,7 @@ Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.c
 - **Smart serializer** -- auto-detects codecs at compile time; falls back to `safeParse` for ~15% faster non-codec schemas
 - **Complete OpenAPI** -- all HTTP parts, nullable types, discriminated unions, recursive schemas, content types
 - **Type-safe end-to-end** -- `req.body`, `req.params`, `req.query`, `req.headers`, and `reply.send()` fully typed
-- **100% test coverage** -- 127 tests including snapshot parity with `fastify-type-provider-zod`
+- **100% test coverage** with snapshot parity against `fastify-type-provider-zod`
 - **Why "Lor"?** -- [Son of Zod](https://dc.fandom.com/wiki/Lor-Zod), here to power your `fastify` schemas.
 
 ## Table of Contents
@@ -222,11 +222,11 @@ import {
 
 app.setErrorHandler((error, request, reply) => {
   if (error instanceof RequestValidationError) {
+    // Log input server-side only — may contain sensitive fields
+    request.log.error({ input: error.input, context: error.context });
     reply.code(400).send({
       error: 'Validation failed',
       issues: error.validation,
-      context: error.context, // 'body' | 'querystring' | 'params' | 'headers'
-      input: error.input,     // the original data that failed validation
     });
     return;
   }
@@ -273,7 +273,7 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
 | --------------- | ------- | --- | ---------------- | ------------------- | ------- |
-| 0.1.x           | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 24 |
+| 0.x             | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 22 |
 
 ## Migrating from fastify-type-provider-zod
 

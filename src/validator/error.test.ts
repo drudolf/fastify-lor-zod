@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
-import { mapIssueToValidationError, RequestValidationError } from './errors.js';
+import { mapIssueToValidationError, RequestValidationError } from './error.js';
 import { validatorCompiler } from './validator.js';
 import assert from 'node:assert';
 

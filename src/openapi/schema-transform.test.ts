@@ -566,7 +566,7 @@ describe('schema-transform', () => {
           route: { method: 'GET', url: '/test', handler: () => ({ id: 1 }) },
           openapiObject: { openapi: '3.0.3' },
         }),
-      ).toThrow('Invalid schema');
+      ).toThrow('Expected a Zod schema or { properties: ZodType } wrapper');
     });
 
     it('passes through non-schema keys like tags and description', () => {

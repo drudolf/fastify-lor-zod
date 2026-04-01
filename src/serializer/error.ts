@@ -37,10 +37,7 @@ export class ResponseSerializationError extends Error {
     options: { method: string; url: string; zodError: z.ZodError },
     errorOptions?: ErrorOptions,
   ) {
-    super(
-      `Response serialization failed for ${options.method} ${options.url}: ${options.zodError.message}`,
-      errorOptions,
-    );
+    super(`Response serialization failed for ${options.method} ${options.url}`, errorOptions);
     this.method = options.method;
     this.url = options.url;
     this.zodError = options.zodError;

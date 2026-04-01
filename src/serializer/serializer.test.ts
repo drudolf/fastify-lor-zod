@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { validatorCompiler } from '../validator/validator.js';
-import { ResponseSerializationError } from './errors.js';
+import { ResponseSerializationError } from './error.js';
 import {
   createSerializerCompiler,
   fastSerializerCompiler,

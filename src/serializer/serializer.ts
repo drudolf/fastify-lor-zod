@@ -3,7 +3,7 @@ import type { FastifySerializerCompiler } from 'fastify/types/schema';
 import { z } from 'zod';
 
 import { hasCodecInTree } from '../utils/has-codec-in-tree.js';
-import { ResponseSerializationError } from './errors.js';
+import { ResponseSerializationError } from './error.js';
 
 /**
  * Options for the serializer compiler factories.
