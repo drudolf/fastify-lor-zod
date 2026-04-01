@@ -77,13 +77,13 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] independent predicates do not share cache
 - [x] findInTree handles non-ZodType input gracefully
 
-## Error Handling (`validator/errors.test.ts`) — 3 tests
+## Error Handling (`validator/error.test.ts`) — 3 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 - [x] Stores input on RequestValidationError
 
-## Error mapping (`validator/errors.test.ts`) — 5 tests
+## Error mapping (`validator/error.test.ts`) — 5 tests
 
 - [x] maps issue path to instancePath
 - [x] produces empty instancePath for root-level issue

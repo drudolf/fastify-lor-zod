@@ -1,7 +1,7 @@
 import type { FastifySchemaCompiler } from 'fastify';
 import type { z } from 'zod';
 
-import { RequestValidationError } from './errors.js';
+import { RequestValidationError } from './error.js';
 
 /**
  * Fastify validator compiler that uses Zod's `safeParse` for request validation.
