@@ -139,7 +139,7 @@ describe('zod-to-openapi', () => {
     expect(result.$ref).toBe('#/components/schemas/User');
   });
 
-  it('does not recurse into additionalProperties for OAS 3.0', () => {
+  it('recurses into additionalProperties for OAS 3.0', () => {
     const schema = {
       type: 'object',
       additionalProperties: {
@@ -153,13 +153,16 @@ describe('zod-to-openapi', () => {
 
     const result = jsonSchemaToOAS(schema, '3.0');
 
-    // additionalProperties is not recursed — nested $id must survive
+    // additionalProperties is recursed — nested $id must be stripped for OAS 3.0
     expect(result).toMatchObject({
       type: 'object',
       additionalProperties: {
-        additionalProperties: { $id: 'should-survive' },
+        additionalProperties: { type: 'string' },
       },
     });
+    expect(
+      (result.additionalProperties as Record<string, unknown>).additionalProperties,
+    ).not.toHaveProperty('$id');
   });
 
   it('throws on unsupported OpenAPI version', () => {
@@ -167,7 +170,7 @@ describe('zod-to-openapi', () => {
       getOASVersion({
         openapiObject: { openapi: '2.0.0' } as Record<string, unknown>,
       } as Parameters<typeof getOASVersion>[0]),
-    ).toThrow('Unsupported OpenAPI document object');
+    ).toThrow('Unsupported OpenAPI version');
   });
   // --- Scaffolded from test-spec.md ---
   it('isZodInternal returns true for a valid Zod schema', () => {

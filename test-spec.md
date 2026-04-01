@@ -180,7 +180,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Recursively converts allOf entries for OAS 3.0
 - [x] Does not mutate original schema
 - [x] Preserves $ref schemas as-is
-- [x] does not recurse into additionalProperties for OAS 3.0
+- [x] recurses into additionalProperties for OAS 3.0
 - [x] throws on unsupported OpenAPI version
 - [x] isZodInternal returns true for a valid Zod schema
 - [x] isZodInternal returns false for non-ZodType input
@@ -209,14 +209,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
----
-
-## isObject (`utils/isObject.test.ts`) — 5 tests
-
-- [x] returns true for plain object
-- [x] returns false for null
-- [x] returns false for array
-- [x] returns false for primitives
-- [x] narrows type to Record<string, unknown>
-
-**Total: 152 spec entries, 167 tests across 11 test files**
+**Total: 147 spec entries, 162 tests across 10 test files**
