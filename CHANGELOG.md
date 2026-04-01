@@ -1,5 +1,12 @@
 # fastify-lor-zod
 
+## 0.2.2
+
+### Patch Changes
+
+- Exclude test artifacts and declaration maps from published npm package
+- Remove README injection from publish script (testing if npm caching was the root cause)
+
 ## 0.2.1
 
 ### Patch Changes
