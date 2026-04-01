@@ -13,7 +13,7 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 25 tests
+## Serialization (`serializer/serializer.test.ts`) — 27 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -91,7 +91,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] omits httpPart from schemaPath when undefined
 - [x] spreads remaining issue properties into params
 
-## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 36 tests
+## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 42 tests
 
 ### Spec generation — 17 tests
 
@@ -219,4 +219,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] returns false for primitives
 - [x] narrows type to Record<string, unknown>
 
-**Total: 148 tests across 11 test files**
+**Total: 152 spec entries, 167 tests across 11 test files**
