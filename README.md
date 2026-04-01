@@ -273,7 +273,7 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
 | --------------- | ------- | --- | ---------------- | ------------------- | ------- |
-| 0.x             | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 24 |
+| 0.x             | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 22 |
 
 ## Migrating from fastify-type-provider-zod
 

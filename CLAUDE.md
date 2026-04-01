@@ -6,7 +6,7 @@ fastify-lor-zod — a Fastify type provider that integrates Zod v4 for schema va
 
 ## Tech stack
 
-- TypeScript (strict mode), ES modules (`"type": "module"`), Node.js >= 24
+- TypeScript (strict mode), ES modules (`"type": "module"`), Node.js >= 22
 - Fastify v5, Zod v4, @fastify/swagger (optional peer dep)
 - No runtime dependencies — Fastify, Zod, and fast-json-stringify are peer deps
 - Vite (JS bundling) + tsc (declaration emit) for build
