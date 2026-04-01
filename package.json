@@ -1,6 +1,6 @@
 {
   "name": "fastify-lor-zod",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "A Fastify type provider integrating Zod v4 for schema validation, response serialization, and OpenAPI generation",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
@@ -13,6 +13,10 @@
   },
   "files": [
     "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/__tests__",
+    "!src/**/__snapshots__",
     "README.md",
     "LICENSE"
   ],
