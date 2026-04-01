@@ -9,7 +9,9 @@ import type z from 'zod';
  * validation errors mapped from Zod issues.
  *
  * Use `instanceof` to catch in a Fastify error handler. The `code` property
- * (`'ERR_REQUEST_VALIDATION'`) is stable for programmatic matching.
+ * (`'ERR_REQUEST_VALIDATION'`) is stable for programmatic matching. The `input`
+ * property contains the raw data that failed validation — be mindful that it may
+ * contain sensitive fields; avoid logging it in production without redaction.
  *
  * @example
  * ```ts
@@ -19,6 +21,7 @@ import type z from 'zod';
  *       error: error.code,           // 'ERR_REQUEST_VALIDATION'
  *       issues: error.validation,    // FastifySchemaValidationError[]
  *       context: error.context,      // 'body' | 'querystring' | 'params' | 'headers'
+ *       input: error.input,          // the original data that failed validation
  *     });
  *   }
  * });
@@ -29,15 +32,18 @@ export class RequestValidationError extends Error {
   readonly code = 'ERR_REQUEST_VALIDATION' as const;
   readonly validation: FastifySchemaValidationError[];
   readonly context: string | undefined;
+  readonly input: unknown;
 
   constructor(
     issues: z.ZodError['issues'][number][],
     context: string | undefined,
+    input?: unknown,
     errorOptions?: ErrorOptions,
   ) {
     super('Request validation failed', errorOptions);
     this.validation = issues.map((issue) => mapIssueToValidationError(issue, context));
     this.context = context;
+    this.input = input;
   }
 }
 

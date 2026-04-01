@@ -3,7 +3,9 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
+import { RequestValidationError } from './errors.js';
 import { validatorCompiler } from './validator.js';
+import assert from 'node:assert';
 
 const buildApp = () => {
   const app = Fastify();
@@ -170,6 +172,36 @@ describe('validator', () => {
           validation: [expect.objectContaining({ schemaPath: '#/name' })],
         }),
       });
+    });
+  });
+
+  describe('input reporting', () => {
+    it('exposes original input on validation error', async () => {
+      let caughtError: unknown;
+      const app = buildApp();
+      app.setErrorHandler((error, _req, reply) => {
+        caughtError = error;
+        reply.code(400).send({ statusCode: 400 });
+      });
+      app.post(
+        '/',
+        {
+          schema: {
+            body: z.object({ email: z.email() }),
+          },
+        },
+        (req) => ({ email: req.body.email }),
+      );
+
+      const payload = { email: 'not-an-email' };
+      await app.inject({
+        method: 'POST',
+        url: '/',
+        payload,
+      });
+
+      assert(caughtError instanceof RequestValidationError);
+      expect(caughtError.input).toEqual(payload);
     });
   });
 
