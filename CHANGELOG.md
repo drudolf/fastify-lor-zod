@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.4.3
+
+### Patch Changes
+
+- Re-enable declaration maps (`.d.ts.map`) alongside source files for working IDE "Go to Definition"
+
 ## 0.4.2
 
 ### Patch Changes
