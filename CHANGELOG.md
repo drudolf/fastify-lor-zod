@@ -1,5 +1,22 @@
 # fastify-lor-zod
 
+## 0.3.0
+
+### Minor Changes
+
+- Support Node.js >= 22 (previously required >= 24)
+
+### Patch Changes
+
+- Fix trailing slash in `schemaPath` for root-level validation errors
+- Fix OAS 3.0 key stripping — now recurses into `additionalProperties` and `definitions`
+- Remove schema details from `ResponseSerializationError.message` (security)
+- Improve error messages with `[fastify-lor-zod]` prefix and actionable context
+- Remove dead `isObject` utility
+- Rename `errors.ts` to `error.ts` in validator and serializer
+- Update npm description and keywords for discoverability
+- Add Node 22 to CI matrix
+
 ## 0.2.2
 
 ### Patch Changes
