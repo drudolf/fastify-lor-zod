@@ -1,14 +1,18 @@
 import type { FastifySchemaCompiler } from 'fastify';
 import type { z } from 'zod';
 
-import { RequestValidationError } from './error.js';
+import { mapIssueToValidationError } from './error.js';
 
 /**
  * Fastify validator compiler that uses Zod's `safeParse` for request validation.
  *
  * Validates all HTTP parts (body, querystring, params, headers). On success returns
- * `{ value }` with the parsed data. On failure returns `{ error }` with a
- * {@link RequestValidationError} containing Fastify-compatible validation errors.
+ * `{ value }` with the parsed data. On failure augments the `ZodError` with
+ * `input` and a Fastify-native `validation` array, then returns it. Fastify adds
+ * `validationContext` and `statusCode` downstream via `wrapValidationError`.
+ *
+ * Use {@link isRequestValidationError} in your error handler to detect and access
+ * the structured validation details.
  *
  * @returns A Fastify schema compiler function
  *
@@ -24,7 +28,15 @@ export const validatorCompiler: FastifySchemaCompiler<z.ZodType> =
   (data: unknown) => {
     const result = schema.safeParse(data);
     if (!result.success) {
-      return { error: new RequestValidationError(result.error.issues, httpPart, data) };
+      const error = result.error as z.ZodError & {
+        input?: unknown;
+        validation?: unknown[];
+      };
+      error.input = data;
+      error.validation = result.error.issues.map((issue) =>
+        mapIssueToValidationError(issue, httpPart),
+      );
+      return { error: error as unknown as Error };
     }
     return { value: result.data };
   };

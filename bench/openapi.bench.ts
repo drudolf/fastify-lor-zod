@@ -137,7 +137,7 @@ describe('OpenAPI spec generation — cold (build + ready)', () => {
   );
 });
 
-describe('Validation — error path (invalid input)', () => {
+describe('Validation — error path (validator only)', () => {
   const invalidBody = { name: 123, email: 'not-an-email' };
 
   const lorZodValidate = lorZodValidator({
@@ -175,6 +175,40 @@ describe('Validation — error path (invalid input)', () => {
     'fastify-zod-openapi',
     () => {
       _result = samchungyValidate(invalidBody);
+    },
+    benchOpts,
+  );
+});
+
+describe('Validation — error path (end-to-end via app.inject)', () => {
+  const invalidPayload = { name: 123, email: 'not-an-email' };
+  const injectOpts = {
+    method: 'POST' as const,
+    url: '/users/1',
+    headers: { 'x-api-key': 'bench' },
+    payload: invalidPayload,
+  };
+
+  bench(
+    'fastify-lor-zod',
+    async () => {
+      _result = await lorZodApp.inject(injectOpts);
+    },
+    benchOpts,
+  );
+
+  bench(
+    'fastify-type-provider-zod',
+    async () => {
+      _result = await turkerApp.inject(injectOpts);
+    },
+    benchOpts,
+  );
+
+  bench(
+    'fastify-zod-openapi',
+    async () => {
+      _result = await samchungyApp.inject(injectOpts);
     },
     benchOpts,
   );

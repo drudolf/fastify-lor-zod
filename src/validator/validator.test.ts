@@ -3,9 +3,8 @@ import { z } from 'zod';
 
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
-import { RequestValidationError } from './error.js';
+import { isRequestValidationError } from './error.js';
 import { validatorCompiler } from './validator.js';
-import assert from 'node:assert';
 
 const buildApp = () => {
   const app = Fastify();
@@ -168,7 +167,6 @@ describe('validator', () => {
       const result = validate({ name: 123 });
       expect(result).toMatchObject({
         error: expect.objectContaining({
-          context: undefined,
           validation: [expect.objectContaining({ schemaPath: '#/name' })],
         }),
       });
@@ -200,8 +198,10 @@ describe('validator', () => {
         payload,
       });
 
-      assert(caughtError instanceof RequestValidationError);
-      expect(caughtError.input).toEqual(payload);
+      expect(isRequestValidationError(caughtError)).toBe(true);
+      if (isRequestValidationError(caughtError)) {
+        expect(caughtError.input).toEqual(payload);
+      }
     });
   });
 

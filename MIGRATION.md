@@ -23,27 +23,26 @@ Everything else keeps the same name: `validatorCompiler`, `serializerCompiler`, 
 
 ## 3. Error handling
 
-The upstream package uses `@fastify/error` constructors with type guard functions. fastify-lor-zod uses standard ES2022+ Error classes — use `instanceof` instead.
+The upstream package uses `@fastify/error` constructors with type guard functions. fastify-lor-zod uses a type guard for validation errors and `instanceof` for serialization errors.
 
 ### Validation errors
 
 ```diff
 - import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
-+ import { RequestValidationError } from 'fastify-lor-zod';
++ import { isRequestValidationError } from 'fastify-lor-zod';
 
   app.setErrorHandler((error, request, reply) => {
 -   if (hasZodFastifySchemaValidationErrors(error)) {
 -     reply.code(400).send({ error: error.validation });
-+   if (error instanceof RequestValidationError) {
++   if (isRequestValidationError(error)) {
 +     reply.code(400).send({ error: error.validation });
     }
   });
 ```
 
-`RequestValidationError` exposes:
-- `code` — `'ERR_REQUEST_VALIDATION'`
-- `validation` — `FastifySchemaValidationError[]` (same shape as upstream)
-- `context` — `'body' | 'querystring' | 'params' | 'headers' | undefined`
+`isRequestValidationError(error)` narrows to `RequestValidationError`, which exposes:
+- `validation` — `FastifySchemaValidationError[]` (Fastify-native format)
+- `validationContext` — `'body' | 'querystring' | 'params' | 'headers'` (set by Fastify)
 - `input` — the original data that failed validation
 
 ### Serialization errors
@@ -74,4 +73,4 @@ The upstream package uses `@fastify/error` constructors with type guard function
 - **fast-json-stringify option** — `fastSerializerCompiler` for maximum throughput (no validation)
 - **Auto-detect input schema variants** — schemas with divergent input/output shapes get `{Id}Input` components automatically
 - **Smarter `.default()` typing** — handler return types make defaulted fields optional instead of required
-- **No `@fastify/error` dependency** — error classes are standard ES2022+ with cause chaining
+- **No `@fastify/error` dependency** — `ResponseSerializationError` is a standard ES2022+ class; validation errors use a lightweight type guard
