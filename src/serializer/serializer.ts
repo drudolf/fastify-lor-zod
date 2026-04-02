@@ -50,9 +50,7 @@ export const createSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
   ({ schema, method, url }) => {
     const useEncode = !schema?._zod?.def || hasCodecInTree(schema);
-    const validate = useEncode
-      ? (data: unknown) => z.safeEncode(schema, data)
-      : (data: unknown) => schema.safeParse(data);
+    const validate = useEncode ? schema.safeEncode : schema.safeParse;
 
     return (data: unknown): string => {
       const result = validate(data);
