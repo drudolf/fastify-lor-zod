@@ -69,7 +69,7 @@ The upstream package uses `@fastify/error` constructors with type guard function
 
 ## 4. What you get
 
-- **19+ upstream bug fixes** — see the [Issues Addressed](README.md#issues-addressed) table
+- **25+ upstream bug fixes** — see the [Issues Addressed](README.md#issues-addressed) table
 - **Codec auto-detect** — the default serializer uses `z.safeEncode` for codec schemas and `z.safeParse` for everything else, chosen at compile time
 - **fast-json-stringify option** — `fastSerializerCompiler` for maximum throughput (no validation)
 - **Auto-detect input schema variants** — schemas with divergent input/output shapes get `{Id}Input` components automatically
