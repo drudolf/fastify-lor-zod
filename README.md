@@ -283,13 +283,14 @@ See [MIGRATION.md](MIGRATION.md) for a step-by-step guide.
 
 ## Issues Addressed
 
-Fixes issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
+Fixes 25+ open issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
 
 | Issue | Description |
 | ----- | ----------- |
 | [#244](https://github.com/turkerdev/fastify-type-provider-zod/issues/244) | params/querystring missing from OpenAPI |
 | [#233](https://github.com/turkerdev/fastify-type-provider-zod/issues/233) | Cannot tweak `toJSONSchema` options |
 | [#214](https://github.com/turkerdev/fastify-type-provider-zod/issues/214) | Input schema variants leak into components |
+| [#212](https://github.com/turkerdev/fastify-type-provider-zod/issues/212) | ESLint `no-unsafe-argument` with serializerCompiler |
 | [#211](https://github.com/turkerdev/fastify-type-provider-zod/issues/211) | Serializer should use `.encode()` for Zod v4 |
 | [#210](https://github.com/turkerdev/fastify-type-provider-zod/issues/210) | Schema definitions ignored |
 | [#209](https://github.com/turkerdev/fastify-type-provider-zod/issues/209) | Cannot modify headers after validation |
@@ -300,10 +301,16 @@ Fixes issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/tur
 | [#178](https://github.com/turkerdev/fastify-type-provider-zod/issues/178) | Multi-content schemas not supported |
 | [#170](https://github.com/turkerdev/fastify-type-provider-zod/issues/170) | `components.schemas` not populated |
 | [#158](https://github.com/turkerdev/fastify-type-provider-zod/issues/158) | `.default(null)` crashes |
+| [#156](https://github.com/turkerdev/fastify-type-provider-zod/issues/156) | Support for Zod v4 |
 | [#155](https://github.com/turkerdev/fastify-type-provider-zod/issues/155) | `.optional().default()` querystring fails |
 | [#148](https://github.com/turkerdev/fastify-type-provider-zod/issues/148) | Optional fields treated as required |
+| [#142](https://github.com/turkerdev/fastify-type-provider-zod/issues/142) | Cannot separate handler from route preserving types |
 | [#132](https://github.com/turkerdev/fastify-type-provider-zod/issues/132) | Body/response content types not handled |
+| [#126](https://github.com/turkerdev/fastify-type-provider-zod/issues/126) | No hybrid ESM/CJS bundle |
+| [#124](https://github.com/turkerdev/fastify-type-provider-zod/issues/124) | Type guard doesn't narrow error types |
+| [#76](https://github.com/turkerdev/fastify-type-provider-zod/issues/76) | 204 response without content |
 | [#71](https://github.com/turkerdev/fastify-type-provider-zod/issues/71) | `z.readonly()` not supported |
+| [#64](https://github.com/turkerdev/fastify-type-provider-zod/issues/64) | `instanceof` on validation error fails |
 | [#47](https://github.com/turkerdev/fastify-type-provider-zod/issues/47) | Response description ignored |
 
 ## Contributing
