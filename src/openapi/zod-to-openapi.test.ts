@@ -1,6 +1,6 @@
-import get from 'lodash-es/get.js';
 import { z } from 'zod';
 
+import { get } from '../__tests__/setup.js';
 import {
   getOASVersion,
   isZodInternal,

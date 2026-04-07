@@ -1,8 +1,8 @@
 import swagger from '@fastify/swagger';
 import Fastify from 'fastify';
-import get from 'lodash-es/get.js';
 import { z } from 'zod';
 
+import { get } from '../__tests__/setup.js';
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
 import { validatorCompiler } from '../validator/validator.js';

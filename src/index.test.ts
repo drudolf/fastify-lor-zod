@@ -1,9 +1,9 @@
 import swagger from '@fastify/swagger';
 import Fastify from 'fastify';
-import get from 'lodash-es/get.js';
 import { expectTypeOf } from 'vitest';
 import { z } from 'zod';
 
+import { get } from './__tests__/setup.js';
 import type { FastifyLorZodTypeProvider, FastifyPluginAsyncZod, RouteHandler } from './index.js';
 import {
   createJsonSchemaTransform,
