@@ -1,8 +1,8 @@
 import swagger from '@fastify/swagger';
 import Fastify from 'fastify';
-import get from 'lodash-es/get.js';
 import { z } from 'zod';
 
+import { get } from '../__tests__/setup.js';
 import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
 import { validatorCompiler } from '../validator/validator.js';
@@ -575,7 +575,11 @@ describe('schema-transform', () => {
       const result = transform({
         schema: {
           description: 'a route',
+          summary: 'Create a user',
           tags: ['auth'],
+          deprecated: true,
+          operationId: 'createUser',
+          security: [{ bearerAuth: [] }],
           body: z.object({ name: z.string() }),
         },
         url: '/test',
@@ -585,7 +589,11 @@ describe('schema-transform', () => {
 
       expect(result.schema).toMatchObject({
         description: 'a route',
+        summary: 'Create a user',
         tags: ['auth'],
+        deprecated: true,
+        operationId: 'createUser',
+        security: [{ bearerAuth: [] }],
       });
     });
 

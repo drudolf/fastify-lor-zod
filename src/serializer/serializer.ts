@@ -48,11 +48,9 @@ export interface SerializerCompilerOptions {
  */
 export const createSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
-  ({ schema, method, url }) => {
+  ({ schema, method, url, httpStatus }) => {
     const useEncode = !schema?._zod?.def || hasCodecInTree(schema);
-    const validate = useEncode
-      ? (data: unknown) => z.safeEncode(schema, data)
-      : (data: unknown) => schema.safeParse(data);
+    const validate = useEncode ? schema.safeEncode : schema.safeParse;
 
     return (data: unknown): string => {
       const result = validate(data);
@@ -60,6 +58,7 @@ export const createSerializerCompiler =
         throw new ResponseSerializationError({
           method,
           url,
+          httpStatus,
           zodError: result.error,
         });
       }
@@ -99,13 +98,14 @@ export const serializerCompiler: FastifySerializerCompiler<z.ZodType> = createSe
  */
 export const createParseSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
-  ({ schema, method, url }) =>
+  ({ schema, method, url, httpStatus }) =>
   (data: unknown): string => {
     const result = schema.safeParse(data);
     if (!result.success) {
       throw new ResponseSerializationError({
         method,
         url,
+        httpStatus,
         zodError: result.error,
       });
     }
