@@ -188,7 +188,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] isZodInternal returns false for non-ZodType input
 - [x] zodSchemaToJson throws if Zod internal API is absent
 
-## Integration & Type Inference (`index.test.ts`) — 16 tests
+## Integration & Type Inference (`index.test.ts`) — 17 tests
 
 - [x] Boots, handles requests, and produces a valid OpenAPI spec
 - [x] Uses Zod codec encode for response serialization
@@ -206,6 +206,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Infers output type for response schemas with preprocess
 - [x] Infers body type from content-type wrapper schema
 - [x] Narrows reply type per status code via reply.code()
+- [x] Infers request types in preHandler hook
 
 ## OpenAPI Metaschema Validation (`openapi/openapi-metaschema.test.ts`) — 2 tests
 

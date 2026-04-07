@@ -555,6 +555,28 @@ describe('type inference', () => {
     await app.ready();
   });
 
+  it('infers request types in preHandler hook', async () => {
+    const app = buildApp();
+
+    app.post(
+      '/',
+      {
+        schema: {
+          body: z.object({ name: z.string() }),
+          querystring: z.object({ verbose: z.coerce.boolean().optional() }),
+        },
+        preHandler: (req, _reply, done) => {
+          expectTypeOf(req.body).toEqualTypeOf<{ name: string }>();
+          expectTypeOf(req.query).toEqualTypeOf<{ verbose?: boolean | undefined }>();
+          done();
+        },
+      },
+      (req) => ({ name: req.body.name }),
+    );
+
+    await app.ready();
+  });
+
   it('infers body type from content-type wrapper schema', async () => {
     const app = buildApp();
 
