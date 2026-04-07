@@ -13,7 +13,7 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 27 tests
+## Serialization (`serializer/serializer.test.ts`) — 29 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -40,6 +40,8 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 
 - [x] serializer uses encode for codec schemas
 - [x] Custom serializer replacer modifies JSON.stringify output
+- [x] includes httpStatus in ResponseSerializationError
+- [x] omits httpStatus from message when not provided
 
 ## Schema divergence detection (`utils/schema-diverges.test.ts`) — 27 tests
 
@@ -186,7 +188,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] isZodInternal returns false for non-ZodType input
 - [x] zodSchemaToJson throws if Zod internal API is absent
 
-## Integration & Type Inference (`index.test.ts`) — 15 tests
+## Integration & Type Inference (`index.test.ts`) — 17 tests
 
 - [x] Boots, handles requests, and produces a valid OpenAPI spec
 - [x] Uses Zod codec encode for response serialization
@@ -203,6 +205,8 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Infers output type for schemas with transforms
 - [x] Infers output type for response schemas with preprocess
 - [x] Infers body type from content-type wrapper schema
+- [x] Narrows reply type per status code via reply.code()
+- [x] Infers request types in preHandler hook
 
 ## OpenAPI Metaschema Validation (`openapi/openapi-metaschema.test.ts`) — 2 tests
 

@@ -64,6 +64,7 @@ The upstream package uses `@fastify/error` constructors with type guard function
 - `code` — `'ERR_RESPONSE_SERIALIZATION'`
 - `method` — HTTP method
 - `url` — request URL
+- `httpStatus` — the response status code whose schema failed (e.g. `'200'`)
 - `zodError` — the `ZodError` (renamed from `cause`)
 
 ## 4. What you get

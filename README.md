@@ -235,9 +235,10 @@ app.setErrorHandler((error, request, reply) => {
   if (error instanceof ResponseSerializationError) {
     reply.code(500).send({
       error: 'Response serialization failed',
-      code: error.code,    // 'ERR_RESPONSE_SERIALIZATION'
-      method: error.method,
-      url: error.url,
+      code: error.code,        // 'ERR_RESPONSE_SERIALIZATION'
+      method: error.method,    // 'GET'
+      url: error.url,          // '/users/42'
+      httpStatus: error.httpStatus, // '200'
     });
     return;
   }
