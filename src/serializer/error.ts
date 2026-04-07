@@ -16,11 +16,12 @@ import type z from 'zod';
  *   if (error instanceof ResponseSerializationError) {
  *     // Do NOT forward error.message or error.zodError to the client —
  *     // they contain internal schema details. Log them server-side instead.
- *     request.log.error({ method: error.method, url: error.url, zodError: error.zodError });
+ *     request.log.error({ method: error.method, url: error.url, httpStatus: error.httpStatus, zodError: error.zodError });
  *     reply.code(500).send({
- *       error: error.code,     // 'ERR_RESPONSE_SERIALIZATION'
- *       method: error.method,  // 'GET'
- *       url: error.url,        // '/users/42'
+ *       error: error.code,         // 'ERR_RESPONSE_SERIALIZATION'
+ *       method: error.method,      // 'GET'
+ *       url: error.url,            // '/users/42'
+ *       httpStatus: error.httpStatus, // '200'
  *     });
  *   }
  * });
@@ -31,15 +32,21 @@ export class ResponseSerializationError extends Error {
   readonly code = 'ERR_RESPONSE_SERIALIZATION' as const;
   readonly method: string;
   readonly url: string;
+  readonly httpStatus: string | undefined;
   readonly zodError: z.ZodError;
 
   constructor(
-    options: { method: string; url: string; zodError: z.ZodError },
+    options: { method: string; url: string; httpStatus?: string; zodError: z.ZodError },
     errorOptions?: ErrorOptions,
   ) {
-    super(`Response serialization failed for ${options.method} ${options.url}`, errorOptions);
+    const status = options.httpStatus ? ` (status ${options.httpStatus})` : '';
+    super(
+      `Response serialization failed for ${options.method} ${options.url}${status}`,
+      errorOptions,
+    );
     this.method = options.method;
     this.url = options.url;
+    this.httpStatus = options.httpStatus;
     this.zodError = options.zodError;
   }
 }

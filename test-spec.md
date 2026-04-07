@@ -13,7 +13,7 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 27 tests
+## Serialization (`serializer/serializer.test.ts`) — 29 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -40,6 +40,8 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 
 - [x] serializer uses encode for codec schemas
 - [x] Custom serializer replacer modifies JSON.stringify output
+- [x] includes httpStatus in ResponseSerializationError
+- [x] omits httpStatus from message when not provided
 
 ## Schema divergence detection (`utils/schema-diverges.test.ts`) — 27 tests
 

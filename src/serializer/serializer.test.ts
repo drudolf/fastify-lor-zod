@@ -232,6 +232,40 @@ describe('serializer — safeEncode only', () => {
     expect(body.createdAt).toBe('2024-01-15T10:30:00.000Z');
   });
 
+  it('includes httpStatus in ResponseSerializationError', async () => {
+    let caughtError: unknown;
+    const app = buildApp(serializerCompiler);
+    app.setErrorHandler((error, _req, reply) => {
+      caughtError = error;
+      reply.code(500).send({ statusCode: 500 });
+    });
+    app.get(
+      '/',
+      { schema: { response: { 200: z.object({ id: z.number() }) } } },
+      () => ({ id: 'not-a-number' }) as unknown as { id: number },
+    );
+
+    await app.inject({ method: 'GET', url: '/' });
+
+    expect(caughtError).toBeInstanceOf(ResponseSerializationError);
+    expect(caughtError as ResponseSerializationError).toMatchObject({
+      method: 'GET',
+      url: '/',
+      httpStatus: '200',
+    });
+    expect((caughtError as ResponseSerializationError).message).toContain('(status 200)');
+  });
+
+  it('omits httpStatus from message when not provided', () => {
+    const error = new ResponseSerializationError({
+      method: 'POST',
+      url: '/test',
+      zodError: new z.ZodError([]),
+    });
+    expect(error.httpStatus).toBeUndefined();
+    expect(error.message).toBe('Response serialization failed for POST /test');
+  });
+
   it('custom serializer replacer modifies JSON.stringify output', async () => {
     const app = Fastify();
     app.setValidatorCompiler(validatorCompiler);
