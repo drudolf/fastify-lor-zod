@@ -526,6 +526,35 @@ describe('type inference', () => {
     await app.ready();
   });
 
+  it('narrows reply type per status code via reply.code()', async () => {
+    const app = buildApp();
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({ id: z.number(), name: z.string() }),
+            404: z.object({ error: z.string() }),
+          },
+        },
+      },
+      (_req, reply) => {
+        // reply.code(200).send() narrows to only the 200 schema
+        expectTypeOf(reply.code(200).send)
+          .parameter(0)
+          .toExtend<{ id: number; name: string } | undefined>();
+
+        // reply.code(404).send() narrows to only the 404 schema
+        expectTypeOf(reply.code(404).send).parameter(0).toExtend<{ error: string } | undefined>();
+
+        reply.code(200).send({ id: 1, name: 'Alice' });
+      },
+    );
+
+    await app.ready();
+  });
+
   it('infers body type from content-type wrapper schema', async () => {
     const app = buildApp();
 
