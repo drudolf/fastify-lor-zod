@@ -1,5 +1,23 @@
 # fastify-lor-zod
 
+## 0.4.4
+
+### Features
+
+- Include `httpStatus` in `ResponseSerializationError` — error messages now show which status code's schema failed (e.g. `Response serialization failed for GET /users/42 (status 200)`)
+- Export `mapIssueToValidationError` for consumers building custom validator compilers
+
+### Fixes
+
+- Remove lodash-es dev dependency (security: code injection and prototype pollution CVEs)
+- Bump Vite to 8.0.6 (security: path traversal and file read CVEs)
+
+### Tests
+
+- Verify reply type narrowing per status code via `reply.code()`
+- Verify type inference in `preHandler` hook
+- Expand schema metadata pass-through coverage (`security`, `operationId`, `deprecated`, `summary`)
+
 ## 0.4.3
 
 ### Patch Changes
