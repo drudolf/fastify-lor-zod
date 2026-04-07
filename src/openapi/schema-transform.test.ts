@@ -575,7 +575,11 @@ describe('schema-transform', () => {
       const result = transform({
         schema: {
           description: 'a route',
+          summary: 'Create a user',
           tags: ['auth'],
+          deprecated: true,
+          operationId: 'createUser',
+          security: [{ bearerAuth: [] }],
           body: z.object({ name: z.string() }),
         },
         url: '/test',
@@ -585,7 +589,11 @@ describe('schema-transform', () => {
 
       expect(result.schema).toMatchObject({
         description: 'a route',
+        summary: 'Create a user',
         tags: ['auth'],
+        deprecated: true,
+        operationId: 'createUser',
+        security: [{ bearerAuth: [] }],
       });
     });
 
