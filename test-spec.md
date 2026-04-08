@@ -114,6 +114,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] hides route when schema has hide: true
 - [x] Allows zodToJsonConfig passthrough (#233)
 - [x] Allows custom override to strip pattern from uuid (#233)
+- [x] allows custom override to transform unsupported types
 - [x] Handles readonly schemas (#71)
 
 ### Edge cases — 5 tests

@@ -73,7 +73,8 @@
       "!**/node_modules",
       "!**/coverage",
       "!.claude",
-      "!bench/results.json"
+      "!bench/results.json",
+      "!.perf"
     ]
   }
 }
