@@ -335,6 +335,60 @@ describe('schema-transform', () => {
       expect(idSchema).not.toHaveProperty('pattern');
     });
 
+    it('allows custom override to transform unsupported types', async () => {
+      const app = Fastify();
+      app.setValidatorCompiler(validatorCompiler);
+      app.setSerializerCompiler(serializerCompiler);
+
+      await app.register(swagger, {
+        openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
+        transform: createJsonSchemaTransform({
+          zodToJsonConfig: {
+            override: (ctx) => {
+              if (ctx.zodSchema instanceof z.ZodBigInt) {
+                ctx.jsonSchema.type = 'integer';
+                ctx.jsonSchema.format = 'int64';
+
+                const { maxValue } = ctx.zodSchema;
+                if (maxValue !== null) ctx.jsonSchema.maximum = Number(maxValue);
+              }
+            },
+          },
+        }),
+      });
+
+      app.after(() => {
+        app.withTypeProvider<FastifyLorZodTypeProvider>().route({
+          method: 'GET',
+          url: '/user',
+          schema: {
+            response: { 200: z.object({ bigInt: z.bigint().max(101n) }) },
+          },
+          handler: (_req, res) => {
+            res.send({ bigInt: 100n });
+          },
+        });
+      });
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const bigIntSchema = get(spec, [
+        'paths',
+        '/user',
+        'get',
+        'responses',
+        '200',
+        'content',
+        'application/json',
+        'schema',
+        'properties',
+        'bigInt',
+      ]);
+
+      expect(bigIntSchema).toMatchObject({ format: 'int64', maximum: 101, type: 'integer' });
+    });
+
     it('handles readonly schemas', async () => {
       const app = await buildAppWithSwagger('3.0.3');
 

@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.4.5
+
+### Patch Changes
+
+- [`1e7d3b0`](https://github.com/drudolf/fastify-lor-zod/commit/1e7d3b0) Update dev dependencies: biome 2.4.11, vitest 4.1.4, fastify 5.8.5, knip 6.4.1, vite 8.0.8.
+
 ## 0.4.4
 
 ### Features
@@ -46,6 +52,7 @@
 - `.code` (`'ERR_REQUEST_VALIDATION'`) removed — Fastify sets `.code` to `'FST_ERR_VALIDATION'`
 
 **Migration:**
+
 ```diff
 - import { RequestValidationError } from 'fastify-lor-zod';
 + import { isRequestValidationError } from 'fastify-lor-zod';
