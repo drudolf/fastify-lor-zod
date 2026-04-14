@@ -13,7 +13,7 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 29 tests
+## Serialization (`serializer/serializer.test.ts`) — 30 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -36,9 +36,10 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 
 - [x] applies default value for omitted field in response schema
 
-### safeEncode only — 2 tests
+### safeEncode only — 5 tests
 
 - [x] serializer uses encode for codec schemas
+- [x] serializes transform response schemas via safeParse
 - [x] Custom serializer replacer modifies JSON.stringify output
 - [x] includes httpStatus in ResponseSerializationError
 - [x] omits httpStatus from message when not provided
@@ -189,7 +190,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] isZodInternal returns false for non-ZodType input
 - [x] zodSchemaToJson throws if Zod internal API is absent
 
-## Integration & Type Inference (`index.test.ts`) — 17 tests
+## Integration & Type Inference (`index.test.ts`) — 26 tests
 
 - [x] Boots, handles requests, and produces a valid OpenAPI spec
 - [x] Uses Zod codec encode for response serialization
@@ -208,10 +209,19 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Infers body type from content-type wrapper schema
 - [x] Narrows reply type per status code via reply.code()
 - [x] Infers request types in preHandler hook
+- [x] infers response type from content-type wrapper schema
+- [x] infers output type for tuples with codec elements
+- [x] infers output type for unions with codec branches
+- [x] infers output type for records with codec values
+- [x] infers output type for intersections with codec-bearing branches
+- [x] infers output type for tuples with codec rest elements
+- [x] infers input type for tuples with transform rest elements
+- [x] preserves constrained keys for records with codec values
+- [x] preserves optional constrained keys for partial records with codec values
 
 ## OpenAPI Metaschema Validation (`openapi/openapi-metaschema.test.ts`) — 2 tests
 
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 147 spec entries, 162 tests across 10 test files**
+**Total: 162 spec entries, 177 tests across 10 test files**

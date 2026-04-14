@@ -497,8 +497,8 @@ describe('type inference', () => {
         },
       },
       (_req, reply) => {
-        // transform produces number — reply.send should accept number for id
-        expectTypeOf(reply.send).parameter(0).toExtend<{ id: number }>();
+        // transform runs during safeParse — reply.send should accept the parse input type
+        expectTypeOf(reply.send).parameter(0).toExtend<{ id: string }>();
       },
     );
 
@@ -595,6 +595,315 @@ describe('type inference', () => {
       (req) => {
         expectTypeOf(req.body).toEqualTypeOf<{ name: string } | string>();
         return { ok: true };
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('infers response type from content-type wrapper schema', async () => {
+    const app = buildApp();
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: {
+              content: {
+                'application/json': { schema: z.object({ ok: z.boolean() }) },
+                'text/plain': { schema: z.string() },
+              },
+            },
+          },
+        },
+      },
+      (_req, reply) => {
+        const responseValue: Parameters<typeof reply.send>[0] =
+          Math.random() > 0.5 ? { ok: true } : 'ok';
+        expectTypeOf(responseValue).toExtend<{ ok: boolean } | string>();
+        // @ts-expect-error number is not a valid response payload for this wrapper
+        const _invalidResponseValue: Parameters<typeof reply.send>[0] = 123;
+        reply.send({ ok: true });
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('infers output type for tuples with codec elements', async () => {
+    const app = buildApp();
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.tuple([dateCodec, z.string().transform((s) => Number.parseInt(s, 10))]),
+          },
+        },
+      },
+      (_req, reply) => {
+        const tupleValue: Parameters<typeof reply.send>[0] = [
+          new Date('2025-01-01T00:00:00.000Z'),
+          '42',
+        ];
+        expectTypeOf(tupleValue).toExtend<[Date, string]>();
+        const _invalidTupleValue: Parameters<typeof reply.send>[0] = [
+          new Date('2025-01-01T00:00:00.000Z'),
+          // @ts-expect-error tuple transform field should use string input, not number output
+          42,
+        ];
+        reply.send([new Date('2025-01-01T00:00:00.000Z'), '42']);
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('infers output type for tuples with codec rest elements', async () => {
+    const app = buildApp();
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.tuple([z.string()]).rest(dateCodec),
+          },
+        },
+      },
+      (_req, reply) => {
+        const tupleValue: Parameters<typeof reply.send>[0] = [
+          'prefix',
+          new Date('2025-01-01T00:00:00.000Z'),
+          new Date('2025-01-02T00:00:00.000Z'),
+        ];
+        expectTypeOf(tupleValue).toExtend<[string, ...Date[]]>();
+        // @ts-expect-error tuple rest codec values should accept Date domain values
+        const _invalidTupleValue: Parameters<typeof reply.send>[0] = [
+          'prefix',
+          '2025-01-01T00:00:00.000Z',
+        ];
+        reply.send(['prefix', new Date('2025-01-01T00:00:00.000Z')]);
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('infers input type for tuples with transform rest elements', async () => {
+    const app = buildApp();
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.tuple([z.string()]).rest(z.string().transform((s) => Number.parseInt(s, 10))),
+          },
+        },
+      },
+      (_req, reply) => {
+        const tupleValue: Parameters<typeof reply.send>[0] = ['prefix', '42', '99'];
+        expectTypeOf(tupleValue).toExtend<[string, ...string[]]>();
+        // @ts-expect-error tuple rest transform values should use string parse input
+        const _invalidTupleValue: Parameters<typeof reply.send>[0] = ['prefix', 42];
+        reply.send(['prefix', '42']);
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('infers output type for unions with codec branches', async () => {
+    const app = buildApp();
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.union([
+              z.object({ kind: z.literal('date'), value: dateCodec }),
+              z.object({
+                kind: z.literal('count'),
+                value: z.string().transform((s) => Number.parseInt(s, 10)),
+              }),
+            ]),
+          },
+        },
+      },
+      (_req, reply) => {
+        const unionValue: Parameters<typeof reply.send>[0] =
+          Math.random() > 0.5
+            ? { kind: 'date', value: new Date('2025-01-01T00:00:00.000Z') }
+            : { kind: 'count', value: '42' };
+        expectTypeOf(unionValue).toExtend<
+          { kind: 'date'; value: Date } | { kind: 'count'; value: string }
+        >();
+        const _invalidUnionValue: Parameters<typeof reply.send>[0] = {
+          kind: 'count',
+          // @ts-expect-error transform branch should use string input, not number output
+          value: 42,
+        };
+        reply.send({ kind: 'date', value: new Date('2025-01-01T00:00:00.000Z') });
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('infers output type for records with codec values', async () => {
+    const app = buildApp();
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.record(z.string(), dateCodec),
+          },
+        },
+      },
+      (_req, reply) => {
+        const recordValue: Parameters<typeof reply.send>[0] = {
+          createdAt: new Date('2025-01-01T00:00:00.000Z'),
+        };
+        expectTypeOf(recordValue).toExtend<Record<string, Date>>();
+        const _invalidRecordValue: Parameters<typeof reply.send>[0] = {
+          // @ts-expect-error record codec values should accept Date domain values
+          createdAt: '2025-01-01T00:00:00.000Z',
+        };
+        reply.send({ createdAt: new Date('2025-01-01T00:00:00.000Z') });
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('preserves constrained keys for records with codec values', async () => {
+    const app = buildApp();
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.record(z.enum(['start', 'end']), dateCodec),
+          },
+        },
+      },
+      (_req, reply) => {
+        const recordValue: Parameters<typeof reply.send>[0] = {
+          start: new Date('2025-01-01T00:00:00.000Z'),
+          end: new Date('2025-01-02T00:00:00.000Z'),
+        };
+        expectTypeOf(recordValue).toExtend<{ start: Date; end: Date }>();
+        const _invalidRecordKey: Parameters<typeof reply.send>[0] = {
+          start: new Date('2025-01-01T00:00:00.000Z'),
+          // @ts-expect-error record should reject keys outside the enum
+          other: new Date('2025-01-02T00:00:00.000Z'),
+        };
+        const _invalidRecordValue: Parameters<typeof reply.send>[0] = {
+          // @ts-expect-error record codec values should accept Date domain values
+          start: '2025-01-01T00:00:00.000Z',
+        };
+        reply.send({
+          start: new Date('2025-01-01T00:00:00.000Z'),
+          end: new Date('2025-01-02T00:00:00.000Z'),
+        });
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('preserves optional constrained keys for partial records with codec values', async () => {
+    const app = buildApp();
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.partialRecord(z.enum(['start', 'end']), dateCodec),
+          },
+        },
+      },
+      (_req, reply) => {
+        const recordValue: Parameters<typeof reply.send>[0] = {
+          start: new Date('2025-01-01T00:00:00.000Z'),
+        };
+        expectTypeOf(recordValue).toExtend<{ start?: Date; end?: Date }>();
+        const _invalidRecordKey: Parameters<typeof reply.send>[0] = {
+          // @ts-expect-error partial record should still reject keys outside the enum
+          other: new Date('2025-01-02T00:00:00.000Z'),
+        };
+        reply.send({
+          start: new Date('2025-01-01T00:00:00.000Z'),
+        });
+      },
+    );
+
+    await app.ready();
+  });
+
+  it('infers output type for intersections with codec-bearing branches', async () => {
+    const app = buildApp();
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.intersection(z.object({ id: z.string() }), z.object({ createdAt: dateCodec })),
+          },
+        },
+      },
+      (_req, reply) => {
+        const intersectionValue: Parameters<typeof reply.send>[0] = {
+          id: 'evt_1',
+          createdAt: new Date('2025-01-01T00:00:00.000Z'),
+        };
+        expectTypeOf(intersectionValue).toExtend<{ id: string; createdAt: Date }>();
+        const _invalidIntersectionValue: Parameters<typeof reply.send>[0] = {
+          id: 'evt_1',
+          // @ts-expect-error codec branch should accept Date domain values, not wire strings
+          createdAt: '2025-01-01T00:00:00.000Z',
+        };
+        reply.send({
+          id: 'evt_1',
+          createdAt: new Date('2025-01-01T00:00:00.000Z'),
+        });
       },
     );
 

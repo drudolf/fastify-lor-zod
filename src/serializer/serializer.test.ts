@@ -232,6 +232,29 @@ describe('serializer — safeEncode only', () => {
     expect(body.createdAt).toBe('2024-01-15T10:30:00.000Z');
   });
 
+  it('serializes transform response schemas via safeParse', async () => {
+    const app = buildApp(serializerCompiler);
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({
+              id: z.string().transform((value) => Number.parseInt(value, 10)),
+            }),
+          },
+        },
+      },
+      () => ({ id: '42' }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ id: 42 });
+  });
+
   it('includes httpStatus in ResponseSerializationError', async () => {
     let caughtError: unknown;
     const app = buildApp(serializerCompiler);
