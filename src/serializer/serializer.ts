@@ -3,6 +3,7 @@ import type { FastifySerializerCompiler } from 'fastify/types/schema';
 import { z } from 'zod';
 
 import { hasCodecInTree } from '../utils/has-codec-in-tree.js';
+import { hasTransformInTree } from '../utils/has-transform-in-tree.js';
 import { ResponseSerializationError } from './error.js';
 
 /**
@@ -49,7 +50,17 @@ export interface SerializerCompilerOptions {
 export const createSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
   ({ schema, method, url, httpStatus }) => {
-    const useEncode = !schema?._zod?.def || hasCodecInTree(schema);
+    const hasCodec = !schema?._zod?.def || hasCodecInTree(schema);
+    const hasTransform = !!schema?._zod?.def && hasTransformInTree(schema);
+
+    if (hasCodec && hasTransform) {
+      throw new Error(
+        `[fastify-lor-zod] Mixed codec+transform response schemas are not supported for serialization: ${method} ${url}. ` +
+          'Use only codecs or only one-way transforms in a response schema, or provide a custom serializer.',
+      );
+    }
+
+    const useEncode = hasCodec;
     const validate = useEncode ? schema.safeEncode : schema.safeParse;
 
     return (data: unknown): string => {

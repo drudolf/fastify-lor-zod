@@ -255,6 +255,36 @@ describe('serializer — safeEncode only', () => {
     expect(response.json()).toEqual({ id: 42 });
   });
 
+  it('rejects mixed codec and one-way transform response schemas with a clear error', async () => {
+    const app = buildApp(serializerCompiler);
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({
+              createdAt: dateCodec,
+              id: z.string().transform((value) => Number.parseInt(value, 10)),
+            }),
+          },
+        },
+      },
+      () => ({
+        createdAt: new Date('2025-01-01T00:00:00.000Z'),
+        id: '42',
+      }),
+    );
+
+    await expect(app.ready()).rejects.toThrow(
+      'Mixed codec+transform response schemas are not supported',
+    );
+  });
+
   it('includes httpStatus in ResponseSerializationError', async () => {
     let caughtError: unknown;
     const app = buildApp(serializerCompiler);

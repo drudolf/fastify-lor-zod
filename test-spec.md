@@ -13,7 +13,7 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 30 tests
+## Serialization (`serializer/serializer.test.ts`) — 31 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -36,10 +36,11 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 
 - [x] applies default value for omitted field in response schema
 
-### safeEncode only — 5 tests
+### safeEncode only — 6 tests
 
 - [x] serializer uses encode for codec schemas
 - [x] serializes transform response schemas via safeParse
+- [x] rejects mixed codec and one-way transform response schemas with a clear error
 - [x] Custom serializer replacer modifies JSON.stringify output
 - [x] includes httpStatus in ResponseSerializationError
 - [x] omits httpStatus from message when not provided
@@ -210,8 +211,8 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Narrows reply type per status code via reply.code()
 - [x] Infers request types in preHandler hook
 - [x] infers response type from content-type wrapper schema
-- [x] infers output type for tuples with codec elements
-- [x] infers output type for unions with codec branches
+- [x] rejects tuples that mix codec and one-way transform elements
+- [x] rejects unions that mix codec and one-way transform branches
 - [x] infers output type for records with codec values
 - [x] infers output type for intersections with codec-bearing branches
 - [x] infers output type for tuples with codec rest elements
@@ -224,4 +225,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 162 spec entries, 177 tests across 10 test files**
+**Total: 163 spec entries, 178 tests across 10 test files**

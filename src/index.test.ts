@@ -631,7 +631,7 @@ describe('type inference', () => {
     await app.ready();
   });
 
-  it('infers output type for tuples with codec elements', async () => {
+  it('rejects tuples that mix codec and one-way transform elements', async () => {
     const app = buildApp();
     const dateCodec = z.codec(z.iso.datetime(), z.date(), {
       decode: (isoString: string) => new Date(isoString),
@@ -647,22 +647,12 @@ describe('type inference', () => {
           },
         },
       },
-      (_req, reply) => {
-        const tupleValue: Parameters<typeof reply.send>[0] = [
-          new Date('2025-01-01T00:00:00.000Z'),
-          '42',
-        ];
-        expectTypeOf(tupleValue).toExtend<[Date, string]>();
-        const _invalidTupleValue: Parameters<typeof reply.send>[0] = [
-          new Date('2025-01-01T00:00:00.000Z'),
-          // @ts-expect-error tuple transform field should use string input, not number output
-          42,
-        ];
-        reply.send([new Date('2025-01-01T00:00:00.000Z'), '42']);
-      },
+      () => [new Date('2025-01-01T00:00:00.000Z'), '42'] as [Date, string],
     );
 
-    await app.ready();
+    await expect(app.ready()).rejects.toThrow(
+      'Mixed codec+transform response schemas are not supported',
+    );
   });
 
   it('infers output type for tuples with codec rest elements', async () => {
@@ -724,7 +714,7 @@ describe('type inference', () => {
     await app.ready();
   });
 
-  it('infers output type for unions with codec branches', async () => {
+  it('rejects unions that mix codec and one-way transform branches', async () => {
     const app = buildApp();
     const dateCodec = z.codec(z.iso.datetime(), z.date(), {
       decode: (isoString: string) => new Date(isoString),
@@ -746,24 +736,16 @@ describe('type inference', () => {
           },
         },
       },
-      (_req, reply) => {
-        const unionValue: Parameters<typeof reply.send>[0] =
-          Math.random() > 0.5
-            ? { kind: 'date', value: new Date('2025-01-01T00:00:00.000Z') }
-            : { kind: 'count', value: '42' };
-        expectTypeOf(unionValue).toExtend<
-          { kind: 'date'; value: Date } | { kind: 'count'; value: string }
-        >();
-        const _invalidUnionValue: Parameters<typeof reply.send>[0] = {
-          kind: 'count',
-          // @ts-expect-error transform branch should use string input, not number output
-          value: 42,
-        };
-        reply.send({ kind: 'date', value: new Date('2025-01-01T00:00:00.000Z') });
-      },
+      () =>
+        ({
+          kind: 'date',
+          value: new Date('2025-01-01T00:00:00.000Z'),
+        }) as { kind: 'date'; value: Date },
     );
 
-    await app.ready();
+    await expect(app.ready()).rejects.toThrow(
+      'Mixed codec+transform response schemas are not supported',
+    );
   });
 
   it('infers output type for records with codec values', async () => {
