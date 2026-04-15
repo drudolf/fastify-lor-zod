@@ -61,6 +61,8 @@ type RecordSerializerType<Key extends z.ZodType<PropertyKey>, Value extends z.Zo
 /** Intersections require values satisfying both serializer shapes simultaneously. */
 type IntersectionSerializerType<A extends z.ZodType, B extends z.ZodType> = SerializerType<A> &
   SerializerType<B>;
+/** Non-codec pipes delegate to their output schema for serializer resolution. */
+type PipeSerializerType<Out extends z.ZodType> = SerializerType<Out>;
 
 /**
  * Wrapper schemas mostly forward serializer behavior from their inner schema,
@@ -104,28 +106,36 @@ type FallbackSerializerType<T extends z.ZodType> =
  */
 type SerializerType<T extends z.ZodType> = T extends z.ZodCodec
   ? z.output<T>
-  : T extends z.ZodJSONSchema
-    ? z.output<T>
-    : T extends z.ZodObject<infer Shape extends SchemaShape, infer _Config>
-      ? ObjectSerializerType<Shape>
-      : T extends z.ZodArray<infer Item extends z.ZodType>
-        ? ArraySerializerType<Item>
-        : T extends z.ZodTuple<infer Items extends readonly z.ZodType[], infer Rest>
-          ? TupleSerializerType<Items, Rest>
-          : T extends z.ZodUnion<infer Options extends readonly z.ZodType[]>
-            ? UnionSerializerType<Options>
-            : T extends z.ZodDiscriminatedUnion<infer Options extends readonly z.ZodType[], string>
+  : T extends z.ZodPipe<z.ZodType, infer Out extends z.ZodType>
+    ? PipeSerializerType<Out>
+    : T extends z.ZodJSONSchema
+      ? z.output<T>
+      : T extends z.ZodObject<infer Shape extends SchemaShape, infer _Config>
+        ? ObjectSerializerType<Shape>
+        : T extends z.ZodArray<infer Item extends z.ZodType>
+          ? ArraySerializerType<Item>
+          : T extends z.ZodTuple<infer Items extends readonly z.ZodType[], infer Rest>
+            ? TupleSerializerType<Items, Rest>
+            : T extends z.ZodUnion<infer Options extends readonly z.ZodType[]>
               ? UnionSerializerType<Options>
-              : T extends z.ZodRecord<
-                    infer Key extends z.ZodType<PropertyKey>,
-                    infer Value extends z.ZodType
+              : T extends z.ZodDiscriminatedUnion<
+                    infer Options extends readonly z.ZodType[],
+                    string
                   >
-                ? RecordSerializerType<Key, Value>
-                : T extends z.ZodIntersection<infer A extends z.ZodType, infer B extends z.ZodType>
-                  ? IntersectionSerializerType<A, B>
-                  : [WrapperSerializerType<T>] extends [never]
-                    ? FallbackSerializerType<T>
-                    : WrapperSerializerType<T>;
+                ? UnionSerializerType<Options>
+                : T extends z.ZodRecord<
+                      infer Key extends z.ZodType<PropertyKey>,
+                      infer Value extends z.ZodType
+                    >
+                  ? RecordSerializerType<Key, Value>
+                  : T extends z.ZodIntersection<
+                        infer A extends z.ZodType,
+                        infer B extends z.ZodType
+                      >
+                    ? IntersectionSerializerType<A, B>
+                    : [WrapperSerializerType<T>] extends [never]
+                      ? FallbackSerializerType<T>
+                      : WrapperSerializerType<T>;
 
 /**
  * Extracts the union of Zod output types from a content-type wrapper.

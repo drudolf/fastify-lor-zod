@@ -253,6 +253,25 @@ describe('serializer — safeEncode only', () => {
     expect(body.createdAt).toBe('2024-01-15T10:30:00.000Z');
   });
 
+  it('serializer uses encode for codec nested inside pipe', async () => {
+    const app = buildApp(serializerCompiler);
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      { schema: { response: { 200: z.object({ createdAt: z.string().pipe(dateCodec) }) } } },
+      () => ({ createdAt: new Date('2024-01-15T10:30:00.000Z') }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().createdAt).toBe('2024-01-15T10:30:00.000Z');
+  });
+
   it('serializes transform response schemas via safeParse', async () => {
     const app = buildApp(serializerCompiler);
 

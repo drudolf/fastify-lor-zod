@@ -13,7 +13,7 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 35 tests
+## Serialization (`serializer/serializer.test.ts`) — 36 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -37,9 +37,10 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 
 - [x] applies default value for omitted field in response schema
 
-### safeEncode only — 7 tests
+### safeEncode only — 8 tests
 
 - [x] serializer uses encode for codec schemas
+- [x] serializer uses encode for codec nested inside pipe
 - [x] serializes transform response schemas via safeParse
 - [x] rejects mixed codec and one-way transform response schemas with a clear error
 - [x] allows codec alongside validation pipe without rejecting
@@ -227,4 +228,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 165 spec entries, 182 tests across 10 test files**
+**Total: 166 spec entries, 183 tests across 10 test files**
