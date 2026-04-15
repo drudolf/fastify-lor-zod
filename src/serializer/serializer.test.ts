@@ -255,6 +255,27 @@ describe('serializer — safeEncode only', () => {
     expect(response.json()).toEqual({ id: 42 });
   });
 
+  it('falls back to JSON.stringify for non-Zod response schemas', async () => {
+    const app = buildApp(serializerCompiler);
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: { type: 'object' } as unknown as z.ZodType,
+          },
+        },
+      },
+      () => ({ ok: true }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true });
+  });
+
   it('rejects mixed codec and one-way transform response schemas with a clear error', async () => {
     const app = buildApp(serializerCompiler);
     const dateCodec = z.codec(z.iso.datetime(), z.date(), {

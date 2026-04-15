@@ -50,8 +50,12 @@ export interface SerializerCompilerOptions {
 export const createSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
   ({ schema, method, url, httpStatus }) => {
-    const hasCodec = !schema?._zod?.def || hasCodecInTree(schema);
-    const hasTransform = !!schema?._zod?.def && hasTransformInTree(schema);
+    if (!schema?._zod?.def) {
+      return (data: unknown): string => JSON.stringify(data, opts.replacer);
+    }
+
+    const hasCodec = hasCodecInTree(schema);
+    const hasTransform = hasTransformInTree(schema);
 
     if (hasCodec && hasTransform) {
       throw new Error(
