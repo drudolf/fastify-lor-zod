@@ -2,6 +2,7 @@ node_modules
 dist
 coverage
 *.tgz
+tsconfig.tsbuildinfo
 .DS_Store
 .claude
 bench/results.json
