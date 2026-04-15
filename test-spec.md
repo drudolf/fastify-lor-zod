@@ -13,19 +13,20 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 29 tests
+## Serialization (`serializer/serializer.test.ts`) — 36 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
-### Serializer-agnostic (×3 serializers = 15 tests)
+### Serializer-agnostic (×3 serializers = 18 tests)
 
 - [x] Returns 204 with empty response schema
 - [x] Returns 200 on correct string response
 - [x] Returns 200 on correct object response
 - [x] Handles nested schemas
+- [x] falls back to JSON.stringify for non-Zod response schemas
 - [x] Strips extra fields not in schema
 
-### Validation errors — safeEncode + safeParse only (×2 = 6 tests)
+### Validation errors — safeEncode + safeParse only (×2 = 8 tests)
 
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
@@ -36,9 +37,13 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 
 - [x] applies default value for omitted field in response schema
 
-### safeEncode only — 2 tests
+### safeEncode only — 8 tests
 
 - [x] serializer uses encode for codec schemas
+- [x] serializer uses encode for codec nested inside pipe
+- [x] serializes transform response schemas via safeParse
+- [x] rejects mixed codec and one-way transform response schemas with a clear error
+- [x] allows codec alongside validation pipe without rejecting
 - [x] Custom serializer replacer modifies JSON.stringify output
 - [x] includes httpStatus in ResponseSerializationError
 - [x] omits httpStatus from message when not provided
@@ -85,17 +90,18 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Produces empty instancePath for root-level validation errors
 - [x] Stores input on RequestValidationError
 
-## Error mapping (`validator/error.test.ts`) — 5 tests
+## Error mapping (`validator/error.test.ts`) — 6 tests
 
 - [x] maps issue path to instancePath
 - [x] produces empty instancePath for root-level issue
 - [x] includes httpPart in schemaPath
 - [x] omits httpPart from schemaPath when undefined
+- [x] escapes RFC 6901 special characters in path segments
 - [x] spreads remaining issue properties into params
 
-## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 42 tests
+## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 43 tests
 
-### Spec generation — 17 tests
+### Spec generation — 19 tests
 
 - [x] Generates OAS 3.0.3 spec correctly
 - [x] Generates OAS 3.1.0 spec correctly
@@ -130,7 +136,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] z.null in unions handled correctly for OAS 3.0 (#192)
 - [x] Reused schemas inlined correctly for OAS 3.0 (#210)
 
-### Other provider issues — 12 tests
+### Other provider issues — 15 tests
 
 - [x] Registered querystring schema generates valid params (#244)
 - [x] z.transform() preserves type info in response schema (#208)
@@ -189,7 +195,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] isZodInternal returns false for non-ZodType input
 - [x] zodSchemaToJson throws if Zod internal API is absent
 
-## Integration & Type Inference (`index.test.ts`) — 17 tests
+## Integration & Type Inference (`index.test.ts`) — 26 tests
 
 - [x] Boots, handles requests, and produces a valid OpenAPI spec
 - [x] Uses Zod codec encode for response serialization
@@ -208,10 +214,19 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Infers body type from content-type wrapper schema
 - [x] Narrows reply type per status code via reply.code()
 - [x] Infers request types in preHandler hook
+- [x] infers response type from content-type wrapper schema
+- [x] rejects tuples that mix codec and one-way transform elements
+- [x] rejects unions that mix codec and one-way transform branches
+- [x] infers output type for records with codec values
+- [x] infers output type for intersections with codec-bearing branches
+- [x] infers output type for tuples with codec rest elements
+- [x] infers input type for tuples with transform rest elements
+- [x] preserves constrained keys for records with codec values
+- [x] preserves optional constrained keys for partial records with codec values
 
 ## OpenAPI Metaschema Validation (`openapi/openapi-metaschema.test.ts`) — 2 tests
 
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 147 spec entries, 162 tests across 10 test files**
+**Total: 167 spec entries, 184 tests across 10 test files**
