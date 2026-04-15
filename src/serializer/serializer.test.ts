@@ -306,6 +306,40 @@ describe('serializer — safeEncode only', () => {
     );
   });
 
+  it('allows codec alongside validation pipe without rejecting', async () => {
+    const app = buildApp(serializerCompiler);
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({
+              createdAt: dateCodec,
+              name: z.string().pipe(z.string().min(1)),
+            }),
+          },
+        },
+      },
+      () => ({
+        createdAt: new Date('2025-01-01T00:00:00.000Z'),
+        name: 'Alice',
+      }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      createdAt: '2025-01-01T00:00:00.000Z',
+      name: 'Alice',
+    });
+  });
+
   it('includes httpStatus in ResponseSerializationError', async () => {
     let caughtError: unknown;
     const app = buildApp(serializerCompiler);

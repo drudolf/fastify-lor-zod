@@ -16,5 +16,6 @@ import { createTreePredicate } from './schema-tree.js';
  */
 export const hasTransformInTree: (schema: z.ZodType) => boolean = createTreePredicate((schema) => {
   if (schema._zod.def.type !== 'pipe') return false;
-  return !('reverseTransform' in schema._zod.def);
+  if ('reverseTransform' in schema._zod.def) return false;
+  return (schema as z.ZodPipe<z.ZodType, z.ZodType>)._zod.def.out._zod.def.type === 'transform';
 });
