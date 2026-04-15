@@ -139,6 +139,12 @@ describe('Error mapping', () => {
     expect(result.schemaPath).toBe('#/name');
   });
 
+  it('escapes RFC 6901 special characters in path segments', () => {
+    const result = mapIssueToValidationError(makeIssue({ path: ['a/b', 'c~d', 0] }), 'body');
+    expect(result.instancePath).toBe('/a~1b/c~0d/0');
+    expect(result.schemaPath).toBe('#/body/a~1b/c~0d/0');
+  });
+
   it('spreads remaining issue properties into params', () => {
     const extras = { minimum: 5, inclusive: true };
     const result = mapIssueToValidationError(
