@@ -3,6 +3,7 @@ import type { FastifySerializerCompiler } from 'fastify/types/schema';
 import { z } from 'zod';
 
 import { hasCodecInTree } from '../utils/has-codec-in-tree.js';
+import { hasTransformInTree } from '../utils/has-transform-in-tree.js';
 import { ResponseSerializationError } from './error.js';
 
 /**
@@ -49,7 +50,21 @@ export interface SerializerCompilerOptions {
 export const createSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
   ({ schema, method, url, httpStatus }) => {
-    const useEncode = !schema?._zod?.def || hasCodecInTree(schema);
+    if (!schema?._zod?.def) {
+      return (data: unknown): string => JSON.stringify(data, opts.replacer);
+    }
+
+    const hasCodec = hasCodecInTree(schema);
+    const hasTransform = hasTransformInTree(schema);
+
+    if (hasCodec && hasTransform) {
+      throw new Error(
+        `[fastify-lor-zod] Mixed codec+transform response schemas are not supported for serialization: ${method} ${url}. ` +
+          'Use only codecs or only one-way transforms in a response schema, or provide a custom serializer.',
+      );
+    }
+
+    const useEncode = hasCodec;
     const validate = useEncode ? schema.safeEncode : schema.safeParse;
 
     return (data: unknown): string => {
@@ -98,18 +113,23 @@ export const serializerCompiler: FastifySerializerCompiler<z.ZodType> = createSe
  */
 export const createParseSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
-  ({ schema, method, url, httpStatus }) =>
-  (data: unknown): string => {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-      throw new ResponseSerializationError({
-        method,
-        url,
-        httpStatus,
-        zodError: result.error,
-      });
+  ({ schema, method, url, httpStatus }) => {
+    if (!schema?._zod?.def) {
+      return (data: unknown): string => JSON.stringify(data, opts.replacer);
     }
-    return JSON.stringify(result.data, opts.replacer);
+
+    return (data: unknown): string => {
+      const result = schema.safeParse(data);
+      if (!result.success) {
+        throw new ResponseSerializationError({
+          method,
+          url,
+          httpStatus,
+          zodError: result.error,
+        });
+      }
+      return JSON.stringify(result.data, opts.replacer);
+    };
   };
 
 /**
@@ -147,6 +167,10 @@ export const parseSerializerCompiler: FastifySerializerCompiler<z.ZodType> =
 export const createFastSerializerCompiler =
   (): FastifySerializerCompiler<z.ZodType> =>
   ({ schema }) => {
+    if (!schema?._zod?.def) {
+      return (data: unknown): string => JSON.stringify(data);
+    }
+
     const jsonSchema = z.toJSONSchema(schema, {
       target: 'draft-2020-12',
       io: 'output',

@@ -53,10 +53,16 @@ export const isRequestValidationError = (error: unknown): error is RequestValida
 export const mapIssueToValidationError = (
   { path, code, message, ...params }: z.ZodError['issues'][number],
   httpPart?: string,
-): FastifySchemaValidationError => ({
-  instancePath: path?.length ? `/${path.join('/')}` : '',
-  keyword: code,
-  message,
-  params,
-  schemaPath: `#${httpPart ? `/${httpPart}` : ''}${path?.length ? `/${path.join('/')}` : ''}`,
-});
+): FastifySchemaValidationError => {
+  const pointer = path?.length
+    ? `/${path.map((s) => String(s).replace(/~/g, '~0').replace(/\//g, '~1')).join('/')}`
+    : '';
+
+  return {
+    instancePath: pointer,
+    keyword: code,
+    message,
+    params,
+    schemaPath: `#${httpPart ? `/${httpPart}` : ''}${pointer}`,
+  };
+};

@@ -87,6 +87,27 @@ describe.each(allSerializers)('serializer — $name', ({ compiler }) => {
     expect(response.json()).toEqual({ id: 1, items: [{ name: 'Widget', qty: 3 }] });
   });
 
+  it('falls back to JSON.stringify for non-Zod response schemas', async () => {
+    const app = buildApp(compiler);
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: { type: 'object' } as unknown as z.ZodType,
+          },
+        },
+      },
+      () => ({ ok: true }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true });
+  });
+
   it('strips extra fields not in schema', async () => {
     const app = buildApp(compiler);
     app.get('/', { schema: { response: { 200: z.object({ id: z.number() }) } } }, () => ({
@@ -230,6 +251,112 @@ describe('serializer — safeEncode only', () => {
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.createdAt).toBe('2024-01-15T10:30:00.000Z');
+  });
+
+  it('serializer uses encode for codec nested inside pipe', async () => {
+    const app = buildApp(serializerCompiler);
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      { schema: { response: { 200: z.object({ createdAt: z.string().pipe(dateCodec) }) } } },
+      () => ({ createdAt: new Date('2024-01-15T10:30:00.000Z') }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().createdAt).toBe('2024-01-15T10:30:00.000Z');
+  });
+
+  it('serializes transform response schemas via safeParse', async () => {
+    const app = buildApp(serializerCompiler);
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({
+              id: z.string().transform((value) => Number.parseInt(value, 10)),
+            }),
+          },
+        },
+      },
+      () => ({ id: '42' }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ id: 42 });
+  });
+
+  it('rejects mixed codec and one-way transform response schemas with a clear error', async () => {
+    const app = buildApp(serializerCompiler);
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({
+              createdAt: dateCodec,
+              id: z.string().transform((value) => Number.parseInt(value, 10)),
+            }),
+          },
+        },
+      },
+      () => ({
+        createdAt: new Date('2025-01-01T00:00:00.000Z'),
+        id: '42',
+      }),
+    );
+
+    await expect(app.ready()).rejects.toThrow(
+      'Mixed codec+transform response schemas are not supported',
+    );
+  });
+
+  it('allows codec alongside validation pipe without rejecting', async () => {
+    const app = buildApp(serializerCompiler);
+    const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+      decode: (isoString: string) => new Date(isoString),
+      encode: (date: Date) => date.toISOString(),
+    });
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: z.object({
+              createdAt: dateCodec,
+              name: z.string().pipe(z.string().min(1)),
+            }),
+          },
+        },
+      },
+      () => ({
+        createdAt: new Date('2025-01-01T00:00:00.000Z'),
+        name: 'Alice',
+      }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      createdAt: '2025-01-01T00:00:00.000Z',
+      name: 'Alice',
+    });
   });
 
   it('includes httpStatus in ResponseSerializationError', async () => {

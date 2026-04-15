@@ -36,6 +36,10 @@ const traverseTree = (schema: z.ZodType): unknown[] => {
   visitNode(get(def, 'keyType'), out);
   visitNode(get(def, 'valueType'), out);
 
+  // pipe → in + out
+  visitNode(get(def, 'in'), out);
+  visitNode(get(def, 'out'), out);
+
   // intersection → left + right, union/discriminatedUnion → options
   visitNode(get(def, 'left'), out);
   visitNode(get(def, 'right'), out);
