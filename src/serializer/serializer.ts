@@ -113,18 +113,23 @@ export const serializerCompiler: FastifySerializerCompiler<z.ZodType> = createSe
  */
 export const createParseSerializerCompiler =
   (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
-  ({ schema, method, url, httpStatus }) =>
-  (data: unknown): string => {
-    const result = schema.safeParse(data);
-    if (!result.success) {
-      throw new ResponseSerializationError({
-        method,
-        url,
-        httpStatus,
-        zodError: result.error,
-      });
+  ({ schema, method, url, httpStatus }) => {
+    if (!schema?._zod?.def) {
+      return (data: unknown): string => JSON.stringify(data, opts.replacer);
     }
-    return JSON.stringify(result.data, opts.replacer);
+
+    return (data: unknown): string => {
+      const result = schema.safeParse(data);
+      if (!result.success) {
+        throw new ResponseSerializationError({
+          method,
+          url,
+          httpStatus,
+          zodError: result.error,
+        });
+      }
+      return JSON.stringify(result.data, opts.replacer);
+    };
   };
 
 /**
@@ -162,6 +167,10 @@ export const parseSerializerCompiler: FastifySerializerCompiler<z.ZodType> =
 export const createFastSerializerCompiler =
   (): FastifySerializerCompiler<z.ZodType> =>
   ({ schema }) => {
+    if (!schema?._zod?.def) {
+      return (data: unknown): string => JSON.stringify(data);
+    }
+
     const jsonSchema = z.toJSONSchema(schema, {
       target: 'draft-2020-12',
       io: 'output',

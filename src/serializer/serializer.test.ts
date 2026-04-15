@@ -87,6 +87,27 @@ describe.each(allSerializers)('serializer — $name', ({ compiler }) => {
     expect(response.json()).toEqual({ id: 1, items: [{ name: 'Widget', qty: 3 }] });
   });
 
+  it('falls back to JSON.stringify for non-Zod response schemas', async () => {
+    const app = buildApp(compiler);
+
+    app.get(
+      '/',
+      {
+        schema: {
+          response: {
+            200: { type: 'object' } as unknown as z.ZodType,
+          },
+        },
+      },
+      () => ({ ok: true }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true });
+  });
+
   it('strips extra fields not in schema', async () => {
     const app = buildApp(compiler);
     app.get('/', { schema: { response: { 200: z.object({ id: z.number() }) } } }, () => ({
@@ -253,27 +274,6 @@ describe('serializer — safeEncode only', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ id: 42 });
-  });
-
-  it('falls back to JSON.stringify for non-Zod response schemas', async () => {
-    const app = buildApp(serializerCompiler);
-
-    app.get(
-      '/',
-      {
-        schema: {
-          response: {
-            200: { type: 'object' } as unknown as z.ZodType,
-          },
-        },
-      },
-      () => ({ ok: true }),
-    );
-
-    const response = await app.inject({ method: 'GET', url: '/' });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ ok: true });
   });
 
   it('rejects mixed codec and one-way transform response schemas with a clear error', async () => {

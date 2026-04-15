@@ -13,19 +13,20 @@
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
 
-## Serialization (`serializer/serializer.test.ts`) — 33 tests
+## Serialization (`serializer/serializer.test.ts`) — 35 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
-### Serializer-agnostic (×3 serializers = 15 tests)
+### Serializer-agnostic (×3 serializers = 18 tests)
 
 - [x] Returns 204 with empty response schema
 - [x] Returns 200 on correct string response
 - [x] Returns 200 on correct object response
 - [x] Handles nested schemas
+- [x] falls back to JSON.stringify for non-Zod response schemas
 - [x] Strips extra fields not in schema
 
-### Validation errors — safeEncode + safeParse only (×2 = 6 tests)
+### Validation errors — safeEncode + safeParse only (×2 = 8 tests)
 
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
@@ -36,11 +37,10 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 
 - [x] applies default value for omitted field in response schema
 
-### safeEncode only — 8 tests
+### safeEncode only — 7 tests
 
 - [x] serializer uses encode for codec schemas
 - [x] serializes transform response schemas via safeParse
-- [x] falls back to JSON.stringify for non-Zod response schemas
 - [x] rejects mixed codec and one-way transform response schemas with a clear error
 - [x] allows codec alongside validation pipe without rejecting
 - [x] Custom serializer replacer modifies JSON.stringify output
@@ -97,9 +97,9 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] omits httpPart from schemaPath when undefined
 - [x] spreads remaining issue properties into params
 
-## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 42 tests
+## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 43 tests
 
-### Spec generation — 17 tests
+### Spec generation — 19 tests
 
 - [x] Generates OAS 3.0.3 spec correctly
 - [x] Generates OAS 3.1.0 spec correctly
@@ -134,7 +134,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] z.null in unions handled correctly for OAS 3.0 (#192)
 - [x] Reused schemas inlined correctly for OAS 3.0 (#210)
 
-### Other provider issues — 12 tests
+### Other provider issues — 15 tests
 
 - [x] Registered querystring schema generates valid params (#244)
 - [x] z.transform() preserves type info in response schema (#208)
@@ -227,4 +227,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 165 spec entries, 180 tests across 10 test files**
+**Total: 165 spec entries, 182 tests across 10 test files**
