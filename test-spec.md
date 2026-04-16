@@ -1,6 +1,6 @@
 # Test Specification
 
-## Request Validation (`validator/validator.test.ts`) — 10 tests
+## Request Validation (`validator/validator.test.ts`) — 24 tests
 
 - [x] Accepts valid querystring parameters
 - [x] Accepts requests on routes without schema
@@ -12,6 +12,20 @@
 - [x] Uses undefined as httpPart fallback when not provided
 - [x] Headers can be modified after validation (#209)
 - [x] Exposes original input on validation error
+- [x] Coerces single querystring value into array for z.array schema (#151)
+- [x] Already-array querystring passes through unchanged (#151)
+- [x] Coerces single value with optional array schema (#151)
+- [x] Coerces single value with nullable array schema (#151)
+- [x] Coerces single value with defaulted array schema (#151)
+- [x] Coerces single value with refined array min length (#151)
+- [x] Coerces single value through element coercion (#151)
+- [x] Coerces multiple single-value array fields in one request (#151)
+- [x] Does not coerce when schema expects non-array (#151)
+- [x] Does not coerce tuple single values (#151)
+- [x] Coerces single header value into array (#151)
+- [x] Coerces single params value into array (#151)
+- [x] Does not coerce body single value to array (#151)
+- [x] Does not false-coerce when union matches non-array branch (#151)
 
 ## Serialization (`serializer/serializer.test.ts`) — 36 tests
 
@@ -229,4 +243,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 167 spec entries, 184 tests across 10 test files**
+**Total: 168 spec entries, 185 tests across 10 test files**
