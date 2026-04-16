@@ -48,6 +48,11 @@ jobs:
             git diff --name-only --diff-filter=U | xargs git add
           fi
 
+          # Remove changesets consumed by the release
+          for f in .changeset/release-*.md; do
+            [ -f "$f" ] && git rm "$f"
+          done
+
           if git diff --cached --quiet; then
             echo "No changes after merge — nothing to commit"
             exit 0

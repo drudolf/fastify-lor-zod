@@ -1,5 +1,11 @@
 # fastify-lor-zod
 
+## 0.5.1
+
+### Patch Changes
+
+- [`b9727df`](https://github.com/drudolf/fastify-lor-zod/commit/b9727df) Tighten README intro and relocate upstream issues table to MIGRATION.md. Update dev dependencies.
+
 ## 0.5.0
 
 ### Minor Changes

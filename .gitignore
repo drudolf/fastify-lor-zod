@@ -4,6 +4,6 @@ coverage
 *.tgz
 tsconfig.tsbuildinfo
 .DS_Store
-.claude
+/.claude
 bench/results.json
 .perf/
