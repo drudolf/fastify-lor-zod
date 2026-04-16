@@ -54,13 +54,13 @@
     }
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.11",
+    "@biomejs/biome": "2.4.12",
     "@changesets/cli": "2.30.0",
     "@changesets/types": "^6.1.0",
     "@commitlint/cli": "20.5.0",
     "@commitlint/config-conventional": "20.5.0",
     "@fastify/swagger": "9.7.0",
-    "@seriousme/openapi-schema-validator": "^2.8.0",
+    "@seriousme/openapi-schema-validator": "^2.9.0",
     "@vitest/coverage-v8": "4.1.4",
     "fast-json-stringify": "6.3.0",
     "fastify": "5.8.5",

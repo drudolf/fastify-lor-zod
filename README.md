@@ -7,9 +7,7 @@
 
 > **Note** -- Pre-1.0: minor versions may include breaking changes. Pin your version and check the [changelog](CHANGELOG.md) before upgrading.
 
-A Fastify type provider for **Zod v4** with full OpenAPI support.
-
-Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.com/turkerdev/fastify-type-provider-zod/issues) from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod).
+A Fastify type provider for **Zod v4** with full OpenAPI support. A ground-up rebuild of [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod) on Zod v4's native APIs — fixes [25+ open upstream issues](MIGRATION.md#appendix-issues-addressed).
 
 ## Why fastify-lor-zod?
 
@@ -30,7 +28,6 @@ Built with good vibes for Fastify v5 and Zod v4. Fixes [issues](https://github.c
 - [Error Handling](#error-handling)
 - [Zod v4 Codec Support](#zod-v4-codec-support)
 - [Compatibility](#compatibility)
-- [Issues Addressed](#issues-addressed)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -280,38 +277,6 @@ app.get(
 ## Migrating from fastify-type-provider-zod
 
 See [MIGRATION.md](MIGRATION.md) for a step-by-step guide.
-
-## Issues Addressed
-
-Fixes 25+ open issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
-
-| Issue | Description | How |
-| ----- | ----------- | --- |
-| [#244](https://github.com/turkerdev/fastify-type-provider-zod/issues/244) | params/querystring missing from OpenAPI | Inline via `httpPart` param |
-| [#233](https://github.com/turkerdev/fastify-type-provider-zod/issues/233) | Cannot tweak `toJSONSchema` options | `zodToJsonConfig` passthrough |
-| [#214](https://github.com/turkerdev/fastify-type-provider-zod/issues/214) | Input schema variants leak into components | Auto-detect divergent schemas |
-| [#212](https://github.com/turkerdev/fastify-type-provider-zod/issues/212) | ESLint `no-unsafe-argument` with serializerCompiler | Clean compiler type signatures |
-| [#211](https://github.com/turkerdev/fastify-type-provider-zod/issues/211) | Serializer should use `.encode()` for Zod v4 | Auto-detect codecs, use `safeEncode` |
-| [#210](https://github.com/turkerdev/fastify-type-provider-zod/issues/210) | Schema definitions ignored | Merge `external.defs` from `toJSONSchema` |
-| [#209](https://github.com/turkerdev/fastify-type-provider-zod/issues/209) | Cannot modify headers after validation | `safeParse` returns unfrozen objects |
-| [#208](https://github.com/turkerdev/fastify-type-provider-zod/issues/208) | `transform()` loses response type info | Override falls back to input side of pipe |
-| [#195](https://github.com/turkerdev/fastify-type-provider-zod/issues/195) | `anyOf` with 3+ items broken | Native `toJSONSchema` handles correctly |
-| [#193](https://github.com/turkerdev/fastify-type-provider-zod/issues/193) | Nullable types converted incorrectly | Native `toJSONSchema` handles correctly |
-| [#192](https://github.com/turkerdev/fastify-type-provider-zod/issues/192) | `z.null` in union generates invalid JSON Schema | Native `toJSONSchema` handles correctly |
-| [#178](https://github.com/turkerdev/fastify-type-provider-zod/issues/178) | Multi-content schemas not supported | `transformContentTypes` handler |
-| [#170](https://github.com/turkerdev/fastify-type-provider-zod/issues/170) | `components.schemas` not populated | `transformObject` with registry resolution |
-| [#158](https://github.com/turkerdev/fastify-type-provider-zod/issues/158) | `.default(null)` crashes | Native `toJSONSchema` handles correctly |
-| [#156](https://github.com/turkerdev/fastify-type-provider-zod/issues/156) | Support for Zod v4 | Built natively on Zod v4 |
-| [#155](https://github.com/turkerdev/fastify-type-provider-zod/issues/155) | `.optional().default()` querystring fails | Native `toJSONSchema` handles correctly |
-| [#148](https://github.com/turkerdev/fastify-type-provider-zod/issues/148) | Optional fields treated as required | `SerializerType<T>` makes defaulted fields optional |
-| [#142](https://github.com/turkerdev/fastify-type-provider-zod/issues/142) | Cannot separate handler from route preserving types | `RouteHandler<S>` type utility |
-| [#132](https://github.com/turkerdev/fastify-type-provider-zod/issues/132) | Body/response content types not handled | `transformContentTypes` handler |
-| [#126](https://github.com/turkerdev/fastify-type-provider-zod/issues/126) | No hybrid ESM/CJS bundle | Dual ESM + CJS exports |
-| [#124](https://github.com/turkerdev/fastify-type-provider-zod/issues/124) | Type guard doesn't narrow error types | `isRequestValidationError` with full narrowing |
-| [#76](https://github.com/turkerdev/fastify-type-provider-zod/issues/76) | 204 response without content | Works with `z.undefined()` |
-| [#71](https://github.com/turkerdev/fastify-type-provider-zod/issues/71) | `z.readonly()` not supported | Native `toJSONSchema` handles correctly |
-| [#64](https://github.com/turkerdev/fastify-type-provider-zod/issues/64) | `instanceof` on validation error fails | ES2022+ `ResponseSerializationError` class |
-| [#47](https://github.com/turkerdev/fastify-type-provider-zod/issues/47) | Response description ignored | Wrapped in `allOf` to preserve alongside `$ref` |
 
 ## Contributing
 
