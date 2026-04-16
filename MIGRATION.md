@@ -78,7 +78,7 @@ The upstream package uses `@fastify/error` constructors with type guard function
 
 ## Appendix: Issues Addressed
 
-Fixes 25+ open issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
+Fixes 27+ open issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
 
 | Issue | Description | How |
 | ----- | ----------- | --- |
@@ -98,6 +98,7 @@ Fixes 25+ open issues from [`turkerdev/fastify-type-provider-zod`](https://githu
 | [#158](https://github.com/turkerdev/fastify-type-provider-zod/issues/158) | `.default(null)` crashes | Native `toJSONSchema` handles correctly |
 | [#156](https://github.com/turkerdev/fastify-type-provider-zod/issues/156) | Support for Zod v4 | Built natively on Zod v4 |
 | [#155](https://github.com/turkerdev/fastify-type-provider-zod/issues/155) | `.optional().default()` querystring fails | Native `toJSONSchema` handles correctly |
+| [#151](https://github.com/turkerdev/fastify-type-provider-zod/issues/151) | Single-value querystring not counted as array | Auto-coerce single values to arrays for `z.array` schemas |
 | [#148](https://github.com/turkerdev/fastify-type-provider-zod/issues/148) | Optional fields treated as required | `SerializerType<T>` makes defaulted fields optional |
 | [#142](https://github.com/turkerdev/fastify-type-provider-zod/issues/142) | Cannot separate handler from route preserving types | `RouteHandler<S>` type utility |
 | [#132](https://github.com/turkerdev/fastify-type-provider-zod/issues/132) | Body/response content types not handled | `transformContentTypes` handler |
@@ -105,5 +106,7 @@ Fixes 25+ open issues from [`turkerdev/fastify-type-provider-zod`](https://githu
 | [#124](https://github.com/turkerdev/fastify-type-provider-zod/issues/124) | Type guard doesn't narrow error types | `isRequestValidationError` with full narrowing |
 | [#76](https://github.com/turkerdev/fastify-type-provider-zod/issues/76) | 204 response without content | Works with `z.undefined()` |
 | [#71](https://github.com/turkerdev/fastify-type-provider-zod/issues/71) | `z.readonly()` not supported | Native `toJSONSchema` handles correctly |
+| [#67](https://github.com/turkerdev/fastify-type-provider-zod/issues/67) | Support for `z.readonly()` | Native `toJSONSchema` handles correctly |
 | [#64](https://github.com/turkerdev/fastify-type-provider-zod/issues/64) | `instanceof` on validation error fails | ES2022+ `ResponseSerializationError` class |
 | [#47](https://github.com/turkerdev/fastify-type-provider-zod/issues/47) | Response description ignored | Wrapped in `allOf` to preserve alongside `$ref` |
+| [#16](https://github.com/turkerdev/fastify-type-provider-zod/issues/16) | Validation not invoked for primitive response types | Serializer runs `safeParse`/`safeEncode` uniformly on every schema |
