@@ -1,5 +1,19 @@
 # fastify-lor-zod
 
+## 0.7.0
+
+### Minor Changes
+
+- [`eb128b5`](https://github.com/drudolf/fastify-lor-zod/commit/eb128b5) Expose `validation` and `validationContext` on `ResponseSerializationError`, mirroring the request-side error shape.
+
+  Response schema failures now carry a Fastify-compatible `validation: FastifySchemaValidationError[]` array — each entry's `schemaPath` is prefixed `#/body/<path>`. A new `validationContext = 'body' as const` field identifies the failing HTTP part, matching `RequestValidationError.validationContext`. Shared error handlers can now treat request and response validation errors uniformly via `error.validation` + `error.validationContext`.
+
+  `mapIssueToValidationError` relocated internally from `./validator/error.js` to `./utils/map-issue-to-validation-error.js`. The public export from the package root is unchanged — no consumer-visible break.
+
+### Chores
+
+- Bump dev dependencies: `@biomejs/biome` 2.4.11 → 2.4.12, `@seriousme/openapi-schema-validator` 2.8.0 → 2.9.0, `typescript` 6.0.2 → 6.0.3.
+
 ## 0.6.0
 
 ### Minor Changes
