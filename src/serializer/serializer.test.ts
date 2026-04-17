@@ -11,6 +11,7 @@ import {
   parseSerializerCompiler,
   serializerCompiler,
 } from './serializer.js';
+import assert from 'node:assert';
 
 const buildApp = (compiler: FastifySerializerCompiler<z.ZodType>) => {
   const app = Fastify();
@@ -230,6 +231,28 @@ describe.each(validatingSerializers)('serializer — $name — validation errors
       code: 'ERR_RESPONSE_SERIALIZATION',
       method: 'GET',
       url: '/',
+    });
+  });
+
+  it('response validation error exposes #/body/<path> schemaPath', async () => {
+    let caughtError: unknown;
+    const app = buildApp(compiler);
+    app.setErrorHandler((error, _req, reply) => {
+      caughtError = error;
+      reply.code(500).send({ statusCode: 500 });
+    });
+    app.get(
+      '/',
+      { schema: { response: { 200: z.object({ name: z.string() }) } } },
+      () => ({ name: 42 }) as unknown as { name: string },
+    );
+
+    await app.inject({ method: 'GET', url: '/' });
+
+    assert(caughtError instanceof ResponseSerializationError);
+    expect(caughtError).toMatchObject({
+      validation: [expect.objectContaining({ schemaPath: '#/body/name' })],
+      validationContext: 'body',
     });
   });
 });

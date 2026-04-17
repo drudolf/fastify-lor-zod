@@ -27,7 +27,7 @@
 - [x] Does not coerce body single value to array (#151)
 - [x] Does not false-coerce when union matches non-array branch (#151)
 
-## Serialization (`serializer/serializer.test.ts`) — 36 tests
+## Serialization (`serializer/serializer.test.ts`) — 38 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -40,12 +40,13 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] falls back to JSON.stringify for non-Zod response schemas
 - [x] Strips extra fields not in schema
 
-### Validation errors — safeEncode + safeParse only (×2 = 8 tests)
+### Validation errors — safeEncode + safeParse only (×2 = 10 tests)
 
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
 - [x] Returns 500 on incorrect object response
 - [x] returns 500 when required field is missing from response
+- [x] response validation error exposes #/body/<path> schemaPath
 
 ### Default values — safeEncode + safeParse only (×2 = 2 tests)
 
@@ -104,7 +105,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Produces empty instancePath for root-level validation errors
 - [x] Stores input on RequestValidationError
 
-## Error mapping (`validator/error.test.ts`) — 6 tests
+## Error mapping (`utils/map-issue-to-validation-error.test.ts`) — 6 tests
 
 - [x] maps issue path to instancePath
 - [x] produces empty instancePath for root-level issue

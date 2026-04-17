@@ -1,7 +1,7 @@
 import type { FastifySchemaCompiler } from 'fastify';
 import type { z } from 'zod';
 
-import { mapIssueToValidationError } from './error.js';
+import { mapIssueToValidationError } from '../utils/map-issue-to-validation-error.js';
 
 /** HTTP parts where Fastify's parser returns a single string for single-valued inputs (#151). */
 const ARRAYABLE_PARTS = new Set(['querystring', 'params', 'headers']);
