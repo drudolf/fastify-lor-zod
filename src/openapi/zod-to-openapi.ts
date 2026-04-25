@@ -273,11 +273,16 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
   ): JSONSchemaRecord | JSONSchemaRecord[] =>
     Array.isArray(v) ? v.map((item) => jsonSchemaToOAS30(item)) : jsonSchemaToOAS30(v);
 
-  if (clone.properties && typeof clone.properties === 'object') {
-    for (const [k, v] of Object.entries(clone.properties as Record<string, JSONSchemaRecord>)) {
-      (clone.properties as Record<string, JSONSchemaRecord>)[k] = jsonSchemaToOAS30(v);
+  const recurseRecord = (key: 'properties' | 'definitions') => {
+    const value = clone[key];
+    if (!value || typeof value !== 'object') return;
+    const record = value as Record<string, JSONSchemaRecord>;
+    for (const [k, v] of Object.entries(record)) {
+      record[k] = jsonSchemaToOAS30(v);
     }
-  }
+  };
+
+  recurseRecord('properties');
 
   if (clone.items && typeof clone.items === 'object' && !Array.isArray(clone.items)) {
     clone.items = recursive(clone.items as JSONSchemaRecord);
@@ -291,11 +296,7 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
     clone.additionalProperties = jsonSchemaToOAS30(clone.additionalProperties as JSONSchemaRecord);
   }
 
-  if (clone.definitions && typeof clone.definitions === 'object') {
-    for (const [k, v] of Object.entries(clone.definitions as Record<string, JSONSchemaRecord>)) {
-      (clone.definitions as Record<string, JSONSchemaRecord>)[k] = jsonSchemaToOAS30(v);
-    }
-  }
+  recurseRecord('definitions');
 
   for (const key of ['allOf', 'anyOf', 'oneOf', 'not', 'then', 'else', 'if', 'contains'] as const) {
     if (clone[key]) {
