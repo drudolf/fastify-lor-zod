@@ -23,7 +23,7 @@ Everything else keeps the same name: `validatorCompiler`, `serializerCompiler`, 
 
 ## 3. Error handling
 
-The upstream package uses `@fastify/error` constructors with type guard functions. fastify-lor-zod uses a type guard for validation errors and `instanceof` for serialization errors.
+[`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod) uses `@fastify/error` constructors with type guard functions. fastify-lor-zod uses a type guard for validation errors and `instanceof` for serialization errors.
 
 ### Validation errors
 
@@ -41,6 +41,7 @@ The upstream package uses `@fastify/error` constructors with type guard function
 ```
 
 `isRequestValidationError(error)` narrows to `RequestValidationError`, which exposes:
+
 - `validation` — `FastifySchemaValidationError[]` (Fastify-native format)
 - `validationContext` — `'body' | 'querystring' | 'params' | 'headers'` (set by Fastify)
 - `input` — the original data that failed validation
@@ -61,6 +62,7 @@ The upstream package uses `@fastify/error` constructors with type guard function
 ```
 
 `ResponseSerializationError` exposes:
+
 - `code` — `'ERR_RESPONSE_SERIALIZATION'`
 - `method` — HTTP method
 - `url` — request URL
@@ -69,7 +71,7 @@ The upstream package uses `@fastify/error` constructors with type guard function
 
 ## 4. Response descriptions: drop the wrapper
 
-The `{ description, properties: ZodSchema }` response wrapper from upstream is removed.
+The `{ description, properties: ZodSchema }` response wrapper is removed.
 Use Zod v4's `.meta({ description })` instead — it works for inline schemas,
 registered schemas, and chained on registered schemas.
 
@@ -89,7 +91,7 @@ strict OAS semantics (only chained or inline `.meta` lifts).
 
 ## 5. What you get
 
-- **25+ upstream bug fixes** — see the [Appendix: Issues Addressed](#appendix-issues-addressed) table below
+- **25+ bug fixes** — see the [Appendix: Issues Addressed](#appendix-issues-addressed) table below
 - **Codec auto-detect** — the default serializer uses `z.safeEncode` for codec schemas and `z.safeParse` for everything else, chosen at compile time
 - **fast-json-stringify option** — `fastSerializerCompiler` for maximum throughput (no validation)
 - **Auto-detect input schema variants** — schemas with divergent input/output shapes get `{Id}Input` components automatically

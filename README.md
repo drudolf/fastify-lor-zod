@@ -7,7 +7,7 @@
 
 > **Note** -- Pre-1.0: minor versions may include breaking changes. Pin your version and check the [changelog](CHANGELOG.md) before upgrading.
 
-A Fastify type provider for **Zod v4** with full OpenAPI support. A ground-up rebuild of [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod) on Zod v4's native APIs — fixes [25+ open upstream issues](MIGRATION.md#appendix-issues-addressed).
+A Fastify type provider for **Zod v4** with full OpenAPI support. A ground-up rebuild of [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod) on Zod v4's native APIs — fixes [25+ open issues](MIGRATION.md#appendix-issues-addressed).
 
 ## Why fastify-lor-zod?
 
