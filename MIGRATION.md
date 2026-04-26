@@ -78,14 +78,13 @@ The upstream package uses `@fastify/error` constructors with type guard function
 
 ## Appendix: Issues Addressed
 
-Fixes 27+ open issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
+Fixes 25+ open issues from [`turkerdev/fastify-type-provider-zod`](https://github.com/turkerdev/fastify-type-provider-zod):
 
 | Issue | Description | How |
 | ----- | ----------- | --- |
 | [#244](https://github.com/turkerdev/fastify-type-provider-zod/issues/244) | params/querystring missing from OpenAPI | Inline via `httpPart` param |
 | [#233](https://github.com/turkerdev/fastify-type-provider-zod/issues/233) | Cannot tweak `toJSONSchema` options | `zodToJsonConfig` passthrough |
 | [#214](https://github.com/turkerdev/fastify-type-provider-zod/issues/214) | Input schema variants leak into components | Auto-detect divergent schemas |
-| [#212](https://github.com/turkerdev/fastify-type-provider-zod/issues/212) | ESLint `no-unsafe-argument` with serializerCompiler | Clean compiler type signatures |
 | [#211](https://github.com/turkerdev/fastify-type-provider-zod/issues/211) | Serializer should use `.encode()` for Zod v4 | Auto-detect codecs, use `safeEncode` |
 | [#210](https://github.com/turkerdev/fastify-type-provider-zod/issues/210) | Schema definitions ignored | Merge `external.defs` from `toJSONSchema` |
 | [#209](https://github.com/turkerdev/fastify-type-provider-zod/issues/209) | Cannot modify headers after validation | `safeParse` returns unfrozen objects |
@@ -108,5 +107,4 @@ Fixes 27+ open issues from [`turkerdev/fastify-type-provider-zod`](https://githu
 | [#71](https://github.com/turkerdev/fastify-type-provider-zod/issues/71) | `z.readonly()` not supported | Native `toJSONSchema` handles correctly |
 | [#67](https://github.com/turkerdev/fastify-type-provider-zod/issues/67) | Support for `z.readonly()` | Native `toJSONSchema` handles correctly |
 | [#64](https://github.com/turkerdev/fastify-type-provider-zod/issues/64) | `instanceof` on validation error fails | ES2022+ `ResponseSerializationError` class |
-| [#47](https://github.com/turkerdev/fastify-type-provider-zod/issues/47) | Response description ignored | Wrapped in `allOf` to preserve alongside `$ref` |
-| [#16](https://github.com/turkerdev/fastify-type-provider-zod/issues/16) | Validation not invoked for primitive response types | Serializer runs `safeParse`/`safeEncode` uniformly on every schema |
+| [#47](https://github.com/turkerdev/fastify-type-provider-zod/issues/47) | Response description ignored | Description placed on OAS response object, separate from schema |
