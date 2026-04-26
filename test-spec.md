@@ -27,11 +27,11 @@
 - [x] Does not coerce body single value to array (#151)
 - [x] Does not false-coerce when union matches non-array branch (#151)
 
-## Serialization (`serializer/serializer.test.ts`) — 43 tests
+## Serialization (`serializer/serializer.test.ts`) — 38 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
-### Serializer-agnostic (×3 serializers = 21 tests)
+### Serializer-agnostic (×3 serializers = 18 tests)
 
 - [x] Returns 204 with empty response schema
 - [x] Returns 200 on correct string response
@@ -39,16 +39,14 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Handles nested schemas
 - [x] falls back to JSON.stringify for non-Zod response schemas
 - [x] Strips extra fields not in schema
-- [x] unwraps { properties: ZodType } response schema wrapper
 
-### Validation errors — safeEncode + safeParse only (×2 = 12 tests)
+### Validation errors — safeEncode + safeParse only (×2 = 10 tests)
 
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
 - [x] Returns 500 on incorrect object response
 - [x] returns 500 when required field is missing from response
 - [x] response validation error exposes #/body/<path> schemaPath
-- [x] validates response declared with { properties: ZodType } wrapper
 
 ### Default values — safeEncode + safeParse only (×2 = 2 tests)
 
@@ -116,7 +114,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] escapes RFC 6901 special characters in path segments
 - [x] spreads remaining issue properties into params
 
-## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 43 tests
+## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 49 tests
 
 ### Spec generation — 19 tests
 
@@ -140,9 +138,10 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] allows custom override to transform unsupported types
 - [x] Handles readonly schemas (#71)
 
-### Edge cases — 5 tests
+### Edge cases — 6 tests
 
 - [x] Throws on non-Zod response schemas
+- [x] Throws migration error for legacy { properties: ZodType } response wrapper
 - [x] Passes through non-schema keys like tags and description
 - [x] Defaults to OAS 3.0 when openapi version is not specified
 - [x] transformObject rejects Swagger 2.0
@@ -153,7 +152,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] z.null in unions handled correctly for OAS 3.0 (#192)
 - [x] Reused schemas inlined correctly for OAS 3.0 (#210)
 
-### Other provider issues — 15 tests
+### Other provider issues — 20 tests
 
 - [x] Registered querystring schema generates valid params (#244)
 - [x] z.transform() preserves type info in response schema (#208)
@@ -165,11 +164,16 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Nested content types supported (#227)
 - [x] anyOf with 3+ items preserved correctly (#195)
 - [x] excludes Input variants from components by default (#214)
-- [x] response description preserved from wrapper object (#47)
-- [x] response description preserved when inner schema is registered (produces $ref)
-- [x] registered schema response without description is unchanged
-- [x] empty string description ignored for registered schema response
 - [x] body content type wrappers supported (#132)
+- [x] registered schema without description has no response description
+- [x] registered schema intrinsic description auto-lifts to response
+- [x] registered schema intrinsic description not lifted in strict mode
+- [x] chained .meta description lifts to response, component unchanged
+- [x] inline schema .meta description lifts to response, removed from body
+- [x] chained description overrides intrinsic component description
+- [x] z.undefined response schema without .meta description passes through unchanged
+- [x] z.undefined response schema with .meta description lifts description to response
+- [x] same registered schema reused at multiple status codes gets independent descriptions
 
 ### createJsonSchemaTransforms — 2 tests
 

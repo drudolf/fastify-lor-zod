@@ -67,7 +67,27 @@ The upstream package uses `@fastify/error` constructors with type guard function
 - `httpStatus` — the response status code whose schema failed (e.g. `'200'`)
 - `zodError` — the `ZodError` (renamed from `cause`)
 
-## 4. What you get
+## 4. Response descriptions: drop the wrapper
+
+The `{ description, properties: ZodSchema }` response wrapper from upstream is removed.
+Use Zod v4's `.meta({ description })` instead — it works for inline schemas,
+registered schemas, and chained on registered schemas.
+
+```diff
+- response: {
+-   200: { description: 'Healthy', properties: HealthSchema },
+- }
++ response: {
++   200: HealthSchema.meta({ description: 'Healthy' }),
++ }
+```
+
+If a registered schema has its own `.meta({ description })`, that description is
+auto-lifted onto `responses.<code>.description` by default. Pass
+`liftSchemaDescriptionToResponse: false` to `createJsonSchemaTransform` for
+strict OAS semantics (only chained or inline `.meta` lifts).
+
+## 5. What you get
 
 - **25+ upstream bug fixes** — see the [Appendix: Issues Addressed](#appendix-issues-addressed) table below
 - **Codec auto-detect** — the default serializer uses `z.safeEncode` for codec schemas and `z.safeParse` for everything else, chosen at compile time

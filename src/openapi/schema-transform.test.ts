@@ -620,7 +620,27 @@ describe('schema-transform', () => {
           route: { method: 'GET', url: '/test', handler: () => ({ id: 1 }) },
           openapiObject: { openapi: '3.0.3' },
         }),
-      ).toThrow('Expected a Zod schema or { properties: ZodType } wrapper');
+      ).toThrow('Expected a Zod schema in response slot');
+    });
+
+    it('throws migration error for legacy { properties: ZodType } response wrapper', () => {
+      const transform = createJsonSchemaTransform();
+
+      expect(() =>
+        transform({
+          schema: {
+            response: {
+              200: {
+                description: 'Healthy',
+                properties: z.object({ status: z.boolean() }),
+              },
+            },
+          },
+          url: '/test',
+          route: { method: 'GET', url: '/test', handler: () => ({ status: true }) },
+          openapiObject: { openapi: '3.0.3' },
+        }),
+      ).toThrow('response wrapper is no longer supported');
     });
 
     it('passes through non-schema keys like tags and description', () => {
@@ -1159,125 +1179,227 @@ describe('schema-transform', () => {
       expect(get(spec, ['components', 'schemas', 'TokenInput'])).toBeUndefined();
     });
 
-    it('response description preserved from wrapper object (#47)', async () => {
-      const app = await buildAppWithSwagger('3.0.3');
+    it('registered schema without description has no response description', async () => {
+      const Item = z.object({ id: z.number() }).meta({ id: 'Item' });
 
-      app.get(
-        '/health',
-        {
-          schema: {
-            response: {
-              200: {
-                description: 'Healthy',
-                properties: z.object({ status: z.boolean() }),
-              },
-            },
-          },
-        },
-        () => ({ status: true }),
-      );
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get('/item', { schema: { response: { 200: Item } } }, () => ({ id: 1 }));
 
       await app.ready();
       const spec = app.swagger();
 
-      expect(get(spec, ['paths', '/health', 'get', 'responses', '200'])).toMatchObject({
-        description: 'Healthy',
+      const response = get(spec, ['paths', '/item', 'get', 'responses', '200']);
+      // fastify-swagger fills in 'Default Response' when none is provided
+      expect(response.description).toBe('Default Response');
+      expect(get(response, ['content', 'application/json', 'schema'])).toMatchObject({
+        $ref: '#/components/schemas/Item',
       });
     });
 
-    it('response description preserved when inner schema is registered (produces $ref)', async () => {
-      const HealthSchema = z.object({ status: z.boolean() }).meta({ id: 'Health' });
+    it('registered schema intrinsic description auto-lifts to response', async () => {
+      const Health = z
+        .object({ status: z.boolean() })
+        .meta({ id: 'Health', description: 'A health status' });
+
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get('/health', { schema: { response: { 200: Health } } }, () => ({ status: true }));
+
+      await app.ready();
+      const spec = app.swagger();
+
+      // Component keeps its own description
+      expect(get(spec, ['components', 'schemas', 'Health'])).toMatchObject({
+        description: 'A health status',
+      });
+
+      // Response object lifts the same description
+      const response = get(spec, ['paths', '/health', 'get', 'responses', '200']);
+      expect(response.description).toBe('A health status');
+      expect(get(response, ['content', 'application/json', 'schema'])).toMatchObject({
+        $ref: '#/components/schemas/Health',
+      });
+    });
+
+    it('registered schema intrinsic description not lifted in strict mode', async () => {
+      const Health = z
+        .object({ status: z.boolean() })
+        .meta({ id: 'Health', description: 'A health status' });
 
       const app = Fastify();
       app.setValidatorCompiler(validatorCompiler);
       app.setSerializerCompiler(serializerCompiler);
-
       await app.register(swagger, {
         openapi: { openapi: '3.0.3', info: { title: 'Test', version: '1.0.0' } },
-        transform: createJsonSchemaTransform(),
+        transform: createJsonSchemaTransform({ liftSchemaDescriptionToResponse: false }),
         transformObject: createJsonSchemaTransformObject(),
       });
 
-      app.withTypeProvider<FastifyLorZodTypeProvider>().get(
+      app
+        .withTypeProvider<FastifyLorZodTypeProvider>()
+        .get('/health', { schema: { response: { 200: Health } } }, () => ({ status: true }));
+
+      await app.ready();
+      const spec = app.swagger();
+
+      // Component still has its description
+      expect(get(spec, ['components', 'schemas', 'Health'])).toMatchObject({
+        description: 'A health status',
+      });
+
+      // Response gets fastify-swagger's fallback — not the lifted value
+      expect(get(spec, ['paths', '/health', 'get', 'responses', '200', 'description'])).toBe(
+        'Default Response',
+      );
+    });
+
+    it('chained .meta description lifts to response, component unchanged', async () => {
+      const Health = z.object({ status: z.boolean() }).meta({ id: 'Health' });
+
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get(
         '/health',
-        {
-          schema: {
-            response: {
-              200: {
-                description: 'Healthy',
-                properties: HealthSchema,
-              },
-            },
-          },
-        },
+        { schema: { response: { 200: Health.meta({ description: 'Healthy' }) } } },
         () => ({ status: true }),
       );
 
       await app.ready();
       const spec = app.swagger();
 
+      // Component is untouched (no description ever)
+      expect(get(spec, ['components', 'schemas', 'Health'])).not.toHaveProperty('description');
+
+      // Response gets the chained value
       const response = get(spec, ['paths', '/health', 'get', 'responses', '200']);
       expect(response.description).toBe('Healthy');
-
-      const schema = get(response, ['content', 'application/json', 'schema']);
-      expect(schema.$ref).toBe('#/components/schemas/Health');
+      expect(get(response, ['content', 'application/json', 'schema'])).toMatchObject({
+        $ref: '#/components/schemas/Health',
+      });
     });
 
-    it('registered schema response without description is unchanged', async () => {
-      const ItemSchema = z.object({ id: z.number() }).meta({ id: 'Item' });
-
-      const app = await buildAppWithSwagger('3.0.3');
-      app.get('/item', { schema: { response: { 200: ItemSchema } } }, () => ({ id: 1 }));
-
-      await app.ready();
-      const spec = app.swagger();
-
-      expect(get(spec, ['components', 'schemas', 'Item'])).toBeDefined();
-
-      const responseSchema = get(spec, [
-        'paths',
-        '/item',
-        'get',
-        'responses',
-        '200',
-        'content',
-        'application/json',
-        'schema',
-      ]);
-      expect(responseSchema).toMatchObject({ $ref: '#/components/schemas/Item' });
-    });
-
-    it('empty string description ignored for registered schema response', async () => {
-      const PingSchema = z.object({ ok: z.boolean() }).meta({ id: 'Ping' });
-
+    it('inline schema .meta description lifts to response, removed from body', async () => {
       const app = await buildAppWithSwagger('3.0.3');
       app.get(
         '/ping',
         {
           schema: {
             response: {
-              200: {
-                description: '',
-                properties: PingSchema,
-              },
+              200: z.object({ ok: z.literal(true) }).meta({ description: 'Service is up' }),
             },
           },
         },
-        () => ({ ok: true }),
+        () => ({ ok: true as const }),
       );
 
       await app.ready();
       const spec = app.swagger();
 
       const response = get(spec, ['paths', '/ping', 'get', 'responses', '200']);
+      expect(response.description).toBe('Service is up');
 
-      // Empty string description must not appear in the OAS output
-      expect(response?.description).not.toBe('');
+      const inlineSchema = get(response, ['content', 'application/json', 'schema']);
+      expect(inlineSchema).not.toHaveProperty('description');
+      expect(inlineSchema).toMatchObject({ type: 'object' });
+    });
 
-      // Schema must be a bare $ref — no allOf wrapping (empty string treated as absent)
-      expect(get(response, ['content', 'application/json', 'schema'])).toMatchObject({
-        $ref: '#/components/schemas/Ping',
+    it('chained description overrides intrinsic component description', async () => {
+      const Health = z
+        .object({ status: z.boolean() })
+        .meta({ id: 'Health', description: 'A health status' });
+
+      const app = await buildAppWithSwagger('3.0.3');
+      app.get(
+        '/health',
+        { schema: { response: { 200: Health.meta({ description: 'Healthy' }) } } },
+        () => ({ status: true }),
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      // Component keeps its OWN description
+      expect(get(spec, ['components', 'schemas', 'Health'])).toMatchObject({
+        description: 'A health status',
       });
+
+      // Response uses the chained override
+      expect(get(spec, ['paths', '/health', 'get', 'responses', '200', 'description'])).toBe(
+        'Healthy',
+      );
+    });
+
+    it('z.undefined response schema without .meta description passes through unchanged', async () => {
+      const app = await buildAppWithSwagger('3.0.3');
+      app.delete('/item', { schema: { response: { 204: z.undefined() } } }, (_req, reply) => {
+        reply.code(204).send();
+      });
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const response = get(spec, ['paths', '/item', 'delete', 'responses', '204']);
+      // No description was supplied; fastify-swagger fills in its default
+      expect(response.description).toBe('Default Response');
+    });
+
+    it('z.undefined response schema with .meta description lifts description to response', async () => {
+      const app = await buildAppWithSwagger('3.0.3');
+      app.delete(
+        '/item',
+        {
+          schema: {
+            response: {
+              204: z.undefined().meta({ description: 'Item deleted' }),
+            },
+          },
+        },
+        (_req, reply) => {
+          reply.code(204).send();
+        },
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const response = get(spec, ['paths', '/item', 'delete', 'responses', '204']);
+      expect(response.description).toBe('Item deleted');
+    });
+
+    it('same registered schema reused at multiple status codes gets independent descriptions', async () => {
+      const Health = z.object({ status: z.boolean() }).meta({ id: 'Health' });
+
+      const app = await buildAppWithSwagger('3.0.3');
+      app.post(
+        '/health/recheck',
+        {
+          schema: {
+            response: {
+              200: Health.meta({ description: 'Recheck successful' }),
+              503: Health.meta({ description: 'Service degraded' }),
+            },
+          },
+        },
+        () => ({ status: true }),
+      );
+
+      await app.ready();
+      const spec = app.swagger();
+
+      const r200 = get(spec, ['paths', '/health/recheck', 'post', 'responses', '200']);
+      const r503 = get(spec, ['paths', '/health/recheck', 'post', 'responses', '503']);
+
+      expect(r200.description).toBe('Recheck successful');
+      expect(r503.description).toBe('Service degraded');
+
+      // Both reference the shared component
+      expect(get(r200, ['content', 'application/json', 'schema'])).toMatchObject({
+        $ref: '#/components/schemas/Health',
+      });
+      expect(get(r503, ['content', 'application/json', 'schema'])).toMatchObject({
+        $ref: '#/components/schemas/Health',
+      });
+
+      // Component is still untouched
+      expect(get(spec, ['components', 'schemas', 'Health'])).not.toHaveProperty('description');
     });
 
     it('body content type wrappers supported (#132)', async () => {
