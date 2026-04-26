@@ -118,28 +118,29 @@ const transformContentTypes = (
   const transformedContent: Record<string, unknown> = {};
 
   for (const [mimeType, mimeEntry] of Object.entries(content)) {
-    if (typeof mimeEntry === 'object' && mimeEntry !== null && 'schema' in mimeEntry) {
-      const schemaValue = (mimeEntry as Record<string, unknown>).schema;
-      if (schemaValue instanceof z.ZodType) {
-        const jsonSchema = zodSchemaToJson(
-          schemaValue,
-          schemaRegistry,
-          io,
-          oasVersion,
-          zodToJsonConfig,
-          undefined,
-          inputSchemaIds,
-        );
-        transformedContent[mimeType] = {
-          ...(mimeEntry as Record<string, unknown>),
-          schema: jsonSchemaToOAS(jsonSchema, oasVersion),
-        };
-      } else {
-        transformedContent[mimeType] = mimeEntry;
-      }
-    } else {
+    const schemaValue =
+      typeof mimeEntry === 'object' && mimeEntry !== null && 'schema' in mimeEntry
+        ? (mimeEntry as Record<string, unknown>).schema
+        : undefined;
+
+    if (!(schemaValue instanceof z.ZodType)) {
       transformedContent[mimeType] = mimeEntry;
+      continue;
     }
+
+    const jsonSchema = zodSchemaToJson(
+      schemaValue,
+      schemaRegistry,
+      io,
+      oasVersion,
+      zodToJsonConfig,
+      undefined,
+      inputSchemaIds,
+    );
+    transformedContent[mimeType] = {
+      ...(mimeEntry as Record<string, unknown>),
+      schema: jsonSchemaToOAS(jsonSchema, oasVersion),
+    };
   }
 
   return { ...wrapper, content: transformedContent };
