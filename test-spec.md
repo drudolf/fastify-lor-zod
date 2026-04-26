@@ -27,11 +27,11 @@
 - [x] Does not coerce body single value to array (#151)
 - [x] Does not false-coerce when union matches non-array branch (#151)
 
-## Serialization (`serializer/serializer.test.ts`) — 38 tests
+## Serialization (`serializer/serializer.test.ts`) — 43 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
-### Serializer-agnostic (×3 serializers = 18 tests)
+### Serializer-agnostic (×3 serializers = 21 tests)
 
 - [x] Returns 204 with empty response schema
 - [x] Returns 200 on correct string response
@@ -39,14 +39,16 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Handles nested schemas
 - [x] falls back to JSON.stringify for non-Zod response schemas
 - [x] Strips extra fields not in schema
+- [x] unwraps { properties: ZodType } response schema wrapper
 
-### Validation errors — safeEncode + safeParse only (×2 = 10 tests)
+### Validation errors — safeEncode + safeParse only (×2 = 12 tests)
 
 - [x] Throws 500 on non-empty response with 204 schema
 - [x] Returns 500 on incorrect string response
 - [x] Returns 500 on incorrect object response
 - [x] returns 500 when required field is missing from response
 - [x] response validation error exposes #/body/<path> schemaPath
+- [x] validates response declared with { properties: ZodType } wrapper
 
 ### Default values — safeEncode + safeParse only (×2 = 2 tests)
 
