@@ -1,5 +1,37 @@
 # fastify-lor-zod
 
+## 0.7.1
+
+### Patch Changes
+
+- [`25e7862`](https://github.com/drudolf/fastify-lor-zod/commit/25e7862) Fix silent skip of response validation when the route declares its response
+  schema with the `{ description, properties: ZodType }` wrapper form (used to
+  attach OAS metadata at the route level).
+
+  Previously, `serializerCompiler`, `parseSerializerCompiler`, and
+  `fastSerializerCompiler` checked for `_zod.def` directly on the wrapper object,
+  found nothing, and fell through to bare `JSON.stringify(data)` — producing
+  no validation, no codec encoding, and no field stripping. The OpenAPI doc
+  generation already supported this wrapper form, so the bug was silent: docs
+  looked correct but responses were not validated.
+
+  All three serializer compilers now unwrap `{ properties: ZodType }` before
+  inspecting the schema, matching upstream `fastify-type-provider-zod` parity.
+  Their public types widen from `FastifySerializerCompiler<z.ZodType>` to
+  `FastifySerializerCompiler<z.ZodType | { properties: z.ZodType }>`.
+
+- [`7e0e711`](https://github.com/drudolf/fastify-lor-zod/commit/7e0e711) Internal cleanup: simplify two helpers in the OpenAPI transform layer.
+
+  `transformContentTypes` (`src/openapi/schema-transform.ts`) replaces a nested
+  if/else that duplicated the non-Zod fallback in two places with a single guard
+  clause, flattening one level of nesting.
+
+  `jsonSchemaToOAS30` (`src/openapi/zod-to-openapi.ts`) extracts a small
+  `recurseRecord(key)` helper to share the previously duplicated recursion over
+  `properties` and `definitions`.
+
+  No behavior change. All public APIs unchanged.
+
 ## 0.7.0
 
 ### Minor Changes
