@@ -124,7 +124,7 @@ exports[`transformer > Should generate Input variant schemas with withInputSchem
                 },
               },
             },
-            "description": "Default Response",
+            "description": "User login response",
           },
         },
       },

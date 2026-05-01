@@ -6,19 +6,6 @@ import { hasCodecInTree } from '../utils/has-codec-in-tree.js';
 import { hasTransformInTree } from '../utils/has-transform-in-tree.js';
 import { ResponseSerializationError } from './error.js';
 
-type MaybeWrappedSchema = z.ZodType | { properties: z.ZodType };
-
-/**
- * Unwraps Fastify's `{ properties: ZodType }` response wrapper used to attach
- * OAS metadata (e.g. `description`) at the route level. Returns the inner Zod
- * schema, or `undefined` when no Zod schema is present.
- */
-const resolveSchema = (maybeSchema: MaybeWrappedSchema | undefined): z.ZodType | undefined => {
-  if (maybeSchema instanceof z.ZodType) return maybeSchema;
-  if (maybeSchema?.properties instanceof z.ZodType) return maybeSchema.properties;
-  return undefined;
-};
-
 /**
  * Options for the serializer compiler factories.
  *
@@ -61,10 +48,9 @@ export interface SerializerCompilerOptions {
  * ```
  */
 export const createSerializerCompiler =
-  (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<MaybeWrappedSchema> =>
-  ({ schema: maybeSchema, method, url, httpStatus }) => {
-    const schema = resolveSchema(maybeSchema);
-    if (!schema) {
+  (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
+  ({ schema, method, url, httpStatus }) => {
+    if (!schema?._zod?.def) {
       return (data: unknown): string => JSON.stringify(data, opts.replacer);
     }
 
@@ -106,8 +92,7 @@ export const createSerializerCompiler =
  * app.setSerializerCompiler(serializerCompiler);
  * ```
  */
-export const serializerCompiler: FastifySerializerCompiler<MaybeWrappedSchema> =
-  createSerializerCompiler();
+export const serializerCompiler: FastifySerializerCompiler<z.ZodType> = createSerializerCompiler();
 
 /**
  * Creates a Fastify serializer compiler that always uses Zod's `safeParse` for response validation.
@@ -127,10 +112,9 @@ export const serializerCompiler: FastifySerializerCompiler<MaybeWrappedSchema> =
  * ```
  */
 export const createParseSerializerCompiler =
-  (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<MaybeWrappedSchema> =>
-  ({ schema: maybeSchema, method, url, httpStatus }) => {
-    const schema = resolveSchema(maybeSchema);
-    if (!schema) {
+  (opts: SerializerCompilerOptions = {}): FastifySerializerCompiler<z.ZodType> =>
+  ({ schema, method, url, httpStatus }) => {
+    if (!schema?._zod?.def) {
       return (data: unknown): string => JSON.stringify(data, opts.replacer);
     }
 
@@ -159,7 +143,7 @@ export const createParseSerializerCompiler =
  * app.setSerializerCompiler(parseSerializerCompiler);
  * ```
  */
-export const parseSerializerCompiler: FastifySerializerCompiler<MaybeWrappedSchema> =
+export const parseSerializerCompiler: FastifySerializerCompiler<z.ZodType> =
   createParseSerializerCompiler();
 
 /**
@@ -181,10 +165,9 @@ export const parseSerializerCompiler: FastifySerializerCompiler<MaybeWrappedSche
  * ```
  */
 export const createFastSerializerCompiler =
-  (): FastifySerializerCompiler<MaybeWrappedSchema> =>
-  ({ schema: maybeSchema }) => {
-    const schema = resolveSchema(maybeSchema);
-    if (!schema) {
+  (): FastifySerializerCompiler<z.ZodType> =>
+  ({ schema }) => {
+    if (!schema?._zod?.def) {
       return (data: unknown): string => JSON.stringify(data);
     }
 
@@ -208,5 +191,5 @@ export const createFastSerializerCompiler =
  * app.setSerializerCompiler(fastSerializerCompiler);
  * ```
  */
-export const fastSerializerCompiler: FastifySerializerCompiler<MaybeWrappedSchema> =
+export const fastSerializerCompiler: FastifySerializerCompiler<z.ZodType> =
   createFastSerializerCompiler();

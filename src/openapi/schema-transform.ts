@@ -40,6 +40,17 @@ export interface SchemaTransformOptions {
   withInputSchema?: boolean;
   /** Configuration for Zod-to-JSON Schema conversion (e.g. custom `target` or `override`). */
   zodToJsonConfig?: ZodToJsonConfig;
+  /**
+   * Controls whether a registered schema's intrinsic `.meta({ description })` is auto-lifted
+   * onto `responses.<code>.description` (default `true`).
+   *
+   * When `true` (default): any meta description on the response-slot schema lifts to the
+   * response object — including the description on the registered component itself.
+   * When `false` (strict): only descriptions chained at the route slot lift (i.e. when the
+   * slot schema instance has a description but no `id`). The component's intrinsic
+   * description stays on the component only.
+   */
+  liftSchemaDescriptionToResponse?: boolean;
 }
 
 const DEFAULT_SKIP_LIST = [
@@ -52,26 +63,58 @@ const DEFAULT_SKIP_LIST = [
   '/documentation/static/*',
 ] as const;
 
-interface ResolvedSchema {
-  schema: z.ZodType;
-  /** Extra keys from a wrapper object (e.g. `description`) to merge into the OAS output. */
-  extras: Record<string, unknown>;
-}
+/**
+ * Throws a clear migration error if the route still uses the legacy
+ * `{ description, properties: ZodSchema }` response wrapper. Returns the
+ * given value unchanged when it's a valid Zod schema; throws on other shapes
+ * for parity with the old `resolveSchema` strictness.
+ */
+const requireZodResponseSchema = (responseEntry: unknown): z.ZodType => {
+  if (responseEntry instanceof z.ZodType) return responseEntry;
 
-const resolveSchema = (maybeSchema: z.ZodType | { properties: z.ZodType }): ResolvedSchema => {
-  if (maybeSchema instanceof z.ZodType) {
-    return { schema: maybeSchema, extras: {} };
-  }
   if (
-    'properties' in maybeSchema &&
-    (maybeSchema as { properties: unknown }).properties instanceof z.ZodType
+    responseEntry !== null &&
+    typeof responseEntry === 'object' &&
+    'properties' in responseEntry &&
+    responseEntry.properties instanceof z.ZodType
   ) {
-    const { properties, ...extras } = maybeSchema as Record<string, unknown>;
-    return { schema: properties as z.ZodType, extras };
+    throw new Error(
+      '[fastify-lor-zod] The `{ description, properties: ZodSchema }` response wrapper is no longer supported. ' +
+        "Use `Schema.meta({ description: '...' })` instead. See MIGRATION.md.",
+    );
   }
+
   throw new Error(
-    `[fastify-lor-zod] Expected a Zod schema or { properties: ZodType } wrapper, received: ${JSON.stringify(maybeSchema)}`,
+    `[fastify-lor-zod] Expected a Zod schema in response slot, received: ${JSON.stringify(responseEntry)}`,
   );
+};
+
+/** Reads a meta description from the registry, or returns undefined if absent / not a string. */
+const readMetaDescription = (
+  schema: z.ZodType,
+  registry: typeof z.globalRegistry,
+): { description?: string; id?: string } => {
+  const meta = registry.get(schema);
+  return {
+    description: typeof meta?.description === 'string' ? meta.description : undefined,
+    id: typeof meta?.id === 'string' ? meta.id : undefined,
+  };
+};
+
+/**
+ * Flattens `{ allOf: [singleObject] }` to `singleObject`. Zod produces this shape
+ * for OAS 3.0 when a registered schema has any sibling alongside `$ref` (the wrap
+ * exists to dodge the OAS 3.0 sibling-of-$ref restriction). Once we lift the
+ * description to the response object, the wrap is no longer necessary.
+ *
+ * Zod always emits schema objects inside `allOf` arrays, so the inner item is
+ * trusted to be a record.
+ */
+const flattenSingletonAllOf = (body: Record<string, unknown>): Record<string, unknown> => {
+  if (Object.keys(body).length !== 1) return body;
+  const allOf = body.allOf;
+  if (!Array.isArray(allOf) || allOf.length !== 1) return body;
+  return allOf[0] as Record<string, unknown>;
 };
 
 const isContentTypeWrapper = (value: unknown): boolean =>
@@ -190,6 +233,7 @@ export const createJsonSchemaTransform = (
     schemaRegistry = z.globalRegistry,
     withInputSchema,
     zodToJsonConfig = {},
+    liftSchemaDescriptionToResponse = true,
   } = opts;
 
   let inputSchemaIds = divergentIds;
@@ -266,7 +310,20 @@ export const createJsonSchemaTransform = (
           continue;
         }
 
-        const { schema: zodSchema, extras } = resolveSchema(responseEntry as z.ZodType);
+        const zodSchema = requireZodResponseSchema(responseEntry);
+        const slotMeta = readMetaDescription(zodSchema, schemaRegistry);
+
+        // Decide whether to lift the meta description to the response object.
+        // Auto-lift mode (default): always lift if a description is present.
+        // Strict mode: only lift if the slot instance has no `id` (i.e. the description
+        // came from a route-slot chain or an inline schema, not from the registered
+        // component itself).
+        const responseDescription =
+          slotMeta.description !== undefined &&
+          (liftSchemaDescriptionToResponse || slotMeta.id === undefined)
+            ? slotMeta.description
+            : undefined;
+
         const jsonSchema = zodSchemaToJson(
           zodSchema,
           schemaRegistry,
@@ -277,13 +334,34 @@ export const createJsonSchemaTransform = (
 
         // If the JSON schema is null, return as-is since fastify-swagger will handle it
         if ((jsonSchema as JSONSchemaRecord).type === 'null') {
-          (transformed.response as JSONSchemaRecord)[prop] = { ...extras, ...jsonSchema };
+          (transformed.response as JSONSchemaRecord)[prop] =
+            responseDescription !== undefined
+              ? { 'x-response-description': responseDescription, ...jsonSchema }
+              : jsonSchema;
           continue;
         }
 
         const oasSchema = jsonSchemaToOAS(jsonSchema, oasVersion);
-        if (extras.description === '') delete extras.description;
-        (transformed.response as JSONSchemaRecord)[prop] = { ...extras, ...oasSchema };
+
+        // Strip top-level description from the body when lifting (so the same text doesn't
+        // appear on both the response label and the schema panel), then flatten any
+        // singleton `allOf` wrap that Zod added solely to host the now-removed sibling.
+        const { description: _stripped, ...rest } = oasSchema;
+        const body = responseDescription !== undefined ? flattenSingletonAllOf(rest) : oasSchema;
+
+        // fastify-swagger lifts response descriptions through two channels:
+        //   - `x-response-description` is read from the resolved schema and stripped from
+        //     the emitted body, giving clean output for inline schemas.
+        //   - `description` is read from the raw schema and survives `$ref` resolution
+        //     because fastify-swagger drops siblings during resolution.
+        // For `$ref`-only bodies we use `description`; otherwise `x-response-description`.
+        const useRefSibling = '$ref' in body;
+        const descriptionKey = useRefSibling ? 'description' : 'x-response-description';
+
+        (transformed.response as JSONSchemaRecord)[prop] =
+          responseDescription !== undefined
+            ? { [descriptionKey]: responseDescription, ...body }
+            : body;
       }
     }
 
