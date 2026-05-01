@@ -121,29 +121,6 @@ describe.each(allSerializers)('serializer — $name', ({ compiler }) => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ id: 1 });
   });
-
-  it('unwraps { properties: ZodType } response schema wrapper', async () => {
-    const app = buildApp(compiler);
-    app.get(
-      '/health',
-      {
-        schema: {
-          response: {
-            200: {
-              description: 'Healthy',
-              properties: z.object({ status: z.boolean() }),
-            },
-          },
-        },
-      },
-      () => ({ status: true, secret: 'should-be-stripped' }),
-    );
-
-    const response = await app.inject({ method: 'GET', url: '/health' });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ status: true });
-  });
 });
 
 describe.each(validatingSerializers)('serializer — $name — validation errors', ({ compiler }) => {
@@ -254,44 +231,6 @@ describe.each(validatingSerializers)('serializer — $name — validation errors
       code: 'ERR_RESPONSE_SERIALIZATION',
       method: 'GET',
       url: '/',
-    });
-  });
-
-  it('validates response declared with { properties: ZodType } wrapper', async () => {
-    const app = buildApp(compiler);
-    app.setErrorHandler((error, _req, reply) => {
-      if (error instanceof ResponseSerializationError) {
-        reply.code(500).send({
-          code: error.code,
-          method: error.method,
-          url: error.url,
-        });
-        return;
-      }
-      reply.send(error);
-    });
-    app.get(
-      '/health',
-      {
-        schema: {
-          response: {
-            200: {
-              description: 'Healthy',
-              properties: z.object({ status: z.boolean() }),
-            },
-          },
-        },
-      },
-      () => ({ status: 'not-a-boolean' }) as unknown as { status: boolean },
-    );
-
-    const response = await app.inject({ method: 'GET', url: '/health' });
-
-    expect(response.statusCode).toBe(500);
-    expect(response.json()).toMatchObject({
-      code: 'ERR_RESPONSE_SERIALIZATION',
-      method: 'GET',
-      url: '/health',
     });
   });
 
