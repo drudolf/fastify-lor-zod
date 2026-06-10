@@ -318,6 +318,162 @@ describe('integration', () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ pong: true });
   });
+
+  /**
+   * Recursive discriminated union in the shape rule-engine consumers use:
+   * group nodes hold children of the same union via z.lazy self-reference.
+   */
+  type RuleNode =
+    | { kind: 'condition'; field: string; value: string }
+    | { kind: 'group'; op: 'and' | 'or'; children: RuleNode[] };
+
+  const makeRuleNodeSchema = (): z.ZodType<RuleNode> => {
+    const ConditionSchema = z.object({
+      kind: z.literal('condition'),
+      field: z.string(),
+      value: z.string(),
+    });
+    const GroupSchema = z.object({
+      kind: z.literal('group'),
+      op: z.enum(['and', 'or']),
+      children: z.array(z.lazy(() => RuleNodeSchema)),
+    });
+    const RuleNodeSchema: z.ZodType<RuleNode> = z.discriminatedUnion('kind', [
+      ConditionSchema,
+      GroupSchema,
+    ]);
+    return RuleNodeSchema;
+  };
+
+  const deepTree: RuleNode = {
+    kind: 'group',
+    op: 'and',
+    children: [
+      { kind: 'condition', field: 'feedId', value: '1' },
+      {
+        kind: 'group',
+        op: 'or',
+        children: [{ kind: 'condition', field: 'title', value: 'olympics' }],
+      },
+    ],
+  };
+
+  it('validates recursive discriminated-union request bodies', async () => {
+    const app = await buildApp();
+
+    app.post(
+      '/rules/preview',
+      {
+        schema: {
+          body: makeRuleNodeSchema(),
+          response: { 200: z.object({ receivedKind: z.string() }) },
+        },
+      },
+      (req) => {
+        expectTypeOf(req.body).toEqualTypeOf<RuleNode>();
+        return { receivedKind: req.body.kind };
+      },
+    );
+
+    await app.ready();
+
+    const res = await app.inject({ method: 'POST', url: '/rules/preview', payload: deepTree });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ receivedKind: 'group' });
+
+    // Swagger spec still generated for routes with anonymous recursive schemas
+    const spec = app.swagger();
+    expect(get(spec, ['paths', '/rules/preview', 'post'])).toBeDefined();
+  });
+
+  it('rejects invalid nodes nested deep inside recursive trees', async () => {
+    const app = await buildApp();
+
+    app.post(
+      '/rules/preview',
+      {
+        schema: { body: makeRuleNodeSchema() },
+      },
+      () => 'ok',
+    );
+
+    await app.ready();
+
+    const invalidDeep = {
+      kind: 'group',
+      op: 'and',
+      children: [
+        {
+          kind: 'group',
+          op: 'or',
+          children: [{ kind: 'condition', field: 'title', value: 42 }],
+        },
+      ],
+    };
+
+    const res = await app.inject({ method: 'POST', url: '/rules/preview', payload: invalidDeep });
+    expect(res.statusCode).toBe(400);
+    const issues = JSON.parse(res.json<{ message: string }>().message);
+    expect(issues[0]).toMatchObject({
+      code: 'invalid_type',
+      path: ['children', 0, 'children', 0, 'value'],
+    });
+  });
+
+  it('serializes recursive discriminated-union responses', async () => {
+    const app = await buildApp();
+
+    app.get(
+      '/rules',
+      {
+        schema: { response: { 200: makeRuleNodeSchema() } },
+      },
+      () => deepTree,
+    );
+
+    await app.ready();
+
+    const res = await app.inject({ method: 'GET', url: '/rules' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual(deepTree);
+  });
+
+  it('registered recursive schemas appear as self-referencing $ref components', async () => {
+    const app = Fastify();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+
+    const registry = z.registry<z.GlobalMeta>();
+    const RuleNodeSchema = makeRuleNodeSchema();
+    registry.add(RuleNodeSchema, { id: 'RuleNode' });
+
+    await app.register(swagger, {
+      openapi: {
+        openapi: '3.0.3',
+        info: { title: 'Recursive Registry Test', version: '1.0.0' },
+      },
+      transform: createJsonSchemaTransform({ schemaRegistry: registry }),
+      transformObject: createJsonSchemaTransformObject({ schemaRegistry: registry }),
+    });
+
+    const typedApp = app.withTypeProvider<FastifyLorZodTypeProvider>();
+
+    typedApp.get(
+      '/rules',
+      {
+        schema: { response: { 200: RuleNodeSchema } },
+      },
+      () => deepTree,
+    );
+
+    await app.ready();
+
+    const spec = app.swagger();
+    const component = get(spec, ['components', 'schemas', 'RuleNode']);
+    expect(component).toBeDefined();
+    // The group branch's children items must point back at the component itself.
+    expect(JSON.stringify(component)).toContain('#/components/schemas/RuleNode');
+  });
 });
 
 describe('RouteHandler', () => {
