@@ -1,5 +1,14 @@
 # fastify-lor-zod
 
+## 0.8.1
+
+### Patch Changes
+
+- [`fc847d5`](https://github.com/drudolf/fastify-lor-zod/commit/fc847d5) Serializer types are now exactOptionalPropertyTypes-safe: plain optional and
+  default/prefault response properties accept zod's undefined-inclusive output
+  inference, while z.exactOptional() properties still reject explicit undefined.
+  The package itself now compiles with exactOptionalPropertyTypes enabled.
+
 ## 0.8.0
 
 ### Minor Changes
