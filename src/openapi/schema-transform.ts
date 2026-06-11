@@ -93,7 +93,7 @@ const requireZodResponseSchema = (responseEntry: unknown): z.ZodType => {
 const readMetaDescription = (
   schema: z.ZodType,
   registry: typeof z.globalRegistry,
-): { description?: string; id?: string } => {
+): { description?: string | undefined; id?: string | undefined } => {
   const meta = registry.get(schema);
   return {
     description: typeof meta?.description === 'string' ? meta.description : undefined,

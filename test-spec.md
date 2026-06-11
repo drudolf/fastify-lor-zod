@@ -216,7 +216,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] isZodInternal returns false for non-ZodType input
 - [x] zodSchemaToJson throws if Zod internal API is absent
 
-## Integration & Type Inference (`index.test.ts`) — 30 tests
+## Integration & Type Inference (`index.test.ts`) — 32 tests
 
 - [x] Boots, handles requests, and produces a valid OpenAPI spec
 - [x] Uses Zod codec encode for response serialization
@@ -248,10 +248,12 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] rejects invalid nodes nested deep inside recursive trees
 - [x] serializes recursive discriminated-union responses
 - [x] registered recursive schemas appear as self-referencing $ref components
+- [x] optional response properties accept undefined-inclusive zod inference
+- [x] exactOptional response properties reject explicit undefined
 
 ## OpenAPI Metaschema Validation (`openapi/openapi-metaschema.test.ts`) — 2 tests
 
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 172 spec entries, 189 tests across 10 test files**
+**Total: 174 spec entries, 191 tests across 10 test files**

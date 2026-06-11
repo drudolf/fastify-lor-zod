@@ -35,10 +35,33 @@ type RequiredSchemaKeys<Shape extends SchemaShape> = Exclude<
   OptionalSchemaKeys<Shape>
 >;
 
-/** Recursively maps an object schema shape to the handler payload expected by `reply.send()`. */
+/**
+ * Keys declared via z.exactOptional(): the key may be omitted, the value is never
+ * undefined. Discriminated behaviorally (does the schema's input reject undefined?)
+ * because ZodExactOptional is structurally a supertype of ZodOptional — an
+ * `extends` check would swallow plain optional keys too.
+ */
+type ExactOptionalSchemaKeys<Shape extends SchemaShape> = {
+  [K in keyof Shape]: K extends OptionalSchemaKeys<Shape>
+    ? undefined extends z.input<Shape[K]>
+      ? never
+      : K
+    : never;
+}[keyof Shape];
+
+/**
+ * Recursively maps an object schema shape to the handler payload expected by `reply.send()`.
+ * Plain optional/default keys keep `| undefined` to match zod's own output inference —
+ * required for consumers compiling with exactOptionalPropertyTypes. Only z.exactOptional()
+ * keys exclude undefined, mirroring their runtime contract.
+ */
 type ObjectSerializerType<Shape extends SchemaShape> = Simplify<
   { [K in RequiredSchemaKeys<Shape>]: SerializerType<Shape[K]> } & {
-    [K in OptionalSchemaKeys<Shape>]?: Exclude<SerializerType<Shape[K]>, undefined>;
+    [K in ExactOptionalSchemaKeys<Shape>]?: Exclude<SerializerType<Shape[K]>, undefined>;
+  } & {
+    [K in Exclude<OptionalSchemaKeys<Shape>, ExactOptionalSchemaKeys<Shape>>]?:
+      | SerializerType<Shape[K]>
+      | undefined;
   }
 >;
 

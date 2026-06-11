@@ -48,7 +48,7 @@ export class ResponseSerializationError extends Error {
   readonly validationContext = 'body' as const;
 
   constructor(
-    options: { method: string; url: string; httpStatus?: string; zodError: z.ZodError },
+    options: { method: string; url: string; httpStatus?: string | undefined; zodError: z.ZodError },
     errorOptions?: ErrorOptions,
   ) {
     const status = options.httpStatus ? ` (status ${options.httpStatus})` : '';

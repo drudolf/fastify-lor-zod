@@ -1047,4 +1047,41 @@ describe('type inference', () => {
 
     await app.ready();
   });
+  it('optional response properties accept undefined-inclusive zod inference', async () => {
+    const app = buildApp();
+    const ResponseSchema = z.object({ required: z.string(), maybe: z.string().optional() });
+
+    app.get('/eopt-loose', { schema: { response: { 200: ResponseSchema } } }, () => {
+      // zod infers `{ required: string; maybe?: string | undefined }` — the
+      // serializer type must accept it even under exactOptionalPropertyTypes,
+      // which this package now compiles with.
+      const payload: z.output<typeof ResponseSchema> = { required: 'x', maybe: undefined };
+      return payload;
+    });
+
+    await app.ready();
+    const res = await app.inject({ method: 'GET', url: '/eopt-loose' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ required: 'x' });
+  });
+
+  it('exactOptional response properties reject explicit undefined', async () => {
+    const app = buildApp();
+    const StrictSchema = z.object({ required: z.string(), maybe: z.exactOptional(z.string()) });
+
+    app.get('/eopt-strict', { schema: { response: { 200: StrictSchema } } }, () => ({
+      required: 'x',
+    }));
+    app.get(
+      '/eopt-strict-undefined',
+      { schema: { response: { 200: StrictSchema } } },
+      // @ts-expect-error z.exactOptional() keys must not be explicitly undefined
+      () => ({ required: 'x', maybe: undefined }),
+    );
+
+    await app.ready();
+    const res = await app.inject({ method: 'GET', url: '/eopt-strict' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ required: 'x' });
+  });
 });
