@@ -64,7 +64,6 @@ const registerSampleRoutes = (app: FastifyInstance) => {
     .route({
       method: 'POST',
       url: '/no-schema',
-      schema: undefined,
       handler: (_req, res) => {
         res.send('ok');
       },

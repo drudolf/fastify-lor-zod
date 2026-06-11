@@ -159,7 +159,6 @@ describe('validator', () => {
     it('uses undefined as httpPart fallback when not provided', () => {
       const validate = validatorCompiler({
         schema: z.object({ name: z.string() }),
-        httpPart: undefined,
         url: '/',
         method: 'GET',
       });

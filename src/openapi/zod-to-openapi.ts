@@ -70,8 +70,8 @@ const getOverride = (
   /* v8 ignore next */
   if (!def) return;
 
-  if (def.type === 'union') {
-    ctx.jsonSchema.anyOf = ctx.jsonSchema.anyOf?.filter(
+  if (def.type === 'union' && ctx.jsonSchema.anyOf) {
+    ctx.jsonSchema.anyOf = ctx.jsonSchema.anyOf.filter(
       (schema: JSONSchemaRecord) => Object.keys(schema).length > 0,
     );
   }
