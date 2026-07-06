@@ -50,23 +50,33 @@ const allProviders = {
   'fastify-zod-openapi': samchungySerializer,
 };
 
-// Codec-capable serializers: lor-zod auto-detect and fast, plus the two
-// encode-based competitors (fastify-type-provider-zod switched to safeEncode
-// in v7). The parse variant and fastify-zod-openapi fail on Date objects.
+// Codec-capable serializers: lor-zod auto-detect plus the two encode-based
+// competitors (fastify-type-provider-zod switched to safeEncode in v7). The
+// parse variant and fastify-zod-openapi fail on Date objects. The fast
+// variant is excluded: fast-json-stringify does not execute codec encode
+// functions — its native Date handling made the date codec appear to work,
+// but custom codecs (e.g. the money codec) silently mis-serialize.
 const codecProviders = {
   'fastify-lor-zod': lorZodSerializer,
-  'fastify-lor-zod (fast)': lorZodFastSerializer,
   'fastify-type-provider-zod': turkerSerializer,
   '@fastify/type-provider-zod': fastifyOrgSerializer,
 };
 
-// Guard the codec inclusion: if a future competitor release silently breaks
-// codec round-trips, fail loudly instead of benching a wrong code path.
+// Guard the codec inclusion: if a future release silently breaks codec
+// round-trips, fail loudly instead of benching a wrong code path. Checks
+// both a native-type codec (Date→ISO) and a custom encode function (money).
 for (const [name, compiler] of Object.entries(codecProviders)) {
-  const serialize = compile({ probe: compiler }, UserResponseWithCodec, '/probe').probe;
-  const output = JSON.parse(serialize(validUserResponseDataWithCodec));
-  if (output.createdAt !== '2025-01-01T00:00:00.000Z') {
-    throw new Error(`[bench] ${name} failed the codec round-trip: ${output.createdAt}`);
+  const dateProbe = compile({ probe: compiler }, UserResponseWithCodec, '/probe').probe;
+  const dateOutput = JSON.parse(dateProbe(validUserResponseDataWithCodec));
+  if (dateOutput.createdAt !== '2025-01-01T00:00:00.000Z') {
+    throw new Error(`[bench] ${name} failed the date-codec round-trip: ${dateOutput.createdAt}`);
+  }
+  const moneyProbe = compile({ probe: compiler }, OrderSchemaWithCodec, '/probe').probe;
+  const moneyOutput = JSON.parse(moneyProbe(validOrderDataWithCodec));
+  if (moneyOutput.totals.total !== '$355.89') {
+    throw new Error(
+      `[bench] ${name} failed the money-codec round-trip: ${moneyOutput.totals.total}`,
+    );
   }
 }
 
