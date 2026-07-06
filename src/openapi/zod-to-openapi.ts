@@ -263,6 +263,10 @@ const OAS30_DELETE_KEYS = [
   'contentMediaType',
 ] as const;
 
+/** Narrows to a plain JSON Schema object, excluding null and arrays. */
+const isRecord = (value: unknown): value is JSONSchemaRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
   const clone: JSONSchemaRecord = { ...jsonSchema };
 
@@ -284,16 +288,12 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
 
   recurseRecord('properties');
 
-  if (clone.items && typeof clone.items === 'object' && !Array.isArray(clone.items)) {
-    clone.items = recursive(clone.items as JSONSchemaRecord);
+  if (isRecord(clone.items)) {
+    clone.items = recursive(clone.items);
   }
 
-  if (
-    clone.additionalProperties &&
-    typeof clone.additionalProperties === 'object' &&
-    !Array.isArray(clone.additionalProperties)
-  ) {
-    clone.additionalProperties = jsonSchemaToOAS30(clone.additionalProperties as JSONSchemaRecord);
+  if (isRecord(clone.additionalProperties)) {
+    clone.additionalProperties = jsonSchemaToOAS30(clone.additionalProperties);
   }
 
   recurseRecord('definitions');

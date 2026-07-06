@@ -117,7 +117,7 @@ const flattenSingletonAllOf = (body: Record<string, unknown>): Record<string, un
   return allOf[0];
 };
 
-const isContentTypeWrapper = (value: unknown): boolean =>
+const isContentTypeWrapper = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' &&
   value !== null &&
   'content' in value &&
@@ -270,7 +270,7 @@ export const createJsonSchemaTransform = (
       // Body can use content-type wrappers (#132)
       if (prop === 'body' && isContentTypeWrapper(zodSchema)) {
         transformed[prop] = transformContentTypes(
-          zodSchema as Record<string, unknown>,
+          zodSchema,
           schemaRegistry,
           'input',
           oasVersion,
@@ -301,7 +301,7 @@ export const createJsonSchemaTransform = (
         // Nested content types (#227): { content: { 'mime': { schema: ZodType } } }
         if (isContentTypeWrapper(responseEntry)) {
           (transformed.response as JSONSchemaRecord)[prop] = transformContentTypes(
-            responseEntry as Record<string, unknown>,
+            responseEntry,
             schemaRegistry,
             'output',
             oasVersion,
