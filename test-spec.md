@@ -98,12 +98,6 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns false for plain string
 - [x] returns false for array of plain objects
 
-## Schema tree traversal (`schema-tree.test.ts`) — 3 tests
-
-- [x] returns cached result from WeakMap
-- [x] independent predicates do not share cache
-- [x] findInTree handles non-ZodType input gracefully
-
 ## Error Handling (`validator/error.test.ts`) — 3 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
@@ -281,4 +275,15 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] selectParseStrategy falls back to classic safeParse and emits a warning
 - [x] selectParseStrategy returns the fast path without warning when healthy
 
-**Total: 193 spec entries, 210 tests across 11 test files**
+## Pipe kinds detection (`utils/pipe-kinds-in-tree.test.ts`) — 8 tests
+
+- [x] detects codec-only tree
+- [x] detects transform-only tree
+- [x] detects both kinds in a mixed tree in one traversal
+- [x] returns neither flag for plain trees
+- [x] classifies a pipe with both reverseTransform and transform out as codec only
+- [x] caches result per schema and returns frozen object
+- [x] handles recursive lazy schemas without infinite loop
+- [x] handles non-ZodType input gracefully
+
+**Total: 198 spec entries, 215 tests across 11 test files**

@@ -2,8 +2,7 @@ import fastJsonStringify from 'fast-json-stringify';
 import type { FastifySerializerCompiler } from 'fastify/types/schema';
 import { z } from 'zod';
 
-import { hasCodecInTree } from '../utils/has-codec-in-tree.js';
-import { hasTransformInTree } from '../utils/has-transform-in-tree.js';
+import { pipeKindsInTree } from '../utils/pipe-kinds-in-tree.js';
 import { ResponseSerializationError } from './error.js';
 
 /**
@@ -54,8 +53,7 @@ export const createSerializerCompiler =
       return (data: unknown): string => JSON.stringify(data, opts.replacer);
     }
 
-    const hasCodec = hasCodecInTree(schema);
-    const hasTransform = hasTransformInTree(schema);
+    const { hasCodec, hasTransform } = pipeKindsInTree(schema);
 
     if (hasCodec && hasTransform) {
       throw new Error(

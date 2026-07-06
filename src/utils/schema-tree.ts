@@ -1,7 +1,12 @@
 import type { z } from 'zod';
 
-/** Duck-type check: is this value a ZodType instance? */
-const isZodType = (v: unknown): v is z.ZodType => v != null && typeof v === 'object' && '_zod' in v;
+/**
+ * Duck-type check: is this value a ZodType instance?
+ *
+ * @internal Not part of the public API — consumed by tree-walking utils only.
+ */
+export const isZodType = (v: unknown): v is z.ZodType =>
+  v != null && typeof v === 'object' && '_zod' in v;
 
 /**
  * Safely read a property from an object, returning only object values.
@@ -21,8 +26,12 @@ const visitNode = (v: object | undefined, out: unknown[]) => {
   else out.push(...Object.values(v));
 };
 
-/** Gather all potential child values from a Zod schema def. */
-const traverseTree = (schema: z.ZodType): unknown[] => {
+/**
+ * Gather all potential child values from a Zod schema def.
+ *
+ * @internal Not part of the public API — consumed by tree-walking utils only.
+ */
+export const traverseTree = (schema: z.ZodType): unknown[] => {
   const def = schema._zod.def;
   const out: unknown[] = [];
 
@@ -52,48 +61,4 @@ const traverseTree = (schema: z.ZodType): unknown[] => {
   if (def.type === 'lazy') visitNode(get(schema._zod, 'innerType'), out);
 
   return out;
-};
-
-/**
- * Recursively searches a Zod schema tree for a node matching the predicate.
- *
- * Uses a `WeakSet` for cycle detection (handles lazy self-refs).
- * Short-circuits on first match.
- */
-const findInTree = (
-  schema: z.ZodType,
-  predicate: (schema: z.ZodType) => boolean,
-  seen: WeakSet<z.ZodType> = new WeakSet(),
-): boolean => {
-  if (!schema?._zod?.def) return false;
-  if (seen.has(schema)) return false;
-  seen.add(schema);
-
-  if (predicate(schema)) return true;
-
-  return traverseTree(schema).some((item) => isZodType(item) && findInTree(item, predicate, seen));
-};
-
-/**
- * Creates a cached predicate that searches a Zod schema tree.
- *
- * The returned function traverses the schema tree once per unique schema,
- * caching the result in a `WeakMap` for subsequent calls. Useful when the
- * same schema appears in multiple routes.
- *
- * @param predicate - Pure function that returns `true` for schema nodes that match
- * @returns A function that checks whether any node in the tree matches
- */
-export const createTreePredicate = (
-  predicate: (schema: z.ZodType) => boolean,
-): ((schema: z.ZodType) => boolean) => {
-  const cache = new WeakMap<z.ZodType, boolean>();
-
-  return (schema: z.ZodType): boolean => {
-    const cached = cache.get(schema);
-    if (cached !== undefined) return cached;
-    const result = findInTree(schema, predicate);
-    cache.set(schema, result);
-    return result;
-  };
 };
