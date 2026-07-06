@@ -118,8 +118,11 @@ export const createParseSerializerCompiler =
       return (data: unknown): string => JSON.stringify(data, opts.replacer);
     }
 
+    // Zod v4 instance methods are self-bound closures, so the unbound capture
+    // is safe — same pattern as `validate` in createSerializerCompiler above.
+    const safeParse = schema.safeParse;
     return (data: unknown): string => {
-      const result = schema.safeParse(data);
+      const result = safeParse(data);
       if (!result.success) {
         throw new ResponseSerializationError({
           method,

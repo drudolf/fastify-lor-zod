@@ -28,7 +28,7 @@
 - [x] Does not false-coerce when union matches non-array branch (#151)
 - [x] Does not coerce nested array path (#151)
 
-## Serialization (`serializer/serializer.test.ts`) — 38 tests
+## Serialization (`serializer/serializer.test.ts`) — 39 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -63,6 +63,10 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Custom serializer replacer modifies JSON.stringify output
 - [x] includes httpStatus in ResponseSerializationError
 - [x] omits httpStatus from message when not provided
+
+### Zod invariants — 1 test
+
+- [x] captured safeParse behaves identically to method call
 
 ## Schema divergence detection (`utils/schema-diverges.test.ts`) — 27 tests
 
@@ -277,4 +281,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] selectParseStrategy falls back to classic safeParse and emits a warning
 - [x] selectParseStrategy returns the fast path without warning when healthy
 
-**Total: 192 spec entries, 209 tests across 11 test files**
+**Total: 193 spec entries, 210 tests across 11 test files**

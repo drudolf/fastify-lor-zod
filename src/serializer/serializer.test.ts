@@ -466,3 +466,19 @@ describe.each(validatingSerializers)('serializer — $name — default values', 
     expect(response.json()).toEqual({ name: 'Alice', role: 'user' });
   });
 });
+
+describe('zod invariants', () => {
+  it('captured safeParse behaves identically to method call', () => {
+    // createParseSerializerCompiler captures schema.safeParse at route
+    // registration; zod v4 defines it as a self-bound instance closure.
+    const schema = z.object({ name: z.string() });
+    const captured = schema.safeParse;
+
+    expect(captured({ name: 'Alice' })).toEqual(schema.safeParse({ name: 'Alice' }));
+    const capturedFail = captured({ name: 42 });
+    const methodFail = schema.safeParse({ name: 42 });
+    expect(capturedFail.success).toBe(false);
+    expect(methodFail.success).toBe(false);
+    expect(capturedFail.error?.issues).toEqual(methodFail.error?.issues);
+  });
+});
