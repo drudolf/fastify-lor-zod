@@ -100,12 +100,12 @@ Serialization throughput (ops/sec, higher is better):
 
 | Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
 | -------- | ------- | --------------- | -------------- | ----------------- | -------------------------- | ----------- |
-| Simple object | 678K | 649K | 1.23M | 585K | 562K | 599K |
-| Simple object + date codec | 327K | Unsupported | 480K | Unsupported | 332K | Unsupported |
-| Nested (10 items) | 73K | 71K | 183K | 67K | 64K | 70K |
-| Nested + money codec | 63K | Unsupported | 192K | Unsupported | 63K | Unsupported |
-| Discriminated union | 1.27M | 1.27M | 1.46M | 1.17M | 1.11M | 876K |
-| Recursive tree | 874K | 827K | 2.15M | 755K | 721K | 912K |
+| Simple object | 664K | 683K | 1.23M | 582K | 590K | 612K |
+| Simple object + date codec | 342K | Unsupported | 470K | Unsupported | 334K | Unsupported |
+| Nested (10 items) | 70K | 73K | 186K | 67K | 65K | 66K |
+| Nested + money codec | 64K | Unsupported | 187K | Unsupported | 64K | Unsupported |
+| Discriminated union | 1.24M | 1.21M | 1.48M | 1.17M | 1.11M | 821K |
+| Recursive tree | 861K | 826K | 2.17M | 707K | 722K | 868K |
 
 For non-codec schemas, `serializerCompiler` auto-detects and matches `parseSerializerCompiler` speed. For codec schemas, it automatically uses `safeEncode`.
 
@@ -113,23 +113,29 @@ Validation throughput on the success path (all libraries are closely matched; di
 
 | Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
 | -------- | ------- | ----------------- | -------------------------- | ----------- |
-| Simple object | 874K | 867K | 828K | 849K |
-| Nested (10 items) | 121K | 121K | 124K | 123K |
-| Discriminated union | 2.12M | 2.06M | 2.09M | 2.04M |
-| Recursive tree | 1.54M | 1.51M | 1.49M | 1.52M |
+| Simple object | 833K | 821K | 839K | 839K |
+| Nested (10 items) | 118K | 124K | 123K | 120K |
+| Discriminated union | 2.15M | 2.12M | 2.05M | 2.03M |
+| Recursive tree | 1.46M | 1.48M | 1.51M | 1.46M |
 
 Validation throughput for rejected and retried requests (where lazy error construction pays off):
 
 | Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
 | -------- | ------- | ----------------- | -------------------------- | ----------- |
-| Single issue | 175K | 142K | 141K | 80K |
-| Many nested issues | 39K | 28K | 26K | 9K |
-| Discriminated union | 256K | 180K | 174K | 93K |
-| Single-value array querystring\* | 227K | 176K | 160K | 72K |
+| Single issue | 171K | 139K | 131K | 80K |
+| Many nested issues | 39K | 27K | 28K | 9K |
+| Discriminated union | 262K | 182K | 171K | 97K |
+| Single-value array querystring\* | 230K | 171K | 165K | 71K |
 
 \* lor-zod parses twice and returns 200 (single values are coerced into arrays, [#151](https://github.com/turkerdev/fastify-type-provider-zod/issues/151)); the others reject with 400 after one parse.
 
-> Measured on Apple M3 Max, Node.js 24, Zod 4.4.3, against fastify-type-provider-zod 7.0.0, @fastify/type-provider-zod 1.0.0, and fastify-zod-openapi 5.6.1. The error-path advantage reproduces at roughly 1.1--1.5x on Linux x64 and other Apple M-series machines (single-scenario floor 1.08x). Run `pnpm bench` to reproduce, or `pnpm bench:lib lor-zod` for this library only.
+Cold start with 50 routes -- app build, ready, and first OpenAPI spec generation (full startups/sec; distinct schemas per route, so schema-keyed caches stay cold):
+
+| Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | ----------------- | -------------------------- | ----------- |
+| 50-route cold start | 73 | 69 | 71 | 56 |
+
+> Measured on Apple M3 Max, Node.js 24, Zod 4.4.3, against fastify-type-provider-zod 7.0.0, @fastify/type-provider-zod 1.0.0, and fastify-zod-openapi 5.6.1. The error-path advantage reproduces at roughly 1.1--1.5x on Linux x64 and other Apple M-series machines (single-scenario floor 1.08x); the 50-route cold-start lead over fastify-type-provider-zod reproduces at 1.06--1.11x on all three machines (the gap to @fastify/type-provider-zod is within run variance). Run `pnpm bench` to reproduce, or `pnpm bench:lib lor-zod` for this library only.
 
 ## OpenAPI / Swagger
 
