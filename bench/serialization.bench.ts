@@ -16,12 +16,15 @@ import {
   TreeNodeSchema,
   UserResponse,
   UserResponseWithCodec,
+  UserResponseWithTransform,
   validOrderData,
+  validOrderDataLarge,
   validOrderDataWithCodec,
   validPaymentSuccess,
   validTreeData,
   validUserResponseData,
   validUserResponseDataWithCodec,
+  validUserResponseDataWithTransform,
 } from './schemas.js';
 
 let _result: unknown;
@@ -47,14 +50,25 @@ const allProviders = {
   'fastify-zod-openapi': samchungySerializer,
 };
 
-// Codec-capable serializers: lor-zod auto-detect and fast, plus
-// @fastify/type-provider-zod (always safeEncode). The parse variant and the
-// remaining competitors would fail validation on Date objects.
+// Codec-capable serializers: lor-zod auto-detect and fast, plus the two
+// encode-based competitors (fastify-type-provider-zod switched to safeEncode
+// in v7). The parse variant and fastify-zod-openapi fail on Date objects.
 const codecProviders = {
   'fastify-lor-zod': lorZodSerializer,
   'fastify-lor-zod (fast)': lorZodFastSerializer,
+  'fastify-type-provider-zod': turkerSerializer,
   '@fastify/type-provider-zod': fastifyOrgSerializer,
 };
+
+// Guard the codec inclusion: if a future competitor release silently breaks
+// codec round-trips, fail loudly instead of benching a wrong code path.
+for (const [name, compiler] of Object.entries(codecProviders)) {
+  const serialize = compile({ probe: compiler }, UserResponseWithCodec, '/probe').probe;
+  const output = JSON.parse(serialize(validUserResponseDataWithCodec));
+  if (output.createdAt !== '2025-01-01T00:00:00.000Z') {
+    throw new Error(`[bench] ${name} failed the codec round-trip: ${output.createdAt}`);
+  }
+}
 
 // --- Without codecs (auto-detect → safeParse) ---
 
@@ -138,6 +152,55 @@ describe('without codecs — recursive tree (3 levels deep)', () => {
       name,
       () => {
         _result = serialize(validTreeData);
+      },
+      benchOpts,
+    );
+  }
+});
+
+// --- Large payload (array-heavy response) ---
+
+// Guard: the fixture must be valid, or every row in the large-array group
+// would silently bench the error path instead of serialization.
+if (!OrderSchema.safeParse(validOrderDataLarge).success) {
+  throw new Error('[bench] validOrderDataLarge does not satisfy OrderSchema');
+}
+
+const largeOrderSerializers = compile(allProviders, OrderSchema, '/orders/large');
+
+describe('without codecs — large array (Order, 1000 items)', () => {
+  for (const [name, serialize] of Object.entries(largeOrderSerializers)) {
+    bench(
+      name,
+      () => {
+        _result = serialize(validOrderDataLarge);
+      },
+      benchOpts,
+    );
+  }
+});
+
+// --- One-way transform in the response schema (lor-zod only — capability) ---
+// All three competitors fail this schema (probe-verified 2026-07-06):
+// fastify-type-provider-zod 7 and @fastify/type-provider-zod throw
+// $ZodEncodeError at request time, fastify-zod-openapi at schema compile time.
+// lor-zod's parse variant is omitted because after compile-time transform
+// detection the auto compiler uses the identical captured safeParse path, and
+// the fast variant is omitted because fast-json-stringify does not execute
+// transforms (its output would differ).
+
+const transformSerializers = compile(
+  { 'fastify-lor-zod': lorZodSerializer },
+  UserResponseWithTransform,
+  '/users/42/display',
+);
+
+describe('transforms — one-way transform in response (lor-zod only — capability)', () => {
+  for (const [name, serialize] of Object.entries(transformSerializers)) {
+    bench(
+      name,
+      () => {
+        _result = serialize(validUserResponseDataWithTransform);
       },
       benchOpts,
     );

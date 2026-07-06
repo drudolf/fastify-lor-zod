@@ -370,6 +370,33 @@ export const validOrderDataWithCodec = {
   },
 };
 
+/** Large-payload variant: same OrderSchema, 1000 items instead of 10. */
+export const validOrderDataLarge = {
+  ...validOrderData,
+  items: Array.from({ length: 1000 }, (_, i) => makeItem(i)),
+};
+
+// Response schema containing a one-way transform. lor-zod detects the
+// transform at compile time and serializes via safeParse (#208); as of
+// fastify-type-provider-zod 7 / @fastify/type-provider-zod 1.0.0 both throw
+// $ZodEncodeError at request time, and fastify-zod-openapi throws at schema
+// compile time — probe-verified 2026-07-06.
+export const UserResponseWithTransform = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  email: z.string(),
+  displayName: z.string().transform((value) => value.trim()),
+  tags: z.array(z.string()),
+});
+
+export const validUserResponseDataWithTransform = {
+  id: 42,
+  name: 'Alice Johnson',
+  email: 'alice@example.com',
+  displayName: '  Alice J.  ',
+  tags: ['engineering', 'lead'],
+};
+
 // --- Multi-route cold-start fixtures ---
 
 /** One route entry for the parameterized bench app builders. */

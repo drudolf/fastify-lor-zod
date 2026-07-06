@@ -162,3 +162,54 @@ describe('validation — coercion retry (single-value array querystring)', () =>
     );
   }
 });
+
+// --- Headers and params (lor-zod routes these through the #151 coercion
+// wrapper on the success path — a real-world cost the competitors do not pay
+// because they do not offer single-value array coercion) ---
+
+const headerValidators = compile(
+  providers,
+  z.object({ 'x-api-key': z.string().min(1), 'x-request-id': z.string().optional() }).loose(),
+  'headers',
+);
+const realisticHeaderBag = {
+  'x-api-key': 'bench-key',
+  'x-request-id': 'req-42',
+  host: 'localhost:3000',
+  'user-agent': 'bench/1.0',
+  accept: '*/*',
+  'content-type': 'application/json',
+  'content-length': '128',
+  connection: 'keep-alive',
+};
+
+describe('validation — headers (loose object, realistic header bag)', () => {
+  for (const [name, validate] of Object.entries(headerValidators)) {
+    bench(
+      name,
+      () => {
+        _result = validate(realisticHeaderBag);
+      },
+      benchOpts,
+    );
+  }
+});
+
+const paramValidators = compile(
+  providers,
+  z.object({ id: z.coerce.number().int(), slug: z.string() }),
+  'params',
+);
+const stringParams = { id: '42', slug: 'user-profile' };
+
+describe('validation — params (string coercion)', () => {
+  for (const [name, validate] of Object.entries(paramValidators)) {
+    bench(
+      name,
+      () => {
+        _result = validate(stringParams);
+      },
+      benchOpts,
+    );
+  }
+});

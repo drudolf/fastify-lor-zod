@@ -161,40 +161,6 @@ const turkerApp = await buildTurkerApp();
 const fastifyOrgApp = await buildFastifyOrgApp();
 const samchungyApp = await buildSamchungyApp();
 
-describe('OpenAPI spec generation — cached (app.swagger())', () => {
-  bench(
-    'fastify-lor-zod',
-    () => {
-      _result = lorZodApp.swagger();
-    },
-    benchOpts,
-  );
-
-  bench(
-    'fastify-type-provider-zod',
-    () => {
-      _result = turkerApp.swagger();
-    },
-    benchOpts,
-  );
-
-  bench(
-    '@fastify/type-provider-zod',
-    () => {
-      _result = fastifyOrgApp.swagger();
-    },
-    benchOpts,
-  );
-
-  bench(
-    'fastify-zod-openapi',
-    () => {
-      _result = samchungyApp.swagger();
-    },
-    benchOpts,
-  );
-});
-
 describe('OpenAPI spec generation — cold (build + ready)', () => {
   bench(
     'fastify-lor-zod',
