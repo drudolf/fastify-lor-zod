@@ -152,11 +152,16 @@ export const parseSerializerCompiler: FastifySerializerCompiler<z.ZodType> =
  *
  * Converts the Zod schema to JSON Schema **once** at route registration, then uses the
  * pre-compiled `fast-json-stringify` function for every request. No Zod validation is
- * performed — responses are serialized directly without type checking.
+ * performed — responses are serialized directly without type checking, the same
+ * trade-off vanilla Fastify makes for every response.
  *
- * Use this when response validation is not needed and throughput is critical.
- * For response validation, use {@link createSerializerCompiler} or
- * {@link createParseSerializerCompiler} instead.
+ * Schemas containing codecs, one-way transforms, or preprocess steps are
+ * **rejected at route registration**: `fast-json-stringify` cannot execute
+ * them, so their output would be silently wrong. There is deliberately no
+ * bypass — use {@link createSerializerCompiler} for such routes. Schema
+ * `.default()` values are applied by `fast-json-stringify`; `.catch()`
+ * fallbacks are not — an unconvertible value throws at serialization time
+ * instead of being replaced.
  *
  * @returns A Fastify serializer compiler function
  *
@@ -167,9 +172,18 @@ export const parseSerializerCompiler: FastifySerializerCompiler<z.ZodType> =
  */
 export const createFastSerializerCompiler =
   (): FastifySerializerCompiler<z.ZodType> =>
-  ({ schema }) => {
+  ({ schema, method, url }) => {
     if (!schema?._zod?.def) {
       return (data: unknown): string => JSON.stringify(data);
+    }
+
+    const { hasCodec, hasTransform, hasPreprocess } = pipeKindsInTree(schema);
+    if (hasCodec || hasTransform || hasPreprocess) {
+      throw new Error(
+        `[fastify-lor-zod] fastSerializerCompiler cannot serialize this response schema: ${method} ${url}. ` +
+          'fast-json-stringify executes neither codec encode functions, transforms, nor preprocess steps — ' +
+          'output would be silently wrong. Use serializerCompiler for this route or as the global serializer.',
+      );
     }
 
     const jsonSchema = z.toJSONSchema(schema, {
@@ -184,8 +198,10 @@ export const createFastSerializerCompiler =
 /**
  * Default fast serializer using `fast-json-stringify` (no validation).
  *
- * The fastest option — pre-compiles a JSON Schema stringify function at route
- * registration. No runtime validation is performed on responses.
+ * The fastest option for plain schemas — pre-compiles a JSON Schema stringify
+ * function at route registration. No runtime validation is performed on
+ * responses; codec, transform, and preprocess schemas are rejected at
+ * registration (see {@link createFastSerializerCompiler}).
  *
  * @example
  * ```ts

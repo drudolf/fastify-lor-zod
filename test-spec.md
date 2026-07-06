@@ -28,7 +28,7 @@
 - [x] Does not false-coerce when union matches non-array branch (#151)
 - [x] Does not coerce nested array path (#151)
 
-## Serialization (`serializer/serializer.test.ts`) — 39 tests
+## Serialization (`serializer/serializer.test.ts`) — 45 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -67,6 +67,15 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 ### Zod invariants — 1 test
 
 - [x] captured safeParse behaves identically to method call
+
+### Fast serializer guard — 6 tests
+
+- [x] fast serializer rejects codec response schemas at route registration
+- [x] fast serializer rejects transform response schemas at route registration
+- [x] fast serializer rejects preprocess response schemas at route registration
+- [x] fast serializer rejects codecs nested in lazy and union schemas
+- [x] fast serializer rejection propagates through app ready
+- [x] fast serializer applies default values via fast-json-stringify
 
 ## Schema divergence detection (`utils/schema-diverges.test.ts`) — 27 tests
 
@@ -276,15 +285,16 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] selectParseStrategy falls back to classic safeParse and emits a warning
 - [x] selectParseStrategy returns the fast path without warning when healthy
 
-## Pipe kinds detection (`utils/pipe-kinds-in-tree.test.ts`) — 8 tests
+## Pipe kinds detection (`utils/pipe-kinds-in-tree.test.ts`) — 9 tests
 
 - [x] detects codec-only tree
 - [x] detects transform-only tree
-- [x] detects both kinds in a mixed tree in one traversal
+- [x] detects all kinds in a mixed tree in one traversal
 - [x] returns neither flag for plain trees
 - [x] classifies a pipe with both reverseTransform and transform out as codec only
 - [x] caches result per schema and returns frozen object
 - [x] handles recursive lazy schemas without infinite loop
 - [x] handles non-ZodType input gracefully
+- [x] detects preprocess-only tree
 
-**Total: 199 spec entries, 216 tests across 11 test files**
+**Total: 206 spec entries, 223 tests across 11 test files**

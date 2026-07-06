@@ -53,9 +53,8 @@ const allProviders = {
 // Codec-capable serializers: lor-zod auto-detect plus the two encode-based
 // competitors (fastify-type-provider-zod switched to safeEncode in v7). The
 // parse variant and fastify-zod-openapi fail on Date objects. The fast
-// variant is excluded: fast-json-stringify does not execute codec encode
-// functions — its native Date handling made the date codec appear to work,
-// but custom codecs (e.g. the money codec) silently mis-serialize.
+// variant is excluded: it rejects codec/transform/preprocess schemas at
+// route registration (fast-json-stringify cannot execute them).
 const codecProviders = {
   'fastify-lor-zod': lorZodSerializer,
   'fastify-type-provider-zod': turkerSerializer,
@@ -196,8 +195,7 @@ describe('without codecs — large array (Order, 1000 items)', () => {
 // $ZodEncodeError at request time, fastify-zod-openapi at schema compile time.
 // lor-zod's parse variant is omitted because after compile-time transform
 // detection the auto compiler uses the identical captured safeParse path, and
-// the fast variant is omitted because fast-json-stringify does not execute
-// transforms (its output would differ).
+// the fast variant rejects transform schemas at route registration.
 
 const transformSerializers = compile(
   { 'fastify-lor-zod': lorZodSerializer },

@@ -80,7 +80,7 @@ Three strategies for different trade-offs:
 | -------- | --------- | ------ | ----- | -------- |
 | `serializerCompiler` | Yes | Auto-detect | Fastest validating | **Recommended default** -- uses `safeParse` for plain schemas, `safeEncode` only when codecs are present |
 | `parseSerializerCompiler` | Yes | No | Same as above | Explicit opt-in to always use `safeParse` |
-| `fastSerializerCompiler` | No | No | Fastest overall | You trust your handlers and want maximum throughput |
+| `fastSerializerCompiler` | No | Rejected at startup | Fastest overall | Escape hatch for plain schemas — no response validation, the same trade-off vanilla Fastify makes; codec, transform, and preprocess schemas are rejected at route registration |
 
 ```ts
 import {
@@ -92,7 +92,7 @@ import {
 app.setSerializerCompiler(serializerCompiler);
 ```
 
-`createSerializerCompiler` and `createParseSerializerCompiler` each accept a `replacer` option for `JSON.stringify`. `createFastSerializerCompiler` takes no options — `fast-json-stringify` pre-compiles the serializer at route registration time and does not use `JSON.stringify`.
+`createSerializerCompiler` and `createParseSerializerCompiler` each accept a `replacer` option for `JSON.stringify`. `createFastSerializerCompiler` takes no options — `fast-json-stringify` pre-compiles the serializer at route registration time and does not use `JSON.stringify`. Because `fast-json-stringify` cannot execute codec encode functions, transforms, or preprocess steps, the fast compiler rejects such schemas at route registration instead of silently emitting wrong output (there is deliberately no bypass — use `serializerCompiler` for those routes). Schema `.default()` values are applied; `.catch()` fallbacks are not — an unconvertible value throws at serialization time.
 
 ### Benchmarks
 
@@ -111,7 +111,7 @@ Serialization throughput (ops/sec, higher is better):
 
 For non-codec schemas, `serializerCompiler` auto-detects and matches `parseSerializerCompiler` speed. For codec schemas, it automatically uses `safeEncode`.
 
-† One-way transforms in response schemas: fastify-type-provider-zod 7 and @fastify/type-provider-zod throw at request time (`safeEncode` cannot run one-way transforms; upstream [#208](https://github.com/turkerdev/fastify-type-provider-zod/issues/208) regressed in v7), and fastify-zod-openapi rejects the schema at startup. lor-zod detects transforms at compile time and serializes them via `safeParse`; its parse variant shares that code path (not benched separately). The fast variant executes neither transforms nor codec encode functions — hence "Unsupported" in the codec and transform rows.
+† One-way transforms in response schemas: fastify-type-provider-zod 7 and @fastify/type-provider-zod throw at request time (`safeEncode` cannot run one-way transforms; upstream [#208](https://github.com/turkerdev/fastify-type-provider-zod/issues/208) regressed in v7), and fastify-zod-openapi rejects the schema at startup. lor-zod detects transforms at compile time and serializes them via `safeParse`; its parse variant shares that code path (not benched separately). The fast variant rejects codec, transform, and preprocess schemas at route registration (`fast-json-stringify` cannot execute them) — hence "Unsupported" in the codec and transform rows.
 
 Validation throughput on the success path (all libraries are closely matched; differences are within run-to-run variance):
 
