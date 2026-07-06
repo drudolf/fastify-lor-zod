@@ -104,7 +104,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] Produces empty instancePath for root-level validation errors
 - [x] Stores input on RequestValidationError
 
-## Error mapping (`utils/map-issue-to-validation-error.test.ts`) — 6 tests
+## Error mapping (`utils/map-issue-to-validation-error.test.ts`) — 7 tests
 
 - [x] maps issue path to instancePath
 - [x] produces empty instancePath for root-level issue
@@ -112,6 +112,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] omits httpPart from schemaPath when undefined
 - [x] escapes RFC 6901 special characters in path segments
 - [x] spreads remaining issue properties into params
+- [x] escapes only affected segments in mixed paths
 
 ## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 49 tests
 
@@ -286,4 +287,4 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] handles recursive lazy schemas without infinite loop
 - [x] handles non-ZodType input gracefully
 
-**Total: 198 spec entries, 215 tests across 11 test files**
+**Total: 199 spec entries, 216 tests across 11 test files**
