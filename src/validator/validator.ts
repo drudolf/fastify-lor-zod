@@ -2,9 +2,17 @@ import type { FastifySchemaCompiler } from 'fastify';
 import type { z } from 'zod';
 
 import { mapIssueToValidationError } from '../utils/map-issue-to-validation-error.js';
+import { fastPathSelfCheck, selectParseStrategy } from './fast-safe-parse.js';
 
 /** HTTP parts where Fastify's parser returns a single string for single-valued inputs (#151). */
 const ARRAYABLE_PARTS = new Set(['querystring', 'params', 'headers']);
+
+/**
+ * Parse strategy resolved once at module load: the fast path (direct parser
+ * core, lazy error construction) when the self-check passes, otherwise plain
+ * `schema.safeParse`.
+ */
+const parse = selectParseStrategy(fastPathSelfCheck());
 
 /**
  * Coerces single-value request inputs into arrays when the schema expects an array (#151).
@@ -31,7 +39,7 @@ const coerceSingleToArray = (
   schema: z.ZodType,
   data: unknown,
 ): ReturnType<z.ZodType['safeParse']> => {
-  const first = schema.safeParse(data);
+  const first = parse(schema, data);
   if (first.success) return first;
 
   const arrayIssues = first.error.issues.filter(
@@ -50,11 +58,16 @@ const coerceSingleToArray = (
     patched[key] = [source[key]];
   }
 
-  return schema.safeParse(patched);
+  return parse(schema, patched);
 };
 
 /**
- * Fastify validator compiler that uses Zod's `safeParse` for request validation.
+ * Fastify validator compiler that uses Zod's parser core for request validation.
+ *
+ * Semantically equivalent to `schema.safeParse`, but errors are constructed
+ * lazily (~3x faster error path). If the installed Zod version fails the
+ * internals self-check, the compiler transparently falls back to
+ * `schema.safeParse`.
  *
  * Validates all HTTP parts (body, querystring, params, headers). On success returns
  * `{ value }` with the parsed data. On failure augments the `ZodError` with
@@ -83,7 +96,7 @@ export const validatorCompiler: FastifySchemaCompiler<z.ZodType> =
     const result =
       httpPart !== undefined && ARRAYABLE_PARTS.has(httpPart)
         ? coerceSingleToArray(schema, data)
-        : schema.safeParse(data);
+        : parse(schema, data);
     if (!result.success) {
       const error = result.error as z.ZodError & {
         input?: unknown;

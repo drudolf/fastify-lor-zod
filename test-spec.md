@@ -1,6 +1,6 @@
 # Test Specification
 
-## Request Validation (`validator/validator.test.ts`) — 24 tests
+## Request Validation (`validator/validator.test.ts`) — 25 tests
 
 - [x] Accepts valid querystring parameters
 - [x] Accepts requests on routes without schema
@@ -26,6 +26,7 @@
 - [x] Coerces single params value into array (#151)
 - [x] Does not coerce body single value to array (#151)
 - [x] Does not false-coerce when union matches non-array branch (#151)
+- [x] Does not coerce nested array path (#151)
 
 ## Serialization (`serializer/serializer.test.ts`) — 38 tests
 
@@ -256,4 +257,24 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 174 spec entries, 191 tests across 10 test files**
+## Fast safe parse (`validator/fast-safe-parse.test.ts`) — 17 tests
+
+- [x] Fast-path error is instanceof ZodError, core $ZodError, and Error
+- [x] Fast-path error has name ZodError and captured stack trace
+- [x] Fast-path error message matches classic safeParse message exactly
+- [x] Fast-path error issues deep-equal classic safeParse issues
+- [x] Fast-path error format and flatten match classic safeParse error
+- [x] Fast-path error isEmpty is false when issues exist
+- [x] addIssue and addIssues update issues and lazy message reflects them
+- [x] Assigning message overrides the lazy getter
+- [x] JSON.stringify of fast-path error matches classic safeParse error layout
+- [x] fastSafeParse returns parsed data on success
+- [x] fastSafeParse strips unknown keys like safeParse
+- [x] fastSafeParse throws ZodAsyncError on async schema
+- [x] Self-check passes on the current zod version
+- [x] Self-check fails when the fast parse is broken
+- [x] Self-check fails when zod internals are missing
+- [x] selectParseStrategy falls back to classic safeParse and emits a warning
+- [x] selectParseStrategy returns the fast path without warning when healthy
+
+**Total: 192 spec entries, 209 tests across 11 test files**

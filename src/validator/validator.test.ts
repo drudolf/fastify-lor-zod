@@ -463,4 +463,21 @@ describe('validator', () => {
       expect(response.json()).toEqual({ value: 'apple' });
     });
   });
+  describe('nested coercion boundaries', () => {
+    it('Does not coerce nested array path (#151)', () => {
+      const validate = validatorCompiler({
+        schema: z.object({ filter: z.object({ tags: z.array(z.string()) }) }),
+        url: '/',
+        method: 'GET',
+        httpPart: 'querystring',
+      });
+
+      const result = validate({ filter: { tags: 'a' } });
+      expect(result).toMatchObject({
+        error: expect.objectContaining({
+          validation: [expect.objectContaining({ instancePath: '/filter/tags' })],
+        }),
+      });
+    });
+  });
 });
