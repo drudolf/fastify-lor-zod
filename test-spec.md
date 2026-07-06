@@ -265,7 +265,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-## Fast safe parse (`validator/fast-safe-parse.test.ts`) — 17 tests
+## Fast safe parse (`validator/fast-safe-parse.test.ts`) — 18 tests
 
 - [x] Fast-path error is instanceof ZodError, core $ZodError, and Error
 - [x] Fast-path error has name ZodError and captured stack trace
@@ -284,6 +284,7 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Self-check fails when zod internals are missing
 - [x] selectParseStrategy falls back to classic safeParse and emits a warning
 - [x] selectParseStrategy returns the fast path without warning when healthy
+- [x] Fast-path error shares one message accessor across instances
 
 ## Pipe kinds detection (`utils/pipe-kinds-in-tree.test.ts`) — 9 tests
 

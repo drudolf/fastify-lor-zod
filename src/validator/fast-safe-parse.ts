@@ -18,6 +18,48 @@ export type SafeParseFn = (schema: z.ZodType, data: unknown) => z.ZodSafeParseRe
 const ZOD_ERROR_TRAITS: ReadonlySet<string> = new Set(['$ZodError', 'ZodError']);
 
 /**
+ * Lazy `message` getter shared by every {@link LorZodError} instance.
+ *
+ * A regular function (dynamic `this`), not a per-instance arrow closure:
+ * defining the accessor with a fresh get/set pair inside the constructor
+ * allocated two closures per error that survived to old space under error
+ * load, driving a ~27x higher GC pause than classic `ZodError`. The result is
+ * intentionally uncached — the message must reflect later `issues` mutations
+ * (see {@link LorZodError.addIssue}).
+ */
+function lorZodMessageGetter(this: LorZodError): string {
+  return JSON.stringify(this.issues, core.util.jsonStringifyReplacer, 2);
+}
+
+/**
+ * Lazy `message` setter shared by every {@link LorZodError} instance.
+ *
+ * Assignment shadows the accessor with an own enumerable data property on that
+ * instance, matching classic `ZodError` where `message` is an eager string.
+ */
+function lorZodMessageSetter(this: LorZodError, value: string): void {
+  Object.defineProperty(this, 'message', {
+    value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+/**
+ * One shared, frozen descriptor reused across every `message` definition.
+ * `Object.defineProperty` reads the descriptor's fields without retaining the
+ * object, so sharing one pair of accessor functions is safe; freezing guards
+ * against an accidental mutation corrupting all future instances.
+ */
+const MESSAGE_DESCRIPTOR: PropertyDescriptor = Object.freeze({
+  get: lorZodMessageGetter,
+  set: lorZodMessageSetter,
+  enumerable: true,
+  configurable: true,
+});
+
+/**
  * ZodError-compatible validation error with lazy message construction.
  *
  * Classic `ZodError` construction eagerly pretty-prints all issues into
@@ -47,19 +89,7 @@ class LorZodError extends Error implements z.ZodError {
       value: { def: issues, traits: ZOD_ERROR_TRAITS },
       enumerable: false,
     });
-    Object.defineProperty(this, 'message', {
-      get: (): string => JSON.stringify(this.issues, core.util.jsonStringifyReplacer, 2),
-      set: (value: string): void => {
-        Object.defineProperty(this, 'message', {
-          value,
-          enumerable: true,
-          writable: true,
-          configurable: true,
-        });
-      },
-      enumerable: true,
-      configurable: true,
-    });
+    Object.defineProperty(this, 'message', MESSAGE_DESCRIPTOR);
   }
 
   format(): core.$ZodFormattedError<unknown>;

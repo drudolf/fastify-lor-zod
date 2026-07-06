@@ -204,4 +204,16 @@ describe('Fast safe parse', () => {
       warn.mockRestore();
     });
   });
+  it('Fast-path error shares one message accessor across instances', () => {
+    const a = Object.getOwnPropertyDescriptor(failFast(UserSchema, invalidUser), 'message');
+    const b = Object.getOwnPropertyDescriptor(failFast(UserSchema, invalidUser), 'message');
+    assert(a !== undefined && b !== undefined);
+
+    // Per-instance closures would allocate fresh get/set on every error and
+    // survive to old space under load — the source of the error-path GC pause.
+    // Sharing one accessor pair keeps them off the per-instance allocation path.
+    expect(a.get).toBe(b.get);
+    expect(a.set).toBe(b.set);
+    expect(a.enumerable).toBe(true);
+  });
 });
