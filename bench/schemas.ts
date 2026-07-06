@@ -370,6 +370,54 @@ export const validOrderDataWithCodec = {
   },
 };
 
+// --- Multi-route cold-start fixtures ---
+
+/** One route entry for the parameterized bench app builders. */
+export interface BenchRoute {
+  url: string;
+  schema: {
+    params?: z.ZodType;
+    querystring?: z.ZodType;
+    headers?: z.ZodType;
+    body?: z.ZodType;
+    response?: Record<number, z.ZodType>;
+  };
+}
+
+/**
+ * Builds `count` routes with distinct URLs and freshly constructed,
+ * structurally varied schemas (property names vary per index).
+ *
+ * Anti-dedup worst case: no two routes share a schema instance or shape, so
+ * schema-keyed caches cannot dedup anything. Typical apps reuse schemas across
+ * routes and will see better cold starts than this measures.
+ */
+export const makeBenchRoutes = (count: number): BenchRoute[] =>
+  Array.from({ length: count }, (_, i) => ({
+    url: `/bench-${i}/:id`,
+    schema: {
+      params: z.object({ id: z.coerce.number().int() }),
+      querystring: z.object({
+        [`filter${i}`]: z.string().optional(),
+        page: z.coerce.number().int().min(1).default(1),
+      }),
+      body: z.object({
+        [`name${i}`]: z.string().min(1),
+        [`count${i}`]: z.number().int(),
+        tags: z.array(z.string()),
+        nested: z.object({ [`flag${i}`]: z.boolean(), value: z.number().nullable() }),
+      }),
+      response: {
+        200: z.object({
+          id: z.number(),
+          [`label${i}`]: z.string(),
+          items: z.array(z.object({ sku: z.string(), [`qty${i}`]: z.number() })),
+          status: z.enum(['a', 'b', 'c']),
+        }),
+      },
+    },
+  }));
+
 // --- Bench options (consistent across all benchmarks) ---
 
 export const benchOpts = {
