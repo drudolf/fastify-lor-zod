@@ -98,38 +98,38 @@ app.setSerializerCompiler(serializerCompiler);
 
 Serialization throughput (ops/sec, higher is better):
 
-| Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | zod-openapi |
-| -------- | ------- | --------------- | -------------- | ----------------- | ----------- |
-| Simple object | 683K | 670K | 1.25M | 590K | 598K |
-| Simple object + date codec | 332K | Unsupported | 480K | Unsupported | Unsupported |
-| Nested (10 items) | 72K | 73K | 187K | 65K | 70K |
-| Nested + money codec | 65K | Unsupported | 177K | Unsupported | Unsupported |
-| Discriminated union | 1.30M | 1.27M | 1.43M | 1.17M | 858K |
-| Recursive tree | 842K | 796K | 2.15M | 738K | 872K |
+| Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | --------------- | -------------- | ----------------- | -------------------------- | ----------- |
+| Simple object | 678K | 649K | 1.23M | 585K | 562K | 599K |
+| Simple object + date codec | 327K | Unsupported | 480K | Unsupported | 332K | Unsupported |
+| Nested (10 items) | 73K | 71K | 183K | 67K | 64K | 70K |
+| Nested + money codec | 63K | Unsupported | 192K | Unsupported | 63K | Unsupported |
+| Discriminated union | 1.27M | 1.27M | 1.46M | 1.17M | 1.11M | 876K |
+| Recursive tree | 874K | 827K | 2.15M | 755K | 721K | 912K |
 
 For non-codec schemas, `serializerCompiler` auto-detects and matches `parseSerializerCompiler` speed. For codec schemas, it automatically uses `safeEncode`.
 
 Validation throughput on the success path (all libraries are closely matched; differences are within run-to-run variance):
 
-| Scenario | lor-zod | type-provider-zod | zod-openapi |
-| -------- | ------- | ----------------- | ----------- |
-| Simple object | 828K | 835K | 830K |
-| Nested (10 items) | 117K | 122K | 119K |
-| Discriminated union | 2.07M | 2.02M | 2.06M |
-| Recursive tree | 1.53M | 1.44M | 1.46M |
+| Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | ----------------- | -------------------------- | ----------- |
+| Simple object | 874K | 867K | 828K | 849K |
+| Nested (10 items) | 121K | 121K | 124K | 123K |
+| Discriminated union | 2.12M | 2.06M | 2.09M | 2.04M |
+| Recursive tree | 1.54M | 1.51M | 1.49M | 1.52M |
 
 Validation throughput for rejected and retried requests (where lazy error construction pays off):
 
-| Scenario | lor-zod | type-provider-zod | zod-openapi |
-| -------- | ------- | ----------------- | ----------- |
-| Single issue | 174K | 145K | 80K |
-| Many nested issues | 40K | 27K | 9K |
-| Discriminated union | 265K | 177K | 94K |
-| Single-value array querystring\* | 224K | 168K | 70K |
+| Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | ----------------- | -------------------------- | ----------- |
+| Single issue | 175K | 142K | 141K | 80K |
+| Many nested issues | 39K | 28K | 26K | 9K |
+| Discriminated union | 256K | 180K | 174K | 93K |
+| Single-value array querystring\* | 227K | 176K | 160K | 72K |
 
 \* lor-zod parses twice and returns 200 (single values are coerced into arrays, [#151](https://github.com/turkerdev/fastify-type-provider-zod/issues/151)); the others reject with 400 after one parse.
 
-> Measured on Apple M3 Max, Node.js 24, Zod 4.4.3, against fastify-type-provider-zod 7.0.0 and fastify-zod-openapi 5.6.1. The error-path advantage reproduces at 1.15--1.5x on Linux x64 and other Apple M-series machines. Run `pnpm bench` to reproduce, or `pnpm bench:lib lor-zod` for this library only.
+> Measured on Apple M3 Max, Node.js 24, Zod 4.4.3, against fastify-type-provider-zod 7.0.0, @fastify/type-provider-zod 1.0.0, and fastify-zod-openapi 5.6.1. The error-path advantage reproduces at roughly 1.1--1.5x on Linux x64 and other Apple M-series machines (single-scenario floor 1.08x). Run `pnpm bench` to reproduce, or `pnpm bench:lib lor-zod` for this library only.
 
 ## OpenAPI / Swagger
 
