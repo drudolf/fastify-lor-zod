@@ -60,6 +60,7 @@
     "@commitlint/cli": "21.2.0",
     "@commitlint/config-conventional": "21.2.0",
     "@fastify/swagger": "9.7.0",
+    "@fastify/type-provider-zod": "1.0.0",
     "@seriousme/openapi-schema-validator": "^2.9.0",
     "@vitest/coverage-v8": "4.1.10",
     "fast-json-stringify": "7.0.0",

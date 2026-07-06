@@ -1,3 +1,4 @@
+import { validatorCompiler as fastifyOrgValidator } from '@fastify/type-provider-zod';
 import { validatorCompiler as turkerValidator } from 'fastify-type-provider-zod';
 import { validatorCompiler as samchungyValidator } from 'fastify-zod-openapi';
 import { bench, describe } from 'vitest';
@@ -33,6 +34,7 @@ const compile = (
 const providers = {
   'fastify-lor-zod': lorZodValidator,
   'fastify-type-provider-zod': turkerValidator,
+  '@fastify/type-provider-zod': fastifyOrgValidator,
   'fastify-zod-openapi': samchungyValidator,
 };
 

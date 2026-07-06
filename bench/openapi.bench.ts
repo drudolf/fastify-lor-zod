@@ -1,4 +1,10 @@
 import swagger from '@fastify/swagger';
+import type { ZodTypeProvider as FastifyOrgTypeProvider } from '@fastify/type-provider-zod';
+import {
+  serializerCompiler as fastifyOrgSerializer,
+  jsonSchemaTransform as fastifyOrgTransform,
+  validatorCompiler as fastifyOrgValidator,
+} from '@fastify/type-provider-zod';
 import Fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
@@ -62,6 +68,23 @@ const buildTurkerApp = async () => {
   return app;
 };
 
+const buildFastifyOrgApp = async () => {
+  const app = Fastify();
+  app.setValidatorCompiler(fastifyOrgValidator);
+  app.setSerializerCompiler(fastifyOrgSerializer);
+
+  await app.register(swagger, {
+    openapi: { openapi: '3.0.3', info: { title: 'Bench', version: '1.0.0' } },
+    transform: fastifyOrgTransform,
+  });
+  const typedApp = app.withTypeProvider<FastifyOrgTypeProvider>();
+  typedApp.post('/users/:id', { schema: FullRouteSchema }, (_req, reply) => {
+    reply.send({} as never);
+  });
+  await app.ready();
+  return app;
+};
+
 const buildSamchungyApp = async () => {
   const app = Fastify();
   app.setValidatorCompiler(samchungyValidator);
@@ -83,6 +106,7 @@ const buildSamchungyApp = async () => {
 // Pre-build apps (OpenAPI generation happens at app.swagger() time)
 const lorZodApp = await buildLorZodApp();
 const turkerApp = await buildTurkerApp();
+const fastifyOrgApp = await buildFastifyOrgApp();
 const samchungyApp = await buildSamchungyApp();
 
 describe('OpenAPI spec generation — cached (app.swagger())', () => {
@@ -98,6 +122,14 @@ describe('OpenAPI spec generation — cached (app.swagger())', () => {
     'fastify-type-provider-zod',
     () => {
       _result = turkerApp.swagger();
+    },
+    benchOpts,
+  );
+
+  bench(
+    '@fastify/type-provider-zod',
+    () => {
+      _result = fastifyOrgApp.swagger();
     },
     benchOpts,
   );
@@ -129,6 +161,14 @@ describe('OpenAPI spec generation — cold (build + ready)', () => {
   );
 
   bench(
+    '@fastify/type-provider-zod',
+    async () => {
+      _result = await buildFastifyOrgApp();
+    },
+    benchOpts,
+  );
+
+  bench(
     'fastify-zod-openapi',
     async () => {
       _result = await buildSamchungyApp();
@@ -151,6 +191,10 @@ describe('Validation — error path (validator only)', () => {
 
   const turkerValidate = turkerValidator(validatorArgs as Parameters<typeof turkerValidator>[0]);
 
+  const fastifyOrgValidate = fastifyOrgValidator(
+    validatorArgs as Parameters<typeof fastifyOrgValidator>[0],
+  );
+
   const samchungyValidate = samchungyValidator(
     validatorArgs as Parameters<typeof samchungyValidator>[0],
   );
@@ -167,6 +211,14 @@ describe('Validation — error path (validator only)', () => {
     'fastify-type-provider-zod',
     () => {
       _result = turkerValidate(invalidBody);
+    },
+    benchOpts,
+  );
+
+  bench(
+    '@fastify/type-provider-zod',
+    () => {
+      _result = fastifyOrgValidate(invalidBody);
     },
     benchOpts,
   );
@@ -201,6 +253,14 @@ describe('Validation — error path (end-to-end via app.inject)', () => {
     'fastify-type-provider-zod',
     async () => {
       _result = await turkerApp.inject(injectOpts);
+    },
+    benchOpts,
+  );
+
+  bench(
+    '@fastify/type-provider-zod',
+    async () => {
+      _result = await fastifyOrgApp.inject(injectOpts);
     },
     benchOpts,
   );

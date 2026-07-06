@@ -1,3 +1,4 @@
+import { serializerCompiler as fastifyOrgSerializer } from '@fastify/type-provider-zod';
 import { serializerCompiler as turkerSerializer } from 'fastify-type-provider-zod';
 import { serializerCompiler as samchungySerializer } from 'fastify-zod-openapi';
 import { bench, describe } from 'vitest';
@@ -42,13 +43,17 @@ const allProviders = {
   'fastify-lor-zod (parse)': lorZodParseSerializer,
   'fastify-lor-zod (fast)': lorZodFastSerializer,
   'fastify-type-provider-zod': turkerSerializer,
+  '@fastify/type-provider-zod': fastifyOrgSerializer,
   'fastify-zod-openapi': samchungySerializer,
 };
 
-// Only auto-detect and fast support codecs; parse would fail validation on Date objects.
-const lorZodCodecProviders = {
+// Codec-capable serializers: lor-zod auto-detect and fast, plus
+// @fastify/type-provider-zod (always safeEncode). The parse variant and the
+// remaining competitors would fail validation on Date objects.
+const codecProviders = {
   'fastify-lor-zod': lorZodSerializer,
   'fastify-lor-zod (fast)': lorZodFastSerializer,
+  '@fastify/type-provider-zod': fastifyOrgSerializer,
 };
 
 // --- Without codecs (auto-detect → safeParse) ---
@@ -81,10 +86,10 @@ describe('without codecs — deeply nested (Order, 10 items)', () => {
 });
 
 // --- With codecs (auto-detect → safeEncode) ---
-// Only lor-zod supports codecs; competitors would produce incorrect output.
+// Codec groups run only the codec-capable serializers (see codecProviders above).
 
-const userCodecSerializers = compile(lorZodCodecProviders, UserResponseWithCodec, '/users/42');
-const orderCodecSerializers = compile(lorZodCodecProviders, OrderSchemaWithCodec, '/orders/1');
+const userCodecSerializers = compile(codecProviders, UserResponseWithCodec, '/users/42');
+const orderCodecSerializers = compile(codecProviders, OrderSchemaWithCodec, '/orders/1');
 
 describe('with codecs — simple object (UserResponse + date codec)', () => {
   for (const [name, serialize] of Object.entries(userCodecSerializers)) {
