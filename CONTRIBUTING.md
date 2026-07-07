@@ -23,6 +23,8 @@ pnpm install
 | `pnpm bench` | Run benchmarks against other type providers |
 | `pnpm build` | Build ESM output |
 
+Benchmark results and methodology live in [`bench/BENCHMARK.md`](bench/BENCHMARK.md) — update it when numbers change.
+
 ## Test-first workflow
 
 Tests follow a spec-first approach:
