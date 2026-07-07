@@ -1,5 +1,136 @@
 # fastify-lor-zod
 
+## 0.9.0
+
+### Minor Changes
+
+- [`ecf2770`](https://github.com/drudolf/fastify-lor-zod/commit/ecf2770) fix: `fastSerializerCompiler` rejects codec, transform, and preprocess response schemas at route registration
+
+  **Breaking for affected setups:** apps that register `fastSerializerCompiler`
+  (globally or per route) together with response schemas containing codecs,
+  one-way transforms, or preprocess steps now **fail at startup**
+  (`app.ready()` rejects) instead of booting. Previously these setups silently
+  emitted wrong JSON — `fast-json-stringify` cannot execute codec encode
+  functions, transforms, or preprocess steps (e.g. a money codec serialized raw
+  cents instead of the encoded `"$12.99"` wire format).
+
+  **Migration:** switch those routes (or the global serializer) to the default
+  `serializerCompiler`, which handles codecs via `safeEncode` and transforms via
+  `safeParse`. There is deliberately no bypass flag.
+
+  Unaffected: plain schemas, `.default()` values (applied by
+  fast-json-stringify), and refinement-only pipes continue to work. `.catch()`
+  fallbacks were never applied by the fast serializer; an unconvertible value
+  throws at serialization time.
+
+- [`505e84d`](https://github.com/drudolf/fastify-lor-zod/commit/505e84d) perf: ~3x faster validation error construction in the validator compiler
+
+  The validator now runs Zod's parser core directly and constructs validation
+  errors lazily instead of paying classic `ZodError` construction cost (eager
+  pretty-printed message, per-instance closures) on every failed request.
+
+  - The returned error remains ZodError-compatible for construct-then-read
+    usage: `instanceof z.ZodError`, `instanceof Error`, `.issues`, `.message`
+    (byte-identical, computed lazily on first access), `.format()`,
+    `.flatten()`, `.name`, plus the documented `.validation` / `.input`
+    augmentation. After mutation via `addIssue`/`addIssues`, `.message`
+    reflects the current issues at read time instead of being re-materialized
+    eagerly.
+  - A one-time self-check at module load round-trips a probe schema through the
+    fast path and compares it against a `schema.safeParse` baseline; on any
+    mismatch the validator falls back to plain `schema.safeParse` and emits a
+    process warning.
+  - The `zod` peer range is now capped to `>=4.4.1 <5` (the fast path relies on
+    verified Zod v4 internals).
+
+- [`ba44605`](https://github.com/drudolf/fastify-lor-zod/commit/ba44605) **BREAKING:** the `{ description, properties: ZodSchema }` response wrapper is removed.
+  Use Zod v4's `.meta({ description: '...' })` directly on the response schema.
+
+  The schema-transform now lifts a response slot's `.meta({ description })` onto the
+  OAS response object (`responses.<code>.description`). Works for inline, registered,
+  and chained-on-registered schemas.
+
+  ```ts
+  // Before
+  response: {
+    200: { description: 'Healthy', properties: HealthSchema },
+  }
+
+  // After
+  response: {
+    200: HealthSchema.meta({ description: 'Healthy' }),
+  }
+  ```
+
+  Behavioral notes:
+
+  - For registered schemas with their own `.meta({ description })`, the description
+    is also auto-lifted by default (the component's description doubles as the
+    response label). Disable with the new `liftSchemaDescriptionToResponse: false`
+    option on `createJsonSchemaTransform` for strict OAS semantics.
+  - The component's intrinsic description is never overwritten by route-level chains.
+  - Chaining `.meta({ description })` at the route slot always wins, even in strict
+    mode, since the chained instance has no id of its own.
+
+  Side effects:
+
+  - Fixes upstream issue #212 — the serializer compiler types are restored from
+    `FastifySerializerCompiler<ZodType | { properties: ZodType }>` (the union shape
+    upstream blames for the ESLint `no-unsafe-argument` warning) back to the clean
+    `FastifySerializerCompiler<z.ZodType>`.
+  - Routes that still use the legacy wrapper form throw a clear migration error at
+    startup with a pointer to MIGRATION.md.
+
+### Patch Changes
+
+- [`fc847d5`](https://github.com/drudolf/fastify-lor-zod/commit/fc847d5) Serializer types are now exactOptionalPropertyTypes-safe: plain optional and
+  default/prefault response properties accept zod's undefined-inclusive output
+  inference, while z.exactOptional() properties still reject explicit undefined.
+  The package itself now compiles with exactOptionalPropertyTypes enabled.
+- [`e89d4e4`](https://github.com/drudolf/fastify-lor-zod/commit/e89d4e4) perf: skip RFC 6901 escaping when path segments contain no special characters
+
+  `mapIssueToValidationError` now builds the JSON pointer with a concatenation
+  loop and only runs the escape regexes when a segment actually contains `~` or
+  `/` — ~2.4x faster issue mapping on the validation error path. Output is
+  byte-identical.
+
+- [`957cf91`](https://github.com/drudolf/fastify-lor-zod/commit/957cf91) perf: share the `LorZodError` message accessor across instances to cut error-path GC pressure
+
+  The fast validator's lazy-message error previously defined its `message`
+  getter/setter as per-instance closures inside the constructor. Under error
+  load these two closures per error were promoted to old space alongside the
+  returned error, driving few-but-expensive major GCs — ~35x higher total GC
+  pause than the encode-based providers despite winning wall time.
+
+  The getter/setter are now shared module-level functions (dynamic `this`)
+  referenced through one frozen descriptor, so no per-instance closures are
+  allocated. `message` remains an own-enumerable accessor, so the observable
+  error shape is unchanged: `instanceof`, `name`, lazy message, setter override,
+  mutation reflection, and `JSON.stringify` layout all stay identical to classic
+  `ZodError`.
+
+  Measured (many-issue error path, `pnpm bench:memory`): GC pause per 20k
+  validations drops from ~150ms to ~4ms — now on par with the other providers —
+  while wall time also improves ~18%.
+
+- [`32a2438`](https://github.com/drudolf/fastify-lor-zod/commit/32a2438) perf: resolve `safeParse` once at route registration in `createParseSerializerCompiler`
+
+  Consistency cleanup: the parse-mode serializer now captures `schema.safeParse`
+  at compile time, matching the pattern the default serializer compiler already
+  uses. Saves a per-request property lookup (~28ns/call, measurable on small
+  payloads and `z.lazy` schemas). No behavior change for supported usage —
+  mutating `schema.safeParse` after route registration is not supported, same
+  as with the default compiler.
+
+- [`c0537d5`](https://github.com/drudolf/fastify-lor-zod/commit/c0537d5) perf: detect codecs and transforms in one schema traversal at route registration
+
+  Simplification of the serializer compile path: the two independent tree
+  traversals (`hasCodecInTree`, `hasTransformInTree`) are replaced by a single
+  `pipeKindsInTree` walk with one WeakMap cache and frozen results — two files
+  and a generic predicate factory deleted. Identical detection semantics; route
+  registration for response schemas is roughly twice as fast in the detection
+  step (~18µs saved per schema in isolation).
+
 ## 0.8.1
 
 ### Patch Changes
