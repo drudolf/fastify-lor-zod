@@ -1,6 +1,12 @@
 import type { FastifySchemaValidationError } from 'fastify';
 import type z from 'zod';
 
+/** RFC 6901 escape, skipped when the segment has no special characters. */
+const escapeSegment = (segment: string): string =>
+  segment.indexOf('~') === -1 && segment.indexOf('/') === -1
+    ? segment
+    : segment.replace(/~/g, '~0').replace(/\//g, '~1');
+
 /**
  * Maps Zod issue object to Fastify-compatible `FastifySchemaValidationError` entry.
  *
@@ -12,9 +18,10 @@ export const mapIssueToValidationError = (
   { path, code, message, ...params }: z.ZodError['issues'][number],
   httpPart?: string,
 ): FastifySchemaValidationError => {
-  const pointer = path?.length
-    ? `/${path.map((s) => String(s).replace(/~/g, '~0').replace(/\//g, '~1')).join('/')}`
-    : '';
+  let pointer = '';
+  if (path) {
+    for (let i = 0; i < path.length; i++) pointer += `/${escapeSegment(String(path[i]))}`;
+  }
 
   return {
     instancePath: pointer,

@@ -370,6 +370,81 @@ export const validOrderDataWithCodec = {
   },
 };
 
+/** Large-payload variant: same OrderSchema, 1000 items instead of 10. */
+export const validOrderDataLarge = {
+  ...validOrderData,
+  items: Array.from({ length: 1000 }, (_, i) => makeItem(i)),
+};
+
+// Response schema containing a one-way transform. lor-zod detects the
+// transform at compile time and serializes via safeParse (#208); as of
+// fastify-type-provider-zod 7 / @fastify/type-provider-zod 1.0.0 both throw
+// $ZodEncodeError at request time, and fastify-zod-openapi throws at schema
+// compile time — probe-verified 2026-07-06.
+export const UserResponseWithTransform = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  email: z.string(),
+  displayName: z.string().transform((value) => value.trim()),
+  tags: z.array(z.string()),
+});
+
+export const validUserResponseDataWithTransform = {
+  id: 42,
+  name: 'Alice Johnson',
+  email: 'alice@example.com',
+  displayName: '  Alice J.  ',
+  tags: ['engineering', 'lead'],
+};
+
+// --- Multi-route cold-start fixtures ---
+
+/** One route entry for the parameterized bench app builders. */
+export interface BenchRoute {
+  url: string;
+  schema: {
+    params?: z.ZodType;
+    querystring?: z.ZodType;
+    headers?: z.ZodType;
+    body?: z.ZodType;
+    response?: Record<number, z.ZodType>;
+  };
+}
+
+/**
+ * Builds `count` routes with distinct URLs and freshly constructed,
+ * structurally varied schemas (property names vary per index).
+ *
+ * Anti-dedup worst case: no two routes share a schema instance or shape, so
+ * schema-keyed caches cannot dedup anything. Typical apps reuse schemas across
+ * routes and will see better cold starts than this measures.
+ */
+export const makeBenchRoutes = (count: number): BenchRoute[] =>
+  Array.from({ length: count }, (_, i) => ({
+    url: `/bench-${i}/:id`,
+    schema: {
+      params: z.object({ id: z.coerce.number().int() }),
+      querystring: z.object({
+        [`filter${i}`]: z.string().optional(),
+        page: z.coerce.number().int().min(1).default(1),
+      }),
+      body: z.object({
+        [`name${i}`]: z.string().min(1),
+        [`count${i}`]: z.number().int(),
+        tags: z.array(z.string()),
+        nested: z.object({ [`flag${i}`]: z.boolean(), value: z.number().nullable() }),
+      }),
+      response: {
+        200: z.object({
+          id: z.number(),
+          [`label${i}`]: z.string(),
+          items: z.array(z.object({ sku: z.string(), [`qty${i}`]: z.number() })),
+          status: z.enum(['a', 'b', 'c']),
+        }),
+      },
+    },
+  }));
+
 // --- Bench options (consistent across all benchmarks) ---
 
 export const benchOpts = {

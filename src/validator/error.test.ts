@@ -5,6 +5,7 @@ import type { FastifyLorZodTypeProvider } from '../index.js';
 import { serializerCompiler } from '../serializer/serializer.js';
 import { isRequestValidationError } from './error.js';
 import { validatorCompiler } from './validator.js';
+import assert from 'node:assert';
 
 const buildApp = () => {
   const app = Fastify();
@@ -102,7 +103,9 @@ describe('error handling', () => {
     expect(response.statusCode).toBe(400);
     expect(isRequestValidationError(caughtError)).toBe(true);
     if (isRequestValidationError(caughtError)) {
-      expect(caughtError.validation[0].instancePath).toBe('');
+      const [firstError] = caughtError.validation;
+      assert(firstError);
+      expect(firstError.instancePath).toBe('');
     }
   });
 });
