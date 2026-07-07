@@ -48,9 +48,15 @@ jobs:
             git diff --name-only --diff-filter=U | xargs git add
           fi
 
-          # Remove changesets consumed by the release
-          for f in .changeset/release-*.md; do
-            [ -f "$f" ] && git rm "$f"
+          # Drop changesets consumed by the release. main is the released truth:
+          # a changeset markdown that main no longer carries was consumed by the
+          # version bump, but the squash-merge across the ancient main<->develop
+          # merge-base leaves it on develop. Align to main; README.md and
+          # config.json exist on both sides and stay.
+          for f in .changeset/*.md; do
+            [ -e "$f" ] || continue
+            [ "$(basename "$f")" = "README.md" ] && continue
+            git cat-file -e "origin/main:$f" 2>/dev/null || git rm --quiet "$f"
           done
 
           if git diff --cached --quiet; then
