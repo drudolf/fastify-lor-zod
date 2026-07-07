@@ -22,6 +22,13 @@ describe('Error mapping', () => {
   it('produces empty instancePath for root-level issue', () => {
     const result = mapIssueToValidationError(makeIssue({ path: [] }), 'body');
     expect(result.instancePath).toBe('');
+
+    // Defensive: issues without a path array behave like root-level issues.
+    const pathless = mapIssueToValidationError(
+      makeIssue({ path: undefined as unknown as PropertyKey[] }),
+      'body',
+    );
+    expect(pathless.instancePath).toBe('');
   });
 
   it('includes httpPart in schemaPath', () => {
@@ -47,5 +54,10 @@ describe('Error mapping', () => {
       'body',
     );
     expect(result.params).toEqual({ expected: 'string', input: 42, minimum: 5, inclusive: true });
+  });
+  it('escapes only affected segments in mixed paths', () => {
+    const result = mapIssueToValidationError(makeIssue({ path: ['a/b', 'plain', 'c~d'] }), 'body');
+    expect(result.instancePath).toBe('/a~1b/plain/c~0d');
+    expect(result.schemaPath).toBe('#/body/a~1b/plain/c~0d');
   });
 });

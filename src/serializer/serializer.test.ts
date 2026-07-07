@@ -466,3 +466,92 @@ describe.each(validatingSerializers)('serializer — $name — default values', 
     expect(response.json()).toEqual({ name: 'Alice', role: 'user' });
   });
 });
+
+describe('zod invariants', () => {
+  it('captured safeParse behaves identically to method call', () => {
+    // createParseSerializerCompiler captures schema.safeParse at route
+    // registration; zod v4 defines it as a self-bound instance closure.
+    const schema = z.object({ name: z.string() });
+    const captured = schema.safeParse;
+
+    expect(captured({ name: 'Alice' })).toEqual(schema.safeParse({ name: 'Alice' }));
+    const capturedFail = captured({ name: 42 });
+    const methodFail = schema.safeParse({ name: 42 });
+    expect(capturedFail.success).toBe(false);
+    expect(methodFail.success).toBe(false);
+    expect(capturedFail.error?.issues).toEqual(methodFail.error?.issues);
+  });
+});
+
+describe('fast serializer guard', () => {
+  const dateCodec = z.codec(z.iso.datetime(), z.date(), {
+    decode: (isoString: string) => new Date(isoString),
+    encode: (date: Date) => date.toISOString(),
+  });
+
+  const compileFast = (schema: z.ZodType) =>
+    fastSerializerCompiler({ schema, method: 'GET', url: '/guarded', httpStatus: '200' });
+
+  it('fast serializer rejects codec response schemas at route registration', () => {
+    expect(() => compileFast(z.object({ createdAt: dateCodec }))).toThrow(
+      'fastSerializerCompiler cannot serialize this response schema',
+    );
+  });
+
+  it('fast serializer rejects transform response schemas at route registration', () => {
+    const schema = z.object({ id: z.string().transform((value) => Number.parseInt(value, 10)) });
+    expect(() => compileFast(schema)).toThrow(
+      'fastSerializerCompiler cannot serialize this response schema',
+    );
+  });
+
+  it('fast serializer rejects preprocess response schemas at route registration', () => {
+    const schema = z.object({ v: z.preprocess((value) => String(value).trim(), z.string()) });
+    expect(() => compileFast(schema)).toThrow(
+      'fastSerializerCompiler cannot serialize this response schema',
+    );
+  });
+
+  it('fast serializer rejects codecs nested in lazy and union schemas', () => {
+    type TreeNode = { children: TreeNode[]; stamp: Date };
+    const LazyNode: z.ZodType<TreeNode> = z.lazy(() =>
+      z.object({ children: z.array(LazyNode), stamp: dateCodec }),
+    );
+    const unionSchema = z.union([
+      z.object({ plain: z.string() }),
+      z.object({ nodes: z.array(LazyNode) }),
+    ]);
+
+    expect(() => compileFast(unionSchema)).toThrow(
+      'fastSerializerCompiler cannot serialize this response schema',
+    );
+  });
+
+  it('fast serializer rejection propagates through app ready', async () => {
+    const app = buildApp(fastSerializerCompiler);
+    app.get('/', { schema: { response: { 200: z.object({ createdAt: dateCodec }) } } }, () => ({
+      createdAt: new Date('2025-01-01T00:00:00.000Z'),
+    }));
+
+    await expect(app.ready()).rejects.toThrow(
+      'fastSerializerCompiler cannot serialize this response schema',
+    );
+  });
+
+  it('fast serializer applies default values via fast-json-stringify', async () => {
+    const app = buildApp(fastSerializerCompiler);
+    app.get(
+      '/',
+      {
+        schema: {
+          response: { 200: z.object({ name: z.string(), role: z.string().default('user') }) },
+        },
+      },
+      () => ({ name: 'Alice' }),
+    );
+
+    const response = await app.inject({ method: 'GET', url: '/' });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ name: 'Alice', role: 'user' });
+  });
+});

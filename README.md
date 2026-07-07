@@ -13,6 +13,7 @@ A Fastify type provider for **Zod v4** with full OpenAPI support. A ground-up re
 
 - **Zod v4 native** -- uses `safeEncode`, `toJSONSchema`, codecs, and registries directly
 - **Smart serializer** -- auto-detects codecs at compile time; falls back to `safeParse` for ~15% faster non-codec schemas
+- **Fast validation errors** -- lazy `ZodError` construction on the error path; 1.1--1.5x faster error responses than alternatives, with a safe automatic fallback
 - **Complete OpenAPI** -- all HTTP parts, nullable types, discriminated unions, recursive schemas, content types
 - **Type-safe end-to-end** -- `req.body`, `req.params`, `req.query`, `req.headers`, and `reply.send()` fully typed
 - **100% test coverage** with snapshot parity against `fastify-type-provider-zod`
@@ -79,7 +80,7 @@ Three strategies for different trade-offs:
 | -------- | --------- | ------ | ----- | -------- |
 | `serializerCompiler` | Yes | Auto-detect | Fastest validating | **Recommended default** -- uses `safeParse` for plain schemas, `safeEncode` only when codecs are present |
 | `parseSerializerCompiler` | Yes | No | Same as above | Explicit opt-in to always use `safeParse` |
-| `fastSerializerCompiler` | No | No | Fastest overall | You trust your handlers and want maximum throughput |
+| `fastSerializerCompiler` | No | Rejected at startup | Fastest overall | Escape hatch for plain schemas — no response validation, the same trade-off vanilla Fastify makes; codec, transform, and preprocess schemas are rejected at route registration |
 
 ```ts
 import {
@@ -91,33 +92,58 @@ import {
 app.setSerializerCompiler(serializerCompiler);
 ```
 
-`createSerializerCompiler` and `createParseSerializerCompiler` each accept a `replacer` option for `JSON.stringify`. `createFastSerializerCompiler` takes no options — `fast-json-stringify` pre-compiles the serializer at route registration time and does not use `JSON.stringify`.
+`createSerializerCompiler` and `createParseSerializerCompiler` each accept a `replacer` option for `JSON.stringify`. `createFastSerializerCompiler` takes no options — `fast-json-stringify` pre-compiles the serializer at route registration time and does not use `JSON.stringify`. Because `fast-json-stringify` cannot execute codec encode functions, transforms, or preprocess steps, the fast compiler rejects such schemas at route registration instead of silently emitting wrong output (there is deliberately no bypass — use `serializerCompiler` for those routes). Schema `.default()` values are applied; `.catch()` fallbacks are not — an unconvertible value throws at serialization time.
 
 ### Benchmarks
 
 Serialization throughput (ops/sec, higher is better):
 
-| Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | zod-openapi |
-| -------- | ------- | --------------- | -------------- | ----------------- | ----------- |
-| Simple object | 278K | 287K | 610K | 291K | 271K |
-| Simple object + date codec | 142K | Unsupported | 211K | Unsupported | Unsupported |
-| Nested (10 items) | 33K | 34K | 86K | 34K | 30K |
-| Nested + money codec | 29K | Unsupported | 90K | Unsupported | Unsupported |
-| Discriminated union | 499K | 487K | 651K | 505K | 316K |
-| Recursive tree | 407K | 383K | 1.13M | 397K | 438K |
+| Scenario | lor-zod | lor-zod (parse) | lor-zod (fast) | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | --------------- | -------------- | ----------------- | -------------------------- | ----------- |
+| Simple object | 662K | 658K | 1.22M | 565K | 571K | 597K |
+| Simple object + date codec | 338K | Unsupported | Unsupported | 334K | 324K | Unsupported |
+| Nested (10 items) | 72K | 72K | 187K | 66K | 64K | 70K |
+| Nested + money codec | 62K | Unsupported | Unsupported | 61K | 64K | Unsupported |
+| Discriminated union | 1.30M | 1.25M | 1.45M | 1.19M | 1.16M | 829K |
+| Recursive tree | 777K | 763K | 2.16M | 659K | 670K | 875K |
+| Large array (1000 items) | 1,020 | 1,050 | 2,246 | 978 | 977 | 918 |
+| One-way transform in response† | 2.47M | — | Unsupported | Unsupported | Unsupported | Unsupported |
 
 For non-codec schemas, `serializerCompiler` auto-detects and matches `parseSerializerCompiler` speed. For codec schemas, it automatically uses `safeEncode`.
 
-Validation throughput (all libraries are within ~5% of each other):
+† One-way transforms in response schemas: fastify-type-provider-zod 7 and @fastify/type-provider-zod throw at request time (`safeEncode` cannot run one-way transforms; upstream [#208](https://github.com/turkerdev/fastify-type-provider-zod/issues/208) regressed in v7), and fastify-zod-openapi rejects the schema at startup. lor-zod detects transforms at compile time and serializes them via `safeParse`; its parse variant shares that code path (not benched separately). The fast variant rejects codec, transform, and preprocess schemas at route registration (`fast-json-stringify` cannot execute them) — hence "Unsupported" in the codec and transform rows.
 
-| Scenario | lor-zod | type-provider-zod | zod-openapi |
-| -------- | ------- | ----------------- | ----------- |
-| Simple object | 386K | 360K | 366K |
-| Nested (10 items) | 57K | 57K | 58K |
-| Discriminated union | 996K | 946K | 933K |
-| Recursive tree | 819K | 805K | 758K |
+Validation throughput on the success path (all libraries are closely matched; differences are within run-to-run variance):
 
-> Measured on Apple M-series, Node.js 24, Zod 4.3.6. Run `pnpm bench` to reproduce, or `pnpm bench:lib lor-zod` for this library only.
+| Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | ----------------- | -------------------------- | ----------- |
+| Simple object | 843K | 845K | 865K | 844K |
+| Nested (10 items) | 122K | 126K | 122K | 125K |
+| Discriminated union | 2.15M | 2.06M | 2.07M | 2.04M |
+| Recursive tree | 1.52M | 1.53M | 1.52M | 1.48M |
+| Headers (loose object)‡ | 3.22M | 3.24M | 3.23M | 3.07M |
+| Params (string coercion)‡ | 8.96M | 8.29M | 8.47M | 7.66M |
+
+‡ lor-zod's headers and params numbers include its single-value array-coercion wrapper ([#151](https://github.com/turkerdev/fastify-type-provider-zod/issues/151)) — a feature the others lack; its overhead is not measurable.
+
+Validation throughput for rejected and retried requests (where lazy error construction pays off):
+
+| Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | ----------------- | -------------------------- | ----------- |
+| Single issue | 169K | 149K | 141K | 80K |
+| Many nested issues | 41K | 28K | 28K | 9K |
+| Discriminated union | 262K | 182K | 170K | 95K |
+| Single-value array querystring\* | 222K | 174K | 168K | 68K |
+
+\* lor-zod parses twice and returns 200 (single values are coerced into arrays, [#151](https://github.com/turkerdev/fastify-type-provider-zod/issues/151)); the others reject with 400 after one parse.
+
+Cold start with 50 routes -- app build, ready, and first OpenAPI spec generation (full startups/sec, higher is better; distinct schemas per route, so schema-keyed caches stay cold):
+
+| Scenario | lor-zod | type-provider-zod | @fastify/type-provider-zod | zod-openapi |
+| -------- | ------- | ----------------- | -------------------------- | ----------- |
+| 50-route cold start | 85 | 82 | 86 | 64 |
+
+> Measured on Apple M3 Max, Node.js 24, Zod 4.4.3, against fastify-type-provider-zod 7.0.0, @fastify/type-provider-zod 1.0.0, and fastify-zod-openapi 5.6.1. The error-path advantage reproduces at roughly 1.1--1.5x on Linux x64 and other Apple M-series machines (single-scenario floor 1.08x); the 50-route cold start leads fastify-type-provider-zod on all three machines (1.02--1.11x across runs), with @fastify/type-provider-zod within run variance in both directions. Run `pnpm bench` to reproduce, or `pnpm bench:lib lor-zod` for this library only.
 
 ## OpenAPI / Swagger
 
@@ -211,6 +237,8 @@ app.get('/users/:id', { schema }, getUser);
 
 Validation errors are detected with the `isRequestValidationError` type guard. Serialization errors use `instanceof` on the `ResponseSerializationError` class.
 
+Validation errors are built on a fast path that skips stock `ZodError` construction cost, but they stay fully ZodError-compatible: `instanceof z.ZodError`, `.issues`, `.message`, `.format()`, and `.flatten()` all behave as usual. If a future Zod version changes the internals this relies on, the validator falls back to plain `schema.safeParse` at startup and emits a one-time process warning (`[fastify-lor-zod] Zod internals self-check failed ...`) -- behavior stays correct, only error construction gets slower.
+
 ```ts
 import {
   isRequestValidationError,
@@ -272,7 +300,7 @@ app.get(
 
 | fastify-lor-zod | Fastify | Zod | @fastify/swagger | fast-json-stringify | Node.js |
 | --------------- | ------- | --- | ---------------- | ------------------- | ------- |
-| 0.x             | >= 5.8.4 | >= 4.3.6 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 22 |
+| 0.x             | >= 5.8.4 | >= 4.4.1 < 5 | >= 9.7.0 (optional) | >= 6.3.0 (optional, for `fastSerializerCompiler`) | >= 22 |
 
 ## Migrating from fastify-type-provider-zod
 

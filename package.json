@@ -36,6 +36,7 @@
     "test:scaffold": "node --experimental-strip-types scripts/test-spec.ts scaffold",
     "bench": "vitest bench",
     "bench:lib": "vitest bench -t",
+    "bench:memory": "pnpm build && node --expose-gc --experimental-strip-types scripts/bench-memory.ts",
     "changeset": "changeset",
     "prepare": "husky"
   },
@@ -43,7 +44,7 @@
     "@fastify/swagger": ">=9.7.0",
     "fast-json-stringify": ">=6.3.0",
     "fastify": ">=5.8.5",
-    "zod": ">=4.4.1"
+    "zod": ">=4.4.1 <5"
   },
   "peerDependenciesMeta": {
     "@fastify/swagger": {
@@ -54,25 +55,26 @@
     }
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.16",
+    "@biomejs/biome": "2.5.2",
     "@changesets/cli": "2.31.0",
     "@changesets/types": "^6.1.0",
-    "@commitlint/cli": "21.0.2",
-    "@commitlint/config-conventional": "21.0.2",
+    "@commitlint/cli": "21.2.0",
+    "@commitlint/config-conventional": "21.2.0",
     "@fastify/swagger": "9.7.0",
+    "@fastify/type-provider-zod": "1.0.0",
     "@seriousme/openapi-schema-validator": "^2.9.0",
-    "@vitest/coverage-v8": "4.1.8",
-    "fast-json-stringify": "6.4.0",
-    "fastify": "5.8.5",
-    "fastify-type-provider-zod": "6.1.0",
+    "@vitest/coverage-v8": "4.1.10",
+    "fast-json-stringify": "7.0.0",
+    "fastify": "5.10.0",
+    "fastify-type-provider-zod": "7.0.0",
     "fastify-zod-openapi": "5.6.1",
     "husky": "9.1.7",
-    "knip": "6.15.0",
-    "lint-staged": "17.0.7",
+    "knip": "6.25.0",
+    "lint-staged": "17.0.8",
     "openapi-types": "12.1.3",
     "typescript": "6.0.3",
-    "vite": "8.0.16",
-    "vitest": "4.1.8",
+    "vite": "8.1.3",
+    "vitest": "4.1.10",
     "zod": "4.4.3"
   },
   "author": "Dirk Matthias Rudolf",

@@ -114,14 +114,14 @@ const flattenSingletonAllOf = (body: Record<string, unknown>): Record<string, un
   if (Object.keys(body).length !== 1) return body;
   const allOf = body.allOf;
   if (!Array.isArray(allOf) || allOf.length !== 1) return body;
-  return allOf[0] as Record<string, unknown>;
+  return allOf[0];
 };
 
-const isContentTypeWrapper = (value: unknown): boolean =>
+const isContentTypeWrapper = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' &&
   value !== null &&
   'content' in value &&
-  typeof (value as Record<string, unknown>).content === 'object';
+  typeof value.content === 'object';
 
 const EMPTY_SET: ReadonlySet<string> = new Set();
 
@@ -163,7 +163,7 @@ const transformContentTypes = (
   for (const [mimeType, mimeEntry] of Object.entries(content)) {
     const schemaValue =
       typeof mimeEntry === 'object' && mimeEntry !== null && 'schema' in mimeEntry
-        ? (mimeEntry as Record<string, unknown>).schema
+        ? mimeEntry.schema
         : undefined;
 
     if (!(schemaValue instanceof z.ZodType)) {
@@ -270,7 +270,7 @@ export const createJsonSchemaTransform = (
       // Body can use content-type wrappers (#132)
       if (prop === 'body' && isContentTypeWrapper(zodSchema)) {
         transformed[prop] = transformContentTypes(
-          zodSchema as Record<string, unknown>,
+          zodSchema,
           schemaRegistry,
           'input',
           oasVersion,
@@ -293,7 +293,7 @@ export const createJsonSchemaTransform = (
     }
 
     if (response) {
-      transformed.response = {};
+      transformed.response = {} as Record<string, unknown>;
 
       for (const prop in response as Record<string, unknown>) {
         const responseEntry = (response as Record<string, unknown>)[prop];
@@ -301,7 +301,7 @@ export const createJsonSchemaTransform = (
         // Nested content types (#227): { content: { 'mime': { schema: ZodType } } }
         if (isContentTypeWrapper(responseEntry)) {
           (transformed.response as JSONSchemaRecord)[prop] = transformContentTypes(
-            responseEntry as Record<string, unknown>,
+            responseEntry,
             schemaRegistry,
             'output',
             oasVersion,
@@ -333,7 +333,7 @@ export const createJsonSchemaTransform = (
         );
 
         // If the JSON schema is null, return as-is since fastify-swagger will handle it
-        if ((jsonSchema as JSONSchemaRecord).type === 'null') {
+        if (jsonSchema.type === 'null') {
           (transformed.response as JSONSchemaRecord)[prop] =
             responseDescription !== undefined
               ? { 'x-response-description': responseDescription, ...jsonSchema }

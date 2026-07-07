@@ -1,6 +1,6 @@
 # Test Specification
 
-## Request Validation (`validator/validator.test.ts`) — 24 tests
+## Request Validation (`validator/validator.test.ts`) — 25 tests
 
 - [x] Accepts valid querystring parameters
 - [x] Accepts requests on routes without schema
@@ -26,8 +26,9 @@
 - [x] Coerces single params value into array (#151)
 - [x] Does not coerce body single value to array (#151)
 - [x] Does not false-coerce when union matches non-array branch (#151)
+- [x] Does not coerce nested array path (#151)
 
-## Serialization (`serializer/serializer.test.ts`) — 38 tests
+## Serialization (`serializer/serializer.test.ts`) — 45 tests
 
 Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (validation, no codecs), `fast` (fast-json-stringify, no validation).
 
@@ -63,6 +64,19 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] includes httpStatus in ResponseSerializationError
 - [x] omits httpStatus from message when not provided
 
+### Zod invariants — 1 test
+
+- [x] captured safeParse behaves identically to method call
+
+### Fast serializer guard — 6 tests
+
+- [x] fast serializer rejects codec response schemas at route registration
+- [x] fast serializer rejects transform response schemas at route registration
+- [x] fast serializer rejects preprocess response schemas at route registration
+- [x] fast serializer rejects codecs nested in lazy and union schemas
+- [x] fast serializer rejection propagates through app ready
+- [x] fast serializer applies default values via fast-json-stringify
+
 ## Schema divergence detection (`utils/schema-diverges.test.ts`) — 27 tests
 
 - [x] returns false for plain object schema
@@ -93,19 +107,13 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] returns false for plain string
 - [x] returns false for array of plain objects
 
-## Schema tree traversal (`schema-tree.test.ts`) — 3 tests
-
-- [x] returns cached result from WeakMap
-- [x] independent predicates do not share cache
-- [x] findInTree handles non-ZodType input gracefully
-
 ## Error Handling (`validator/error.test.ts`) — 3 tests
 
 - [x] Returns 400 with structured error on body validation error (method, url, validation details)
 - [x] Produces empty instancePath for root-level validation errors
 - [x] Stores input on RequestValidationError
 
-## Error mapping (`utils/map-issue-to-validation-error.test.ts`) — 6 tests
+## Error mapping (`utils/map-issue-to-validation-error.test.ts`) — 7 tests
 
 - [x] maps issue path to instancePath
 - [x] produces empty instancePath for root-level issue
@@ -113,6 +121,7 @@ Three serializer compilers: `safeEncode` (default, codec support), `safeParse` (
 - [x] omits httpPart from schemaPath when undefined
 - [x] escapes RFC 6901 special characters in path segments
 - [x] spreads remaining issue properties into params
+- [x] escapes only affected segments in mixed paths
 
 ## OpenAPI/Swagger (`openapi/schema-transform.test.ts`) — 49 tests
 
@@ -256,4 +265,37 @@ Byte-identical snapshot output with turkerdev/fastify-type-provider-zod `fastify
 - [x] Generated OAS 3.0.3 spec passes official metaschema validation
 - [x] Generated OAS 3.1.0 spec passes official metaschema validation
 
-**Total: 174 spec entries, 191 tests across 10 test files**
+## Fast safe parse (`validator/fast-safe-parse.test.ts`) — 18 tests
+
+- [x] Fast-path error is instanceof ZodError, core $ZodError, and Error
+- [x] Fast-path error has name ZodError and captured stack trace
+- [x] Fast-path error message matches classic safeParse message exactly
+- [x] Fast-path error issues deep-equal classic safeParse issues
+- [x] Fast-path error format and flatten match classic safeParse error
+- [x] Fast-path error isEmpty is false when issues exist
+- [x] addIssue and addIssues update issues and lazy message reflects them
+- [x] Assigning message overrides the lazy getter
+- [x] JSON.stringify of fast-path error matches classic safeParse error layout
+- [x] fastSafeParse returns parsed data on success
+- [x] fastSafeParse strips unknown keys like safeParse
+- [x] fastSafeParse throws ZodAsyncError on async schema
+- [x] Self-check passes on the current zod version
+- [x] Self-check fails when the fast parse is broken
+- [x] Self-check fails when zod internals are missing
+- [x] selectParseStrategy falls back to classic safeParse and emits a warning
+- [x] selectParseStrategy returns the fast path without warning when healthy
+- [x] Fast-path error shares one message accessor across instances
+
+## Pipe kinds detection (`utils/pipe-kinds-in-tree.test.ts`) — 9 tests
+
+- [x] detects codec-only tree
+- [x] detects transform-only tree
+- [x] detects all kinds in a mixed tree in one traversal
+- [x] returns neither flag for plain trees
+- [x] classifies a pipe with both reverseTransform and transform out as codec only
+- [x] caches result per schema and returns frozen object
+- [x] handles recursive lazy schemas without infinite loop
+- [x] handles non-ZodType input gracefully
+- [x] detects preprocess-only tree
+
+**Total: 206 spec entries, 223 tests across 11 test files**
