@@ -43,13 +43,40 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: pnpm test:spec-check --strict
 
+  peer-compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { peer: fastify, version: '5.7.0' } # lowest supported (>=5.7.0 <6)
+          - { peer: fastify, version: '5' } # latest 5.x
+          - { peer: fast-json-stringify, version: '6.0.0' } # lowest supported (>=6.0.0 <8)
+          - { peer: fast-json-stringify, version: '7' } # latest 7.x
+          - { peer: '@fastify/swagger', version: '9.7.0' } # lowest supported (>=9.7.0 <10)
+          - { peer: '@fastify/swagger', version: '9' } # latest 9.x
+    container: node:24-alpine
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - run: apk add --no-cache tar
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - run: pnpm install --frozen-lockfile
+      - name: Pin ${{ matrix.peer }}@${{ matrix.version }}
+        run: pnpm add -D ${{ matrix.peer }}@${{ matrix.version }}
+      - run: pnpm typecheck
+      - run: pnpm test
+
   ci-status:
-    needs: ci
+    needs: [ci, peer-compat]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - run: exit 1
-        if: contains(needs.ci.result, 'failure') || contains(needs.ci.result, 'cancelled')
+        if: >-
+          contains(needs.ci.result, 'failure') || contains(needs.ci.result, 'cancelled') ||
+          contains(needs.peer-compat.result, 'failure') || contains(needs.peer-compat.result, 'cancelled')
 
   coverage-report:
     needs: ci

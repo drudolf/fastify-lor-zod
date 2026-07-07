@@ -1,6 +1,6 @@
 {
   "name": "fastify-lor-zod",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "A Fastify type provider integrating Zod v4 for schema validation, response serialization, and OpenAPI generation",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
@@ -41,9 +41,9 @@
     "prepare": "husky"
   },
   "peerDependencies": {
-    "@fastify/swagger": ">=9.7.0",
-    "fast-json-stringify": ">=6.3.0",
-    "fastify": ">=5.8.5",
+    "@fastify/swagger": ">=9.7.0 <10",
+    "fast-json-stringify": ">=6.0.0 <8",
+    "fastify": ">=5.7.0 <6",
     "zod": ">=4.4.1 <5"
   },
   "peerDependenciesMeta": {
