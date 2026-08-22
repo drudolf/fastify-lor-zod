@@ -4,6 +4,12 @@
   "description": "A Fastify type provider integrating Zod v4 for schema validation, response serialization, and OpenAPI generation",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "overrides": {
+      "fast-uri@3": "3.1.5",
+      "find-my-way@9": "9.7.0"
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
