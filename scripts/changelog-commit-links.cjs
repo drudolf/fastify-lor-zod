@@ -12,7 +12,9 @@ module.exports = {
     const [firstLine, ...rest] = changeset.summary.split('\n').map((l) => l.trimEnd());
 
     const prefix =
-      changeset.commit && options?.repo ? `${commitLink(changeset.commit, options.repo)} ` : '';
+      changeset.commit && typeof options?.repo === 'string'
+        ? `${commitLink(changeset.commit, options.repo)} `
+        : '';
 
     let line = `- ${prefix}${firstLine}`;
 
@@ -28,7 +30,9 @@ module.exports = {
 
     const links = changesets.map((changeset) => {
       const suffix =
-        changeset.commit && options?.repo ? ` ${commitLink(changeset.commit, options.repo)}` : '';
+        changeset.commit && typeof options?.repo === 'string'
+          ? ` ${commitLink(changeset.commit, options.repo)}`
+          : '';
       return `- Updated dependencies${suffix}`;
     });
 

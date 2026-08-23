@@ -267,6 +267,10 @@ const OAS30_DELETE_KEYS = [
 const isRecord = (value: unknown): value is JSONSchemaRecord =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+/** Narrows to an array of plain JSON Schema objects (allOf/anyOf/oneOf shape). */
+const isRecordArray = (value: unknown): value is JSONSchemaRecord[] =>
+  Array.isArray(value) && value.every(isRecord);
+
 const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
   const clone: JSONSchemaRecord = { ...jsonSchema };
 
@@ -299,8 +303,9 @@ const jsonSchemaToOAS30 = (jsonSchema: JSONSchemaRecord): JSONSchemaRecord => {
   recurseRecord('definitions');
 
   for (const key of ['allOf', 'anyOf', 'oneOf', 'not', 'then', 'else', 'if', 'contains'] as const) {
-    if (clone[key]) {
-      clone[key] = recursive(clone[key] as JSONSchemaRecord | JSONSchemaRecord[]);
+    const value = clone[key];
+    if (isRecord(value) || isRecordArray(value)) {
+      clone[key] = recursive(value);
     }
   }
 
