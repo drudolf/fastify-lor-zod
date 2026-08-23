@@ -1,5 +1,19 @@
 # fastify-lor-zod
 
+## 0.9.2
+
+### Patch Changes
+
+- [`4427dc9`](https://github.com/drudolf/fastify-lor-zod/commit/4427dc9) Harden the development dependency tree via `pnpm.overrides`, clearing the last two Dependabot advisories.
+  
+  Pin patched transitive build/test dependencies: `fast-uri@3` → 3.1.5 (GHSA-7p8r-x3mc-p8w7) and `find-my-way@9` → 9.7.0 (GHSA-c96f-x56v-gq3h). Dev-scope only — `fastify` is a peer dependency and `pnpm.overrides` does not propagate to installs, so the published package and its consumers are unaffected.
+- [`c355be1`](https://github.com/drudolf/fastify-lor-zod/commit/c355be1) Reduce `as` type assertions in the OpenAPI transform layer by tightening types at
+  their source rather than casting at each use: a local `responseSchemas` accumulator,
+  an `isRecord` guard on the response slot, `Object.entries` for the extra-props loop,
+  a `content`-narrowed `isContentTypeWrapper` predicate, and an `isRecordArray` guard
+  in the OAS 3.0 downgrade. Internal refactor — no API or output change (100% coverage
+  preserved).
+
 ## 0.9.1
 
 ### Patch Changes
