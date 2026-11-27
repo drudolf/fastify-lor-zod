@@ -6,6 +6,8 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    cooldown:
+      default-days: 1
     groups:
       dev-dependencies:
         dependency-type: development
